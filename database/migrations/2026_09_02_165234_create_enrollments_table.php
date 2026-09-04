@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('class_id')->constrained('classes','id')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('users','id')->cascadeOnDelete();
-            $table->enum('status',['active','inactive'])->default('active');
+            $table->enum('status',['active','removed'])->default('active');
             $table->timestamp('joined_at')->useCurrent();
             $table->timestamps();
             $table->unique(['class_id','student_id']);
