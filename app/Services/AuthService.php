@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class AuthService{
  
@@ -43,10 +44,10 @@ class AuthService{
 
     public function redirectByRole(string $role) : string {    
         return match ($role) {
-            "admin" => '/admin',
-            "teacher" => '/teacher/dashboard',
-            "student" => '/student/dashboard',
-            default => '/'
+            "admin" => route('admin.dashboard'),
+            "teacher" => route('teacher.dashboard'),
+            "student" => route('student.dashboard'),
+            default => route('login')
         };
     }
 
