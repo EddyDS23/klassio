@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['activity_id','rows','columns','grid'])]
-#[Hidden(['created_at','updated_at'])]
+#[Fillable(['activity_id', 'rows', 'columns', 'grid'])]
+#[Hidden(['created_at', 'updated_at'])]
 class Wordsearch extends Model
 {
+    protected $table = 'worksearches';
     public $timestamps = true;
 
     public function activity(): BelongsTo
@@ -22,5 +23,12 @@ class Wordsearch extends Model
     public function words(): HasMany
     {
         return $this->hasMany(Word::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'grid' => 'array',
+        ];
     }
 }

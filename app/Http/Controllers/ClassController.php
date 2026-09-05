@@ -143,12 +143,9 @@ class ClassController extends Controller
     public function studentShow(int $id): mixed
     {
         $class = $this->classService->get($id);
-
         Gate::authorize('view', $class);
-
-        return view('student.classes.show', [
-            'class' => $class
-        ]);
+        $activities = $class->activities()->where('status', 'published')->latest()->get();
+        return view('student.classes.show', ['class' => $class, 'activities' => $activities]);
     }
 
     public function studentIndex(): mixed

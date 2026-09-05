@@ -1,13 +1,12 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', fn()=>redirect('login'));
 
 Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -18,30 +17,39 @@ Route::middleware(['throttle:auth'])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-Route::middleware(['auth', 'active', 'role:admin'])->group(function () {
-    Route::get('/admin/dashboard', [DashboardController::class,'admin'])->name('admin.dashboard');
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'active', 'role:admin'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
 });
 
-Route::middleware(['auth', 'active', 'role:teacher'])->group(function () {
-    Route::get('/teacher/dashboard', [DashboardController::class, 'teacher'])->name('teacher.dashboard');
-    Route::get('/classes', [ClassController::class, 'index'])->name('teacher.classes.index');
-    Route::get('/classes/create', [ClassController::class, 'create'])->name('teacher.classes.create');
-    Route::post('/classes', [ClassController::class, 'store'])->name('teacher.classes.store');
-    Route::get('/classes/{id}', [ClassController::class, 'show'])->name('teacher.classes.show');
-    Route::get('/classes/{id}/edit', [ClassController::class, 'edit'])->name('teacher.classes.edit');
-    Route::put('/classes/{id}', [ClassController::class, 'update'])->name('teacher.classes.update');
-    Route::get('/classes/{id}/students', [ClassController::class, 'students'])->name('teacher.classes.students');
-    Route::delete('/classes/{id}/students/{studentId}', [ClassController::class, 'removeStudent'])->name('teacher.classes.students.remove');
-    Route::patch('/classes/{id}/regenerate-code', [ClassController::class, 'regenerateCode'])->name('teacher.classes.regenerate-code');
-    Route::patch('/classes/{id}/archive', [ClassController::class, 'archive'])->name('teacher.classes.archive');
-    Route::patch('/classes/{id}/unarchive', [ClassController::class, 'unarchive'])->name('teacher.classes.unarchive');
+Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:teacher'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'teacher'])->name('dashboard');
+    Route::get('/classes', [ClassController::class, 'index'])->name('classes.index');
+    Route::get('/classes/create', [ClassController::class, 'create'])->name('classes.create');
+    Route::post('/classes', [ClassController::class, 'store'])->name('classes.store');
+    Route::get('/classes/{id}', [ClassController::class, 'show'])->name('classes.show');
+    Route::get('/classes/{id}/edit', [ClassController::class, 'edit'])->name('classes.edit');
+    Route::put('/classes/{id}', [ClassController::class, 'update'])->name('classes.update');
+    Route::get('/classes/{id}/students', [ClassController::class, 'students'])->name('classes.students');
+    Route::delete('/classes/{id}/students/{studentId}', [ClassController::class, 'removeStudent'])->name('classes.students.remove');
+    Route::patch('/classes/{id}/regenerate-code', [ClassController::class, 'regenerateCode'])->name('classes.regenerate-code');
+    Route::patch('/classes/{id}/archive', [ClassController::class, 'archive'])->name('classes.archive');
+    Route::patch('/classes/{id}/unarchive', [ClassController::class, 'unarchive'])->name('classes.unarchive');
+    Route::get('/classes/{id}/activities',[ActivityController::class, 'teacherIndex'])->name('activities.index');
+    Route::get('/classes/{id}/activities/create',[ActivityController::class, 'teacherCreate'])->name('activities.create');
+    Route::post('/classes/{id}/activities',[ActivityController::class, 'teacherStore'])->name('activities.store');
+    Route::get('/activities/{id}',[ActivityController::class, 'teacherShow'])->name('activities.show');
+    Route::get('/activities/{id}/edit',[ActivityController::class, 'teacherEdit'])->name('activities.edit');
+    Route::put('/activities/{id}',[ActivityController::class, 'teacherUpdate'])->name('activities.update');
+    Route::post('/activities/{id}/publish',[ActivityController::class, 'publish'])->name('activities.publish');
+    Route::post('/activities/{id}/close',[ActivityController::class, 'close'])->name('activities.close');
 });
 
-Route::middleware(['auth', 'active', 'role:student'])->group(function () {
-    Route::get('/student/dashboard', [DashboardController::class,'student'])->name('student.dashboard');
-    Route::get('/student/classes', [ClassController::class, 'studentIndex'])->name('student.classes.index');
-    Route::post('/student/classes/join', [ClassController::class, 'join'])->name('student.class.join');
-    Route::get('/student/classes/{id}/students', [ClassController::class, 'studentStudents'])->name('student.class.students');
-    Route::get('/student/classes/{id}', [ClassController::class, 'studentShow'])->name('student.class.show');
-    
+Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:student'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'student'])->name('dashboard');
+    Route::get('/classes', [ClassController::class, 'studentIndex'])->name('classes.index');
+    Route::post('/classes/join', [ClassController::class, 'join'])->name('class.join');
+    Route::get('/classes/{id}/students', [ClassController::class, 'studentStudents'])->name('class.students');
+    Route::get('/classes/{id}', [ClassController::class, 'studentShow'])->name('class.show');
+    Route::get('/classes/{id}/activities',[ActivityController::class, 'studentIndex'])->name('activities.index');
+    Route::get('/activities/{id}',[ActivityController::class, 'studentShow'])->name('activities.show');
 });

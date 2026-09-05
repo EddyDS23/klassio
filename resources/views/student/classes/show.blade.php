@@ -48,13 +48,20 @@
         </section>
 
         <section>
-
             <h2>Actividades</h2>
-
-            <p>
-                No hay actividades disponibles todavía.
-            </p>
-
+            @forelse ($activities as $activity)
+                <article>
+                    <h3>{{ $activity->title }}</h3>
+                    <p> {{ $activity->description ?? 'Sin descripción' }} </p>
+                    <p> <strong>Tipo:</strong> {{ $activity->type }} </p>
+                    <p> <strong>Tiempo:</strong> {{ $activity->time_limit }} segundos </p>
+                    @if ($activity->due_at)
+                        <p> <strong>Fecha límite:</strong> {{ $activity->due_at->format('d/m/Y H:i') }} </p>
+                    @endif <a href="{{ route('student.activities.show', $activity->id) }}"> Ver
+                        actividad </a>
+                </article>
+            <hr> @empty <p> No hay actividades disponibles todavía. </p>
+            @endforelse
         </section>
 
     </main>

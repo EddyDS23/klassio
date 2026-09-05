@@ -80,6 +80,14 @@
         </form>
     @endif
 
+    <hr>
+    <section>
+        <h2>Actividades</h2>
+        <p> Crea y administra las actividades de esta clase. </p> <a
+            href="{{ route('teacher.activities.index', $class->id) }}"> Ver actividades </a> <a
+            href="{{ route('teacher.activities.create', $class->id) }}"> Crear actividad </a>
+    </section>
+
 </body>
 
 </html>

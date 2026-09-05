@@ -24,7 +24,7 @@ class Activity extends Model
         ];
     }
 
-    public function class(): BelongsTo
+    public function schoolClass(): BelongsTo
     {
         return $this->belongsTo(SchoolClass::class, 'class_id');
     }
