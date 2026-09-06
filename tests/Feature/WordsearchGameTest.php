@@ -35,7 +35,7 @@ class WordsearchGameTest extends TestCase
         $class = SchoolClass::create([
             'teacher_id' => $teacher->id,
             'name' => 'Clase demo',
-            'code' => 'WS0001',
+            'code' => 'WS' . strtoupper(uniqid()),
         ]);
 
         return Activity::create([
@@ -58,6 +58,7 @@ class WordsearchGameTest extends TestCase
         return [
             'wordsearch' => $wordsearch,
             'payload' => [
+                'wordsearch_id' => $wordsearch->id,
                 'start_row' => $word->row,
                 'start_column' => $word->column,
                 'end_row' => $word->direction === 'horizontal' ? $word->row : $word->row + mb_strlen($word->word) - 1,
@@ -66,13 +67,9 @@ class WordsearchGameTest extends TestCase
         ];
     }
 
-    #[Test]
-    public function el_maestro_genera_una_sopa_desde_el_formulario(): void
+    private function payload(): array
     {
-        $activity = $this->makeActivity();
-
-        $response = $this->post(route('teacher.wordsearches.store'), [
-            'activity_id' => $activity->id,
+        return [
             'rows' => 10,
             'columns' => 10,
             'words' => [
@@ -82,7 +79,19 @@ class WordsearchGameTest extends TestCase
                 ['word' => 'PHP', 'score' => 5],
                 ['word' => 'MYSQL', 'score' => 10],
             ],
-        ]);
+        ];
+    }
+
+    #[Test]
+    public function el_maestro_configura_una_sopa_desde_el_formulario(): void
+    {
+        $activity = $this->makeActivity();
+
+        $this->get(route('teacher.word-search.configure', $activity->id))
+            ->assertOk()
+            ->assertSee('Configurar Sopa de Letras');
+
+        $response = $this->post(route('teacher.word-search.store', $activity->id), $this->payload());
 
         $response->assertRedirect();
 
@@ -95,8 +104,7 @@ class WordsearchGameTest extends TestCase
     {
         $activity = $this->makeActivity();
 
-        $response = $this->post(route('teacher.wordsearches.store'), [
-            'activity_id' => $activity->id,
+        $response = $this->post(route('teacher.word-search.store', $activity->id), [
             'rows' => 10,
             'columns' => 10,
             'words' => [],
@@ -106,19 +114,21 @@ class WordsearchGameTest extends TestCase
     }
 
     #[Test]
-    public function regenerar_la_sopa_reemplaza_las_palabras_anteriores(): void
+    public function actualizar_la_sopa_reemplaza_las_palabras_anteriores(): void
     {
         $activity = $this->makeActivity();
 
-        $this->post(route('teacher.wordsearches.store'), [
-            'activity_id' => $activity->id,
+        $this->post(route('teacher.word-search.store', $activity->id), [
             'rows' => 10,
             'columns' => 10,
             'words' => [['word' => 'HTTP', 'score' => 10]],
         ]);
 
-        $this->post(route('teacher.wordsearches.store'), [
-            'activity_id' => $activity->id,
+        $this->get(route('teacher.word-search.edit', $activity->id))
+            ->assertOk()
+            ->assertSee('Editar Sopa de Letras');
+
+        $this->put(route('teacher.word-search.update', $activity->id), [
             'rows' => 10,
             'columns' => 10,
             'words' => [['word' => 'PHP', 'score' => 10]],
@@ -136,13 +146,13 @@ class WordsearchGameTest extends TestCase
             ['word' => 'HTTP', 'score' => 10],
         ]);
 
-        $this->get(route('wordsearches.play', $activity->wordsearch))
+        $this->get(route('student.word-search.play', $activity->id))
             ->assertOk()
             ->assertSee('HTTP');
 
         ['wordsearch' => $wordsearch, 'payload' => $payload] = $this->correctPayload($activity);
 
-        $response = $this->postJson(route('wordsearches.answer', $wordsearch), $payload);
+        $response = $this->postJson(route('student.word-search.answer'), $payload);
 
         $response->assertOk();
         $response->assertJson([
@@ -166,10 +176,10 @@ class WordsearchGameTest extends TestCase
 
         ['wordsearch' => $wordsearch, 'payload' => $payload] = $this->correctPayload($activity);
 
-        $this->postJson(route('wordsearches.answer', $wordsearch), $payload)
+        $this->postJson(route('student.word-search.answer'), $payload)
             ->assertJson(['correct' => true, 'already_found' => false]);
 
-        $this->postJson(route('wordsearches.answer', $wordsearch), $payload)
+        $this->postJson(route('student.word-search.answer'), $payload)
             ->assertJson(['correct' => true, 'already_found' => true, 'score' => 0]);
 
         $this->assertDatabaseCount('wordsearch_answers', 1);
@@ -184,7 +194,8 @@ class WordsearchGameTest extends TestCase
         ]);
         $wordsearch = $activity->wordsearch;
 
-        $response = $this->postJson(route('wordsearches.answer', $wordsearch), [
+        $response = $this->postJson(route('student.word-search.answer'), [
+            'wordsearch_id' => $wordsearch->id,
             'start_row' => 0,
             'start_column' => 0,
             'end_row' => 0,
@@ -203,7 +214,8 @@ class WordsearchGameTest extends TestCase
             ['word' => 'HTTP', 'score' => 10],
         ]);
 
-        $response = $this->postJson(route('wordsearches.answer', $activity->wordsearch), [
+        $response = $this->postJson(route('student.word-search.answer'), [
+            'wordsearch_id' => $activity->wordsearch->id,
             'start_row' => 1,
             'start_column' => 1,
             'end_row' => 3,

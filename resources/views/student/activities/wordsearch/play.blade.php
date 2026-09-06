@@ -98,13 +98,14 @@
 
     function fetchAnswer(startCell, endCell) {
         const body = {
+            wordsearch_id: {{ $wordsearch->id }},
             start_row: parseInt(startCell.dataset.row, 10),
             start_column: parseInt(startCell.dataset.column, 10),
             end_row: parseInt(endCell.dataset.row, 10),
             end_column: parseInt(endCell.dataset.column, 10),
         };
 
-        fetch(@json(route('wordsearches.answer', $wordsearch)), {
+        fetch(@json(route('student.word-search.answer')), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

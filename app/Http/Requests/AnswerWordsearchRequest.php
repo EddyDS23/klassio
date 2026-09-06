@@ -14,6 +14,7 @@ class AnswerWordsearchRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'wordsearch_id' => ['required', 'integer', 'exists:wordsearches,id'],
             'start_row' => ['required', 'integer'],
             'start_column' => ['required', 'integer'],
             'end_row' => ['required', 'integer'],

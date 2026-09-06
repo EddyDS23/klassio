@@ -8,14 +8,15 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::prefix('teacher')->name('teacher.wordsearches.')->group(function () {
-    Route::get('wordsearches/create', [WordsearchController::class, 'create'])->name('create');
-    Route::post('wordsearches', [WordsearchController::class, 'store'])->name('store');
+Route::prefix('teacher')->name('teacher.word-search.')->group(function () {
+    Route::get('activities/{id}/word-search/configure', [WordsearchController::class, 'configure'])->name('configure');
+    Route::post('activities/{id}/word-search', [WordsearchController::class, 'store'])->name('store');
+    Route::get('activities/{id}/word-search/edit', [WordsearchController::class, 'edit'])->name('edit');
+    Route::put('activities/{id}/word-search', [WordsearchController::class, 'update'])->name('update');
 });
 
-Route::get('wordsearches/{wordsearch}', [WordsearchController::class, 'show'])->name('wordsearches.show');
-Route::get('wordsearches/{wordsearch}/play', [WordsearchController::class, 'play'])->name('wordsearches.play');
-Route::post('wordsearches/{wordsearch}/answer', [WordsearchController::class, 'answer'])->name('wordsearches.answer');
+Route::get('student/activities/{id}/word-search/play', [WordsearchController::class, 'play'])->name('student.word-search.play');
+Route::post('student/word-search/answer', [WordsearchController::class, 'answer'])->name('student.word-search.answer');
 
 Route::prefix('teacher')->name('teacher.matchings.')->group(function () {
     Route::get('matchings/create', [MatchingController::class, 'create'])->name('create');

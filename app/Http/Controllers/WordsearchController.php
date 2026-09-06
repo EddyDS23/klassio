@@ -4,38 +4,41 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AnswerWordsearchRequest;
 use App\Http\Requests\StoreWordsearchRequest;
+use App\Http\Requests\UpdateWordsearchRequest;
 use App\Models\Activity;
 use App\Models\Participation;
 use App\Models\Wordsearch;
 use App\Services\WordSearchService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
 class WordsearchController extends Controller
 {
     public function __construct(
-        protected WordSearchService $service
+        protected WordSearchService $wordSearchService
     ) {
     }
 
-    public function create(): View
+    public function configure(int $id): View
     {
-        $activities = Activity::query()
-            ->where('type', 'word_search')
-            ->orderBy('id')
-            ->get();
+        $activity = Activity::findOrFail($id);
 
-        return view('teacher.activities.wordsearch.create', compact('activities'));
+        return view('teacher.activities.wordsearch.form', [
+            'activity' => $activity,
+            'wordsearch' => null,
+            'editing' => false,
+        ]);
     }
 
-    public function store(StoreWordsearchRequest $request): \Illuminate\Http\RedirectResponse
+    public function store(StoreWordsearchRequest $request, int $id): RedirectResponse
     {
+        $activity = Activity::findOrFail($id);
+
         $data = $request->validated();
 
-        $activity = Activity::findOrFail($data['activity_id']);
-
-        $this->service->buildWordsearch(
+        $this->wordSearchService->buildWordsearch(
             $activity,
             (int) $data['rows'],
             (int) $data['columns'],
@@ -43,24 +46,60 @@ class WordsearchController extends Controller
         );
 
         return redirect()
-            ->route('wordsearches.show', $activity->wordsearch)
-            ->with('status', 'Sopa de letras generada correctamente.');
+            ->route('teacher.word-search.edit', $id)
+            ->with('status', 'Sopa de letras guardada correctamente.');
     }
 
-    public function show(Wordsearch $wordsearch): View
+    public function edit(int $id): View
     {
-        return view('teacher.activities.wordsearch.show', [
+        $activity = Activity::findOrFail($id);
+
+        $wordsearch = $activity->wordsearch;
+
+        if (! $wordsearch) {
+            return view('teacher.activities.wordsearch.form', [
+                'activity' => $activity,
+                'wordsearch' => null,
+                'editing' => false,
+            ]);
+        }
+
+        return view('teacher.activities.wordsearch.form', [
+            'activity' => $activity,
             'wordsearch' => $wordsearch,
-            'grid' => $wordsearch->grid,
-            'words' => $wordsearch->words()->orderBy('word')->get(),
+            'editing' => true,
         ]);
     }
 
-    public function play(Wordsearch $wordsearch): View
+    public function update(UpdateWordsearchRequest $request, int $id): RedirectResponse
     {
+        $activity = Activity::findOrFail($id);
+
+        $data = $request->validated();
+
+        $this->wordSearchService->buildWordsearch(
+            $activity,
+            (int) $data['rows'],
+            (int) $data['columns'],
+            $data['words']
+        );
+
+        return redirect()
+            ->route('teacher.word-search.edit', $id)
+            ->with('status', 'Sopa de letras actualizada correctamente.');
+    }
+
+    public function play(int $id): View
+    {
+        $activity = Activity::findOrFail($id);
+
+        $wordsearch = $activity->wordsearch;
+
+        abort_unless($wordsearch, 404, 'Esta actividad aún no tiene una sopa de letras.');
+
         $participation = $this->resolveParticipation($wordsearch);
 
-        $found = $this->service->foundWords($wordsearch, $participation);
+        $found = $this->wordSearchService->foundWords($wordsearch, $participation);
 
         $foundWords = $wordsearch->words()->whereIn('id', $found)->get();
 
@@ -76,15 +115,15 @@ class WordsearchController extends Controller
         ]);
     }
 
-    public function answer(
-        AnswerWordsearchRequest $request,
-        Wordsearch $wordsearch
-    ): JsonResponse {
+    public function answer(AnswerWordsearchRequest $request): JsonResponse
+    {
         $data = $request->validated();
+
+        $wordsearch = Wordsearch::findOrFail((int) $data['wordsearch_id']);
 
         $participation = $this->resolveParticipation($wordsearch);
 
-        $result = $this->service->checkAnswer(
+        $result = $this->wordSearchService->checkAnswer(
             $wordsearch,
             $participation,
             (int) $data['start_row'],
@@ -93,7 +132,7 @@ class WordsearchController extends Controller
             (int) $data['end_column']
         );
 
-        $result['total'] = $this->service->foundWords($wordsearch, $participation);
+        $result['total'] = $this->wordSearchService->foundWords($wordsearch, $participation);
 
         return response()->json($result);
     }
