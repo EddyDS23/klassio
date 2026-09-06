@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('team_id')->nullable()->constrained('teams', 'id')->cascadeOnDelete();
             $table->unsignedTinyInteger('attempt')->default(1);
             $table->enum('status', ['started', 'completed', 'abandoned', 'expired'])->default('started');
-            $table->unsignedTinyInteger('score')->default(0);
+            $table->unsignedSmallInteger('score')->default(0);
             $table->timestamp('started_at')->useCurrent();
             $table->timestamp('completed_at')->nullable();
             $table->unsignedInteger('elapsed_seconds')->nullable();

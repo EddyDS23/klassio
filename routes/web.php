@@ -1,7 +1,62 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ClassController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CrosswordController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/', fn()=>redirect('login'));
+
+Route::post('/logout', [AuthController::class, 'logout']);
+
+Route::middleware(['throttle:auth'])->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
+
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'active', 'role:admin'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+});
+
+Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:teacher'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'teacher'])->name('dashboard');
+    Route::get('/classes', [ClassController::class, 'index'])->name('classes.index');
+    Route::get('/classes/create', [ClassController::class, 'create'])->name('classes.create');
+    Route::post('/classes', [ClassController::class, 'store'])->name('classes.store');
+    Route::get('/classes/{id}', [ClassController::class, 'show'])->name('classes.show');
+    Route::get('/classes/{id}/edit', [ClassController::class, 'edit'])->name('classes.edit');
+    Route::put('/classes/{id}', [ClassController::class, 'update'])->name('classes.update');
+    Route::get('/classes/{id}/students', [ClassController::class, 'students'])->name('classes.students');
+    Route::delete('/classes/{id}/students/{studentId}', [ClassController::class, 'removeStudent'])->name('classes.students.remove');
+    Route::patch('/classes/{id}/regenerate-code', [ClassController::class, 'regenerateCode'])->name('classes.regenerate-code');
+    Route::patch('/classes/{id}/archive', [ClassController::class, 'archive'])->name('classes.archive');
+    Route::patch('/classes/{id}/unarchive', [ClassController::class, 'unarchive'])->name('classes.unarchive');
+    Route::get('/classes/{id}/activities',[ActivityController::class, 'teacherIndex'])->name('activities.index');
+    Route::get('/classes/{id}/activities/create',[ActivityController::class, 'teacherCreate'])->name('activities.create');
+    Route::post('/classes/{id}/activities',[ActivityController::class, 'teacherStore'])->name('activities.store');
+    Route::get('/activities/{id}',[ActivityController::class, 'teacherShow'])->name('activities.show');
+    Route::get('/activities/{id}/edit',[ActivityController::class, 'teacherEdit'])->name('activities.edit');
+    Route::put('/activities/{id}',[ActivityController::class, 'teacherUpdate'])->name('activities.update');
+    Route::post('/activities/{id}/publish',[ActivityController::class, 'publish'])->name('activities.publish');
+    Route::post('/activities/{id}/close',[ActivityController::class, 'close'])->name('activities.close');
+    Route::get('/activities/{id}/crossword/configure',[CrosswordController::class, 'configure'])->name('crossword.configure');
+    Route::post('/activities/{id}/crossword',[CrosswordController::class, 'store'])->name('crossword.store'); 
+    Route::get('/activities/{id}/crossword/edit',[CrosswordController::class, 'edit'])->name('crossword.edit');
+    Route::put('/activities/{id}/crossword',[CrosswordController::class, 'update'])->name('crossword.update');
+});
+
+Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:student'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'student'])->name('dashboard');
+    Route::get('/classes', [ClassController::class, 'studentIndex'])->name('classes.index');
+    Route::post('/classes/join', [ClassController::class, 'join'])->name('class.join');
+    Route::get('/classes/{id}/students', [ClassController::class, 'studentStudents'])->name('class.students');
+    Route::get('/classes/{id}', [ClassController::class, 'studentShow'])->name('class.show');
+    Route::get('/classes/{id}/activities',[ActivityController::class, 'studentIndex'])->name('activities.index');
+    Route::get('/activities/{id}',[ActivityController::class, 'studentShow'])->name('activities.show');
+    Route::get('/activities/{id}/crossword/play',[CrosswordController::class, 'play'])->name('crossword.play');
+    Route::post('/crossword/answer',[CrosswordController::class, 'answer'])->name('crossword.answer');
 });
