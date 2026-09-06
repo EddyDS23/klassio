@@ -9,6 +9,7 @@ use App\Models\SchoolClass;
 use App\Services\ClassService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 
 class ClassController extends Controller
 {
@@ -140,12 +141,16 @@ class ClassController extends Controller
             ->with('success', 'Te has unido a la clase correctamente');
     }
 
-    public function studentShow(int $id): mixed
+    public function studentShow(int $id): View
     {
-        $class = $this->classService->get($id);
-        Gate::authorize('view', $class);
-        $activities = $class->activities()->where('status', 'published')->latest()->get();
-        return view('student.classes.show', ['class' => $class, 'activities' => $activities]);
+        $class = SchoolClass::findOrFail($id);
+
+        $activity = $class->activities()
+            ->where('status', 'published')
+            ->latest()
+            ->first();
+
+        return view('student.classes.show', compact('class', 'activity'));
     }
 
     public function studentIndex(): mixed

@@ -10,7 +10,6 @@
 
 <body>
 
-
     <h1>{{ $activity->title }}</h1>
 
     @if (session('success'))
@@ -82,24 +81,105 @@
         </p>
     @endif
 
-    {{-- Acciones específicas del crucigrama --}}
-    @if ($activity->type === 'crossword')
 
-        @if ($activity->crossword && $activity->crossword->words()->exists())
-            <p>
-                <a href="{{ route('teacher.crossword.edit', $activity->id) }}">
-                    Editar crucigrama
-                </a>
-            </p>
-        @else
-            <p>
-                <a href="{{ route('teacher.crossword.configure', $activity->id) }}">
-                    Configurar crucigrama
-                </a>
-            </p>
-        @endif
+    {{-- Configuración específica del juego --}}
+    @if ($activity->status === 'draft')
+
+        <h3>Configuración del juego</h3>
+
+        @switch($activity->type)
+
+            {{-- Crucigrama --}}
+            @case('crossword')
+
+                @if ($activity->crossword && $activity->crossword->words()->exists())
+                    <p>
+                        <a href="{{ route('teacher.crossword.edit', $activity->id) }}">
+                            Editar crucigrama
+                        </a>
+                    </p>
+                @else
+                    <p>
+                        <a href="{{ route('teacher.crossword.configure', $activity->id) }}">
+                            Configurar crucigrama
+                        </a>
+                    </p>
+                @endif
+
+                @break
+
+
+            {{-- Kahoot --}}
+            @case('kahoot')
+
+                @if ($activity->kahoot && $activity->kahoot->questions()->exists())
+                    <p>
+                        <a href="{{ route('teacher.kahoot.edit', $activity->id) }}">
+                            Editar Kahoot
+                        </a>
+                    </p>
+                @else
+                    <p>
+                        <a href="{{ route('teacher.kahoot.configure', $activity->id) }}">
+                            Configurar Kahoot
+                        </a>
+                    </p>
+                @endif
+
+                @break
+
+
+            {{-- Sopa de letras --}}
+            @case('wordsearch')
+
+                @if ($activity->wordsearch && $activity->wordsearch->words()->exists())
+                    <p>
+                        <a href="{{ route('teacher.wordsearch.edit', $activity->id) }}">
+                            Editar sopa de letras
+                        </a>
+                    </p>
+                @else
+                    <p>
+                        <a href="{{ route('teacher.wordsearch.configure', $activity->id) }}">
+                            Configurar sopa de letras
+                        </a>
+                    </p>
+                @endif
+
+                @break
+
+
+            {{-- Unir conceptos --}}
+            @case('matching')
+
+                @if ($activity->matching && $activity->matching->pairs()->exists())
+                    <p>
+                        <a href="{{ route('teacher.matching.edit', $activity->id) }}">
+                            Editar unir conceptos
+                        </a>
+                    </p>
+                @else
+                    <p>
+                        <a href="{{ route('teacher.matching.configure', $activity->id) }}">
+                            Configurar unir conceptos
+                        </a>
+                    </p>
+                @endif
+
+                @break
+
+
+            {{-- Tipo de actividad sin configuración --}}
+            @default
+
+                <p>
+                    Este tipo de actividad no tiene configuración adicional.
+                </p>
+
+        @endswitch
 
     @endif
+
 
     {{-- Publicar --}}
     @if ($activity->status === 'draft')
@@ -111,6 +191,7 @@
             </button>
         </form>
     @endif
+
 
     {{-- Cerrar --}}
     @if ($activity->status === 'published')
@@ -130,7 +211,6 @@
             Volver a actividades
         </a>
     </p>
-
 
 </body>
 

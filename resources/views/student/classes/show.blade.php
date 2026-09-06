@@ -28,7 +28,7 @@
 
             <h2>Información de la clase</h2>
 
-            @if($class->description)
+            @if ($class->description)
                 <p>
                     <strong>Descripción:</strong>
                     {{ $class->description }}
@@ -60,15 +60,15 @@
 
         <section>
 
-            <h2>Actividades</h2>
+            <h2>Actividad reciente</h2>
 
-            @forelse($activities as $activity)
+            @if ($activity)
 
                 <article>
 
                     <h3>{{ $activity->title }}</h3>
 
-                    @if($activity->description)
+                    @if ($activity->description)
                         <p>
                             {{ $activity->description }}
                         </p>
@@ -89,12 +89,12 @@
                         <dt>Puntuación máxima:</dt>
                         <dd>{{ $activity->max_score }}</dd>
 
-                        @if($activity->time_limit)
+                        @if ($activity->time_limit)
                             <dt>Tiempo límite:</dt>
                             <dd>{{ $activity->time_limit }} segundos</dd>
                         @endif
 
-                        @if($activity->due_at)
+                        @if ($activity->due_at)
                             <dt>Fecha límite:</dt>
                             <dd>
                                 {{ $activity->due_at->format('d/m/Y H:i') }}
@@ -108,16 +108,18 @@
                     </a>
 
                 </article>
-
-                <hr>
-
-            @empty
-
+            @else
                 <p>
                     No hay actividades disponibles todavía.
                 </p>
 
-            @endforelse
+            @endif
+
+            <p>
+                <a href="{{ route('student.activities.index', $class->id) }}">
+                    Ver todas las actividades
+                </a>
+            </p>
 
         </section>
 
@@ -126,4 +128,3 @@
 </body>
 
 </html>
-

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CrosswordController;
+use App\Http\Controllers\KahootController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn()=>redirect('login'));
@@ -47,6 +48,10 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
     Route::post('/activities/{id}/crossword',[CrosswordController::class, 'store'])->name('crossword.store'); 
     Route::get('/activities/{id}/crossword/edit',[CrosswordController::class, 'edit'])->name('crossword.edit');
     Route::put('/activities/{id}/crossword',[CrosswordController::class, 'update'])->name('crossword.update');
+    Route::get('/activities/{id}/kahoot/configure',[KahootController::class, 'configure'])->name('kahoot.configure');
+    Route::post('/activities/{id}/kahoot',[KahootController::class, 'store'])->name('kahoot.store');
+    Route::get('/activities/{id}/kahoot/edit',[KahootController::class, 'edit'])->name('kahoot.edit');
+    Route::put('/activities/{id}/kahoot',[KahootController::class, 'update'])->name('kahoot.update');
 });
 
 Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:student'])->group(function () {
@@ -59,4 +64,6 @@ Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:
     Route::get('/activities/{id}',[ActivityController::class, 'studentShow'])->name('activities.show');
     Route::get('/activities/{id}/crossword/play',[CrosswordController::class, 'play'])->name('crossword.play');
     Route::post('/crossword/answer',[CrosswordController::class, 'answer'])->name('crossword.answer');
+    Route::get('/activities/{id}/kahoot/play',[KahootController::class, 'play'])->name('kahoot.play');
+    Route::post('/kahoot/answer',[KahootController::class, 'answer'])->name('kahoot.answer');
 });

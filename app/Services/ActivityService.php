@@ -102,7 +102,7 @@ class ActivityService
 
         foreach ($questions as $question) {
 
-            if ($question->options->count() !== 4) {
+            if ($question->options->count() < 2 || $question->options->count() > 4) {
                 return false;
             }
 

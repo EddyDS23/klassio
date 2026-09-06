@@ -17,8 +17,21 @@ class ActivityController extends Controller
     public function teacherIndex(int $id): View
     {
         $class = SchoolClass::findOrFail($id);
+
         Gate::authorize('create', [Activity::class, $class]);
-        $activities = $class->activities()->latest()->get();
+
+        $query = $class->activities();
+
+        if (request()->filled('type')) {
+            $query->where('type', request('type'));
+        }
+
+        if (request()->filled('search')) {
+            $query->where('title', 'like', '%' . request('search') . '%');
+        }
+
+        $activities = $query->latest()->get();
+
         return view('teacher.activities.index', compact('class', 'activities'));
     }
 
@@ -40,15 +53,24 @@ class ActivityController extends Controller
             $request->validated()
         );
 
-        if ($activity->type === 'crossword') {
-            return redirect()
-                ->route('teacher.crossword.configure', $activity->id)
-                ->with('success', 'Actividad creada correctamente. Ahora configura el crucigrama.');
-        }
+        $configureRoutes = [
+            'crossword' => 'teacher.crossword.configure',
+            'kahoot'    => 'teacher.kahoot.configure',
+            'wordsearch' => 'teacher.wordsearch.configure',
+            'matching'  => 'teacher.matching.configure',
+        ];
+
+        $route = $configureRoutes[$activity->type] ?? 'teacher.activities.edit';
 
         return redirect()
-            ->route('teacher.activities.edit', $activity->id)
-            ->with('success', 'Actividad creada correctamente.');
+            ->route($route, $activity->id)
+            ->with(
+                'success',
+                'Actividad creada correctamente.'
+                    . (isset($configureRoutes[$activity->type])
+                        ? ' Ahora configura el juego.'
+                        : '')
+            );
     }
 
     public function teacherShow(int $id): View
@@ -92,7 +114,20 @@ class ActivityController extends Controller
     public function studentIndex(int $id): View
     {
         $class = SchoolClass::findOrFail($id);
-        $activities = $class->activities()->where('status', 'published')->latest()->get();
+
+        $query = $class->activities()
+            ->where('status', 'published');
+
+        if (request()->filled('type')) {
+            $query->where('type', request('type'));
+        }
+
+        if (request()->filled('search')) {
+            $query->where('title', 'like', '%' . request('search') . '%');
+        }
+
+        $activities = $query->latest()->get();
+
         return view('student.activities.index', compact('class', 'activities'));
     }
 
