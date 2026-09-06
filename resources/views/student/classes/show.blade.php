@@ -12,9 +12,11 @@
 
     <header>
 
-        <a href="{{ route('student.classes.index') }}">
-            Volver a mis clases
-        </a>
+        <nav>
+            <a href="{{ route('student.classes.index') }}">
+                Volver a mis clases
+            </a>
+        </nav>
 
         <h1>{{ $class->name }}</h1>
 
@@ -26,10 +28,17 @@
 
             <h2>Información de la clase</h2>
 
-            <p>
-                <strong>Descripción:</strong>
-                {{ $class->description }}
-            </p>
+            @if($class->description)
+                <p>
+                    <strong>Descripción:</strong>
+                    {{ $class->description }}
+                </p>
+            @else
+                <p>
+                    <strong>Descripción:</strong>
+                    Sin descripción.
+                </p>
+            @endif
 
             <p>
                 <strong>Maestro:</strong>
@@ -47,21 +56,69 @@
 
         </section>
 
+        <hr>
+
         <section>
+
             <h2>Actividades</h2>
-            @forelse ($activities as $activity)
+
+            @forelse($activities as $activity)
+
                 <article>
+
                     <h3>{{ $activity->title }}</h3>
-                    <p> {{ $activity->description ?? 'Sin descripción' }} </p>
-                    <p> <strong>Tipo:</strong> {{ $activity->type }} </p>
-                    <p> <strong>Tiempo:</strong> {{ $activity->time_limit }} segundos </p>
-                    @if ($activity->due_at)
-                        <p> <strong>Fecha límite:</strong> {{ $activity->due_at->format('d/m/Y H:i') }} </p>
-                    @endif <a href="{{ route('student.activities.show', $activity->id) }}"> Ver
-                        actividad </a>
+
+                    @if($activity->description)
+                        <p>
+                            {{ $activity->description }}
+                        </p>
+                    @else
+                        <p>
+                            Sin descripción.
+                        </p>
+                    @endif
+
+                    <dl>
+
+                        <dt>Tipo:</dt>
+                        <dd>{{ $activity->type }}</dd>
+
+                        <dt>Modo:</dt>
+                        <dd>{{ $activity->mode }}</dd>
+
+                        <dt>Puntuación máxima:</dt>
+                        <dd>{{ $activity->max_score }}</dd>
+
+                        @if($activity->time_limit)
+                            <dt>Tiempo límite:</dt>
+                            <dd>{{ $activity->time_limit }} segundos</dd>
+                        @endif
+
+                        @if($activity->due_at)
+                            <dt>Fecha límite:</dt>
+                            <dd>
+                                {{ $activity->due_at->format('d/m/Y H:i') }}
+                            </dd>
+                        @endif
+
+                    </dl>
+
+                    <a href="{{ route('student.activities.show', $activity->id) }}">
+                        Ver actividad
+                    </a>
+
                 </article>
-            <hr> @empty <p> No hay actividades disponibles todavía. </p>
+
+                <hr>
+
+            @empty
+
+                <p>
+                    No hay actividades disponibles todavía.
+                </p>
+
             @endforelse
+
         </section>
 
     </main>
@@ -69,3 +126,4 @@
 </body>
 
 </html>
+

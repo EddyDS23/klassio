@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -11,17 +12,33 @@
 <body>
 
     <header>
+
         <h1>Mis clases</h1>
 
-        <a href="{{ route('student.dashboard') }}">
-            Volver al dashboard
-        </a>
+        <p>
+            Clases en las que estás inscrito.
+        </p>
+
+        <nav>
+            <a href="{{ route('student.dashboard') }}">
+                Volver al dashboard
+            </a>
+        </nav>
+
     </header>
 
     <main>
 
-        @if (session('success'))
-            <p>{{ session('success') }}</p>
+        @if(session('success'))
+            <p>
+                {{ session('success') }}
+            </p>
+        @endif
+
+        @if(session('error'))
+            <p>
+                {{ session('error') }}
+            </p>
         @endif
 
         @forelse ($classes as $class)
@@ -32,13 +49,22 @@
                     {{ $class->name }}
                 </h2>
 
-                <p>
-                    {{ $class->description }}
-                </p>
+                @if($class->description)
+                    <p>
+                        {{ $class->description }}
+                    </p>
+                @else
+                    <p>
+                        Sin descripción.
+                    </p>
+                @endif
 
-                <p>
-                    Estado: {{ $class->status }}
-                </p>
+                <dl>
+
+                    <dt>Estado:</dt>
+                    <dd>{{ $class->status }}</dd>
+
+                </dl>
 
                 <a href="{{ route('student.class.show', $class->id) }}">
                     Ver clase
@@ -46,11 +72,22 @@
 
             </article>
 
+            <hr>
+
         @empty
 
             <p>
                 No estás inscrito en ninguna clase.
             </p>
+
+            <p>
+                Puedes unirte a una clase utilizando el código
+                proporcionado por tu maestro.
+            </p>
+
+            <a href="{{ route('student.dashboard') }}">
+                Ir al dashboard
+            </a>
 
         @endforelse
 

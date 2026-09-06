@@ -1,65 +1,117 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Editar clase</title>
 </head>
+
 <body>
 
-    <h1>Editar clase</h1>
+    <header>
 
-    @if ($errors->any())
-        <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    @endif
+        <h1>Editar clase</h1>
 
-    <form action="{{ route('teacher.classes.update', $class->id) }}" method="POST">
+        <nav>
+            <a href="{{ route('teacher.classes.show', $class->id) }}">
+                Volver a la clase
+            </a>
 
-        @csrf
-        @method('PUT')
-
-        <div>
-            <label for="name">Nombre</label>
             <br>
 
-            <input
-                type="text"
-                id="name"
-                name="name"
-                value="{{ old('name', $class->name) }}"
-                required
+            <a href="{{ route('teacher.classes.index') }}">
+                Volver a mis clases
+            </a>
+        </nav>
+
+    </header>
+
+    <main>
+
+        <section>
+
+            <h2>{{ $class->name }}</h2>
+
+            @if($errors->any())
+
+                <div>
+
+                    <h3>No se pudo actualizar la clase</h3>
+
+                    <ul>
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+
+                </div>
+
+            @endif
+
+            <form
+                action="{{ route('teacher.classes.update', $class->id) }}"
+                method="POST"
             >
-        </div>
 
-        <br>
+                @csrf
+                @method('PUT')
 
-        <div>
-            <label for="description">Descripción</label>
-            <br>
+                <div>
 
-            <textarea
-                id="description"
-                name="description"
-                rows="4"
-            >{{ old('description', $class->description) }}</textarea>
-        </div>
+                    <label for="name">
+                        Nombre de la clase:
+                    </label>
 
-        <br>
+                    <br>
 
-        <button type="submit">
-            Guardar cambios
-        </button>
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value="{{ old('name', $class->name) }}"
+                        required
+                    >
 
-        <a href="{{ route('teacher.classes.show', $class->id) }}">
-            Cancelar
-        </a>
+                </div>
 
-    </form>
+                <br>
+
+                <div>
+
+                    <label for="description">
+                        Descripción:
+                    </label>
+
+                    <br>
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        rows="4"
+                    >{{ old('description', $class->description) }}</textarea>
+
+                </div>
+
+                <br>
+
+                <button type="submit">
+                    Guardar cambios
+                </button>
+
+                <a href="{{ route('teacher.classes.show', $class->id) }}">
+                    Cancelar
+                </a>
+
+            </form>
+
+        </section>
+
+    </main>
 
 </body>
+
 </html>
 

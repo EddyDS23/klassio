@@ -1,56 +1,105 @@
+
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
-    <title>Alumnos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Alumnos - {{ $class->name }}</title>
 </head>
 
 <body>
 
-    <h1>Alumnos de {{ $class->name }}</h1>
+    <header>
 
-    <a href="{{ route('teacher.classes.show', $class->id) }}">
-        Volver a la clase
-    </a>
+        <nav>
+            <a href="{{ route('teacher.classes.show', $class->id) }}">
+                Volver a la clase
+            </a>
 
-    <hr>
+            <br>
 
-    @if ($students->isEmpty())
+            <a href="{{ route('teacher.classes.index') }}">
+                Volver a mis clases
+            </a>
+        </nav>
 
-        <p>No hay alumnos inscritos en esta clase.</p>
-    @else
-        <ul>
-            @foreach ($students as $enrollment)
-                <div>
-                    <strong>
-                        {{ $enrollment->student->name }}
-                    </strong>
+        <h1>Alumnos de {{ $class->name }}</h1>
 
-                    <span>
-                        {{ $enrollment->student->email }}
-                    </span>
+    </header>
 
-                    <form
-                        action="{{ route('teacher.classes.students.remove', [
-                            'id' => $class->id,
-                            'studentId' => $enrollment->student->id,
-                        ]) }}"
-                        method="POST">
-                        @csrf
-                        @method('DELETE')
+    <main>
 
-                        <button type="submit">
-                            Remover
-                        </button>
-                    </form>
-                    <hr>
-                </div>
-            @endforeach
-        </ul>
+        @if(session('success'))
+            <p>
+                {{ session('success') }}
+            </p>
+        @endif
 
-    @endif
+        @if(session('error'))
+            <p>
+                {{ session('error') }}
+            </p>
+        @endif
+
+        <section>
+
+            <h2>Alumnos inscritos</h2>
+
+            @if($students->isEmpty())
+
+                <p>
+                    No hay alumnos inscritos en esta clase.
+                </p>
+
+            @else
+
+                <ul>
+
+                    @foreach($students as $enrollment)
+
+                        <li>
+
+                            <strong>
+                                {{ $enrollment->student->name }}
+                            </strong>
+
+                            <span>
+                                - {{ $enrollment->student->email }}
+                            </span>
+
+                            <form
+                                action="{{ route(
+                                    'teacher.classes.students.remove',
+                                    [
+                                        'id' => $class->id,
+                                        'studentId' => $enrollment->student->id
+                                    ]
+                                ) }}"
+                                method="POST"
+                            >
+                                @csrf
+                                @method('DELETE')
+
+                                <button type="submit">
+                                    Retirar alumno
+                                </button>
+                            </form>
+
+                        </li>
+
+                    @endforeach
+
+                </ul>
+
+            @endif
+
+        </section>
+
+    </main>
 
 </body>
 
 </html>
+

@@ -1,32 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar actividad</title>
 </head>
+
 <body>
 
     <h1>Editar actividad</h1>
 
-    @if($errors->any())
-        <ul>
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+    @if(session('success'))
+        <p>{{ session('success') }}</p>
     @endif
 
-    <form
-        action="{{ route('teacher.activities.update', $activity->id) }}"
-        method="POST"
-    >
+    @if($errors->any())
+        <div>
+            <h2>Errores</h2>
+
+            <ul>
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <h2>{{ $activity->title }}</h2>
+
+    <form action="{{ route('teacher.activities.update', $activity->id) }}" method="POST">
         @csrf
         @method('PUT')
 
         <div>
-            <label for="title">Título</label>
-
+            <label for="title">Título:</label>
             <input
                 type="text"
                 id="title"
@@ -39,55 +47,45 @@
         <br>
 
         <div>
-            <label for="description">Descripción</label>
-
+            <label for="description">Descripción:</label>
             <textarea
                 id="description"
                 name="description"
+                rows="5"
             >{{ old('description', $activity->description) }}</textarea>
         </div>
 
         <br>
 
         <div>
-            <label for="type">Tipo</label>
+            <label>Tipo de actividad:</label>
 
-            <select id="type" name="type" required>
-                <option value="word_search"
-                    {{ $activity->type === 'word_search' ? 'selected' : '' }}>
-                    Sopa de letras
-                </option>
+            <p>{{ $activity->type }}</p>
 
-                <option value="crossword"
-                    {{ $activity->type === 'crossword' ? 'selected' : '' }}>
-                    Crucigrama
-                </option>
-
-                <option value="matching"
-                    {{ $activity->type === 'matching' ? 'selected' : '' }}>
-                    Relacionar
-                </option>
-
-                <option value="kahoot"
-                    {{ $activity->type === 'kahoot' ? 'selected' : '' }}>
-                    Kahoot
-                </option>
-            </select>
+            <input
+                type="hidden"
+                name="type"
+                value="{{ $activity->type }}"
+            >
         </div>
 
         <br>
 
         <div>
-            <label for="mode">Modo</label>
+            <label for="mode">Modo:</label>
 
             <select id="mode" name="mode" required>
-                <option value="individual"
-                    {{ $activity->mode === 'individual' ? 'selected' : '' }}>
+                <option
+                    value="individual"
+                    {{ old('mode', $activity->mode) === 'individual' ? 'selected' : '' }}
+                >
                     Individual
                 </option>
 
-                <option value="team"
-                    {{ $activity->mode === 'team' ? 'selected' : '' }}>
+                <option
+                    value="team"
+                    {{ old('mode', $activity->mode) === 'team' ? 'selected' : '' }}
+                >
                     Equipo
                 </option>
             </select>
@@ -96,7 +94,7 @@
         <br>
 
         <div>
-            <label for="max_score">Puntuación máxima</label>
+            <label for="max_score">Puntuación máxima:</label>
 
             <input
                 type="number"
@@ -111,7 +109,7 @@
         <br>
 
         <div>
-            <label for="time_limit">Tiempo límite (segundos)</label>
+            <label for="time_limit">Límite de tiempo (minutos):</label>
 
             <input
                 type="number"
@@ -119,20 +117,24 @@
                 name="time_limit"
                 value="{{ old('time_limit', $activity->time_limit) }}"
                 min="1"
-                required
             >
         </div>
 
         <br>
 
         <div>
-            <label for="due_at">Fecha límite</label>
+            <label for="due_at">Fecha límite:</label>
 
             <input
                 type="datetime-local"
                 id="due_at"
                 name="due_at"
-                value="{{ old('due_at', $activity->due_at?->format('Y-m-d\TH:i')) }}"
+                value="{{ old(
+                    'due_at',
+                    $activity->due_at
+                        ? $activity->due_at->format('Y-m-d\TH:i')
+                        : ''
+                ) }}"
             >
         </div>
 
@@ -141,15 +143,23 @@
         <button type="submit">
             Guardar cambios
         </button>
-
     </form>
 
-    <br>
+    <hr>
 
-    <a href="{{ route('teacher.activities.show', $activity->id) }}">
-        Cancelar
-    </a>
+    <nav>
+        <a href="{{ route('teacher.activities.show', $activity->id) }}">
+            Cancelar
+        </a>
+
+        <br>
+
+        <a href="{{ route('teacher.activities.index', $activity->class_id) }}">
+            Volver a actividades
+        </a>
+    </nav>
 
 </body>
+
 </html>
 

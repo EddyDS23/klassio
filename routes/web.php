@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CrosswordController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn()=>redirect('login'));
@@ -42,6 +43,10 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
     Route::put('/activities/{id}',[ActivityController::class, 'teacherUpdate'])->name('activities.update');
     Route::post('/activities/{id}/publish',[ActivityController::class, 'publish'])->name('activities.publish');
     Route::post('/activities/{id}/close',[ActivityController::class, 'close'])->name('activities.close');
+    Route::get('/activities/{id}/crossword/configure',[CrosswordController::class, 'configure'])->name('crossword.configure');
+    Route::post('/activities/{id}/crossword',[CrosswordController::class, 'store'])->name('crossword.store'); 
+    Route::get('/activities/{id}/crossword/edit',[CrosswordController::class, 'edit'])->name('crossword.edit');
+    Route::put('/activities/{id}/crossword',[CrosswordController::class, 'update'])->name('crossword.update');
 });
 
 Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:student'])->group(function () {
@@ -52,4 +57,6 @@ Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:
     Route::get('/classes/{id}', [ClassController::class, 'studentShow'])->name('class.show');
     Route::get('/classes/{id}/activities',[ActivityController::class, 'studentIndex'])->name('activities.index');
     Route::get('/activities/{id}',[ActivityController::class, 'studentShow'])->name('activities.show');
+    Route::get('/activities/{id}/crossword/play',[CrosswordController::class, 'play'])->name('crossword.play');
+    Route::post('/crossword/answer',[CrosswordController::class, 'answer'])->name('crossword.answer');
 });

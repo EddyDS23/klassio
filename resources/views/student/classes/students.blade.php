@@ -1,32 +1,66 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Compañeros</title>
 </head>
+
 <body>
 
-    <h1>Compañeros de {{ $class->name }}</h1>
+    <header>
 
-    <a href="{{ route('student.class.show', $class->id) }}">
-        Volver a la clase
-    </a>
+        <nav>
+            <a href="{{ route('student.class.show', $class->id) }}">
+                Volver a la clase
+            </a>
+        </nav>
 
-    <hr>
+        <h1>Compañeros de {{ $class->name }}</h1>
 
-    @if ($students->isEmpty())
-        <p>No hay compañeros en esta clase.</p>
-    @else
-        <ul>
-            @foreach ($students as $enrollment)
-                <li>
-                    {{ $enrollment->student->name }}
-                    -
-                    {{ $enrollment->student->email }}
-                </li>
-            @endforeach
-        </ul>
-    @endif
+    </header>
+
+    <main>
+
+        <section>
+
+            <h2>Lista de compañeros</h2>
+
+            @if($students->isEmpty())
+
+                <p>
+                    No hay compañeros en esta clase.
+                </p>
+
+            @else
+
+                <ul>
+
+                    @foreach($students as $enrollment)
+
+                        <li>
+                            <strong>
+                                {{ $enrollment->student->name }}
+                            </strong>
+
+                            <span>
+                                - {{ $enrollment->student->email }}
+                            </span>
+                        </li>
+
+                    @endforeach
+
+                </ul>
+
+            @endif
+
+        </section>
+
+    </main>
 
 </body>
+
 </html>
+
