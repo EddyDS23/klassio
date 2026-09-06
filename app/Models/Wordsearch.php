@@ -7,12 +7,21 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Override;
 
 #[Fillable(['activity_id','rows','columns','grid'])]
 #[Hidden(['created_at','updated_at'])]
 class Wordsearch extends Model
 {
     public $timestamps = true;
+
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'grid' => 'array',
+        ];
+    }
 
     public function activity(): BelongsTo
     {
