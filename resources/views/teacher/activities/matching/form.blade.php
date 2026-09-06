@@ -3,14 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Crear Unir Conceptos</title>
+    <title>{{ $editing ? 'Editar' : 'Configurar' }} Unir Conceptos</title>
     <style>
         body { font-family: system-ui, sans-serif; background: #f1f5f9; margin: 0; padding: 2rem; color: #0f172a; }
-        .card { background: #fff; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); max-width: 720px; margin: 0 auto; padding: 2rem; }
+        .card { background: #fff; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); max-width: 760px; margin: 0 auto; padding: 2rem; }
         h1 { margin-top: 0; }
         label { font-weight: 600; display: block; margin: 1rem 0 .35rem; }
-        select { padding: .5rem; border: 1px solid #cbd5e1; border-radius: .4rem; min-width: 260px; }
         table { width: 100%; border-collapse: collapse; margin-top: .5rem; }
         th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid #e2e8f0; }
         th { background: #f8fafc; }
@@ -22,12 +20,17 @@
         .primary { background: #2563eb; color: #fff; margin-top: 1.25rem; width: 100%; font-weight: 600; }
         .message { padding: .8rem; border-radius: .45rem; margin-bottom: 1rem; background: #dcfce7; color: #15803d; }
         .error { background: #fee2e2; color: #b91c1c; padding: .8rem; border-radius: .45rem; margin-bottom: 1rem; }
-        .pair-row:first-child .remove { visibility: hidden; }
+        .summary { margin-top: 2rem; }
+        .row-form:first-child .remove { visibility: hidden; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Crear Unir Conceptos</h1>
+        <h1>{{ $editing ? 'Editar Unir Conceptos' : 'Configurar Unir Conceptos' }}</h1>
+        <p>
+            Actividad: <strong>{{ $activity->title }}</strong> ·
+            <a href="{{ route('teacher.matching.configure', $activity->id) }}">Reiniciar configuración</a>
+        </p>
 
         @if (session('status'))
             <div class="message">{{ session('status') }}</div>
@@ -43,18 +46,16 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('teacher.matchings.store') }}">
+        <form
+            method="POST"
+            action="{{ $editing
+                ? route('teacher.matching.update', $activity->id)
+                : route('teacher.matching.store', $activity->id) }}"
+        >
             @csrf
-
-            <label for="activity_id">Actividad (matching)</label>
-            <select name="activity_id" id="activity_id" required>
-                <option value="">Selecciona una actividad...</option>
-                @foreach ($activities as $activity)
-                    <option value="{{ $activity->id }}">
-                        #{{ $activity->id }} — {{ $activity->title }}
-                    </option>
-                @endforeach
-            </select>
+            @if ($editing)
+                @method('PUT')
+            @endif
 
             <label>Parejas (concepto → definición)</label>
             <table id="pairs-table">
@@ -67,19 +68,56 @@
                 </tr>
                 </thead>
                 <tbody id="pairs-body">
-                <tr class="pair-row">
-                    <td><input type="text" name="items[0][left]" placeholder="HTTP" required></td>
-                    <td><input type="text" name="items[0][right]" placeholder="Protocolo de transferencia" required></td>
-                    <td><input type="number" name="items[0][score]" value="10" min="1" required></td>
-                    <td><button type="button" class="danger remove" title="Eliminar">Eliminar</button></td>
-                </tr>
+                @forelse (($editing && $matching ? $matching->items : []) as $i => $item)
+                    <tr class="row-form">
+                        <td><input type="text" name="items[{{ $i }}][left]" value="{{ $item->left_text }}" required></td>
+                        <td><input type="text" name="items[{{ $i }}][right]" value="{{ $item->right_text }}" required></td>
+                        <td><input type="number" name="items[{{ $i }}][score]" value="{{ $item->score }}" min="1" required></td>
+                        <td><button type="button" class="danger remove" title="Eliminar">Eliminar</button></td>
+                    </tr>
+                @empty
+                    <tr class="row-form">
+                        <td><input type="text" name="items[0][left]" placeholder="HTTP" required></td>
+                        <td><input type="text" name="items[0][right]" placeholder="Protocolo de transferencia" required></td>
+                        <td><input type="number" name="items[0][score]" value="10" min="1" required></td>
+                        <td><button type="button" class="danger remove" title="Eliminar">Eliminar</button></td>
+                    </tr>
+                @endforelse
                 </tbody>
             </table>
 
             <button type="button" class="secondary" id="add-pair" style="margin-top:.75rem;">+ Agregar pareja</button>
 
-            <button type="submit" class="primary">Generar actividad</button>
+            <button type="submit" class="primary">{{ $editing ? 'Actualizar actividad' : 'Guardar actividad' }}</button>
         </form>
+
+        @if ($editing && $matching)
+            <div class="summary">
+                <h2 style="margin-bottom:.5rem;">Parejas configuradas ({{ $matching->items()->count() }})</h2>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Concepto</th>
+                        <th>Definición</th>
+                        <th style="width:120px">Puntos</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach ($matching->items()->orderBy('left_text')->get() as $item)
+                        <tr>
+                            <td><strong>{{ $item->left_text }}</strong></td>
+                            <td>{{ $item->right_text }}</td>
+                            <td>{{ $item->score }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+
+                <p style="margin-top:1.5rem;">
+                    <a href="{{ route('student.matching.play', $activity->id) }}">▶ Probar unir conceptos</a>
+                </p>
+            </div>
+        @endif
 
         <p style="margin-top:1rem;">
             <a href="{{ url('/') }}">← Volver al inicio</a>
@@ -88,10 +126,10 @@
 
     <script>
         const body = document.getElementById('pairs-body');
-        let index = 1;
+        let index = body.querySelectorAll('tr.row-form').length;
 
         function reindex() {
-            body.querySelectorAll('tr.pair-row').forEach((row, i) => {
+            body.querySelectorAll('tr.row-form').forEach((row, i) => {
                 row.querySelectorAll('input').forEach((input) => {
                     input.name = input.name.replace(/\[(\w+)\]\[[\w]+\]/, `[$1][${i}]`);
                 });
@@ -100,7 +138,7 @@
 
         document.getElementById('add-pair').addEventListener('click', () => {
             const tr = document.createElement('tr');
-            tr.className = 'pair-row';
+            tr.className = 'row-form';
             tr.innerHTML = `
                 <td><input type="text" name="items[${index}][left]" placeholder="Concepto" required></td>
                 <td><input type="text" name="items[${index}][right]" placeholder="Definición" required></td>
@@ -114,7 +152,7 @@
             if (!event.target.classList.contains('remove')) {
                 return;
             }
-            if (body.querySelectorAll('tr.pair-row').length > 1) {
+            if (body.querySelectorAll('tr.row-form').length > 1) {
                 event.target.closest('tr').remove();
                 reindex();
             }

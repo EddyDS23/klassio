@@ -14,6 +14,7 @@ class AnswerMatchingRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'matching_id' => ['required', 'integer', 'exists:matchings,id'],
             'matching_item_id' => ['required', 'integer'],
             'response' => ['required', 'string', 'min:1'],
         ];

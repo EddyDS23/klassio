@@ -111,7 +111,7 @@
     }
 
     function fetchAnswer(leftCard, rightCard) {
-        fetch(@json(route('matchings.answer', $matching)), {
+        fetch(@json(route('student.matching.answer')), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -119,6 +119,7 @@
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             },
             body: JSON.stringify({
+                matching_id: {{ $matching->id }},
                 matching_item_id: parseInt(leftCard.dataset.itemId, 10),
                 response: rightCard.dataset.text,
             }),

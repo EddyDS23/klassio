@@ -54,7 +54,6 @@ class MatchingGameTest extends TestCase
     private function payload(): array
     {
         return [
-            'activity_id' => $this->makeActivity()->id,
             'items' => [
                 ['left' => 'HTTP', 'right' => 'Protocolo de transferencia', 'score' => 10],
                 ['left' => 'HTML', 'right' => 'Lenguaje de marcado', 'score' => 5],
@@ -71,17 +70,15 @@ class MatchingGameTest extends TestCase
     }
 
     #[Test]
-    public function el_maestro_genera_la_actividad_desde_el_formulario(): void
+    public function el_maestro_configura_la_actividad_desde_el_formulario(): void
     {
         $activity = $this->makeActivity();
 
-        $response = $this->post(route('teacher.matchings.store'), [
-            'activity_id' => $activity->id,
-            'items' => [
-                ['left' => 'HTTP', 'right' => 'Protocolo de transferencia', 'score' => 10],
-                ['left' => 'HTML', 'right' => 'Lenguaje de marcado', 'score' => 5],
-            ],
-        ]);
+        $this->get(route('teacher.matching.configure', $activity->id))
+            ->assertOk()
+            ->assertSee('Configurar Unir Conceptos');
+
+        $response = $this->post(route('teacher.matching.store', $activity->id), $this->payload());
 
         $response->assertRedirect();
 
@@ -94,8 +91,7 @@ class MatchingGameTest extends TestCase
     {
         $activity = $this->makeActivity();
 
-        $response = $this->post(route('teacher.matchings.store'), [
-            'activity_id' => $activity->id,
+        $response = $this->post(route('teacher.matching.store', $activity->id), [
             'items' => [],
         ]);
 
@@ -104,13 +100,17 @@ class MatchingGameTest extends TestCase
     }
 
     #[Test]
-    public function regenerar_la_actividad_reemplaza_las_parejas_anteriores(): void
+    public function actualizar_la_actividad_reemplaza_las_parejas_anteriores(): void
     {
         $activity = $this->makeActivity();
-        $this->buildDefaultMatching($activity);
 
-        $this->post(route('teacher.matchings.store'), [
-            'activity_id' => $activity->id,
+        $this->post(route('teacher.matching.store', $activity->id), $this->payload());
+
+        $this->get(route('teacher.matching.edit', $activity->id))
+            ->assertOk()
+            ->assertSee('Editar Unir Conceptos');
+
+        $this->put(route('teacher.matching.update', $activity->id), [
             'items' => [['left' => 'CSS', 'right' => 'Hoja de estilos', 'score' => 10]],
         ]);
 
@@ -125,12 +125,13 @@ class MatchingGameTest extends TestCase
         $matching = $this->buildDefaultMatching($activity);
         $item = $matching->items()->first();
 
-        $this->get(route('matchings.play', $matching))
+        $this->get(route('student.matching.play', $activity->id))
             ->assertOk()
             ->assertSee('HTTP')
             ->assertSee('HTML');
 
-        $response = $this->postJson(route('matchings.answer', $matching), [
+        $response = $this->postJson(route('student.matching.answer'), [
+            'matching_id' => $matching->id,
             'matching_item_id' => $item->id,
             'response' => $item->right_text,
         ]);
@@ -151,15 +152,18 @@ class MatchingGameTest extends TestCase
     #[Test]
     public function no_se_puntua_dos_veces_la_misma_pareja(): void
     {
-        $matching = $this->buildDefaultMatching($this->makeActivity());
+        $activity = $this->makeActivity();
+        $matching = $this->buildDefaultMatching($activity);
         $item = $matching->items()->first();
 
-        $this->postJson(route('matchings.answer', $matching), [
+        $this->postJson(route('student.matching.answer'), [
+            'matching_id' => $matching->id,
             'matching_item_id' => $item->id,
             'response' => $item->right_text,
         ])->assertJson(['correct' => true, 'already_answered' => false]);
 
-        $this->postJson(route('matchings.answer', $matching), [
+        $this->postJson(route('student.matching.answer'), [
+            'matching_id' => $matching->id,
             'matching_item_id' => $item->id,
             'response' => $item->right_text,
         ])->assertJson(['correct' => true, 'already_answered' => true, 'score' => 0]);
@@ -170,11 +174,13 @@ class MatchingGameTest extends TestCase
     #[Test]
     public function se_marca_incorrecta_una_pareja_no_correspondiente(): void
     {
-        $matching = $this->buildDefaultMatching($this->makeActivity());
+        $activity = $this->makeActivity();
+        $matching = $this->buildDefaultMatching($activity);
         $item = $matching->items()->first();
         $wrongRight = $matching->items()->skip(1)->first()->right_text;
 
-        $response = $this->postJson(route('matchings.answer', $matching), [
+        $response = $this->postJson(route('student.matching.answer'), [
+            'matching_id' => $matching->id,
             'matching_item_id' => $item->id,
             'response' => $wrongRight,
         ]);
@@ -186,10 +192,12 @@ class MatchingGameTest extends TestCase
     #[Test]
     public function se_rechaza_un_item_de_otra_actividad(): void
     {
-        $matching = $this->buildDefaultMatching($this->makeActivity());
+        $activity = $this->makeActivity();
+        $matching = $this->buildDefaultMatching($activity);
         $other = $this->buildDefaultMatching($this->makeActivity());
 
-        $response = $this->postJson(route('matchings.answer', $matching), [
+        $response = $this->postJson(route('student.matching.answer'), [
+            'matching_id' => $matching->id,
             'matching_item_id' => $other->items()->first()->id,
             'response' => 'cualquier cosa',
         ]);

@@ -4,54 +4,81 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AnswerMatchingRequest;
 use App\Http\Requests\StoreMatchingRequest;
+use App\Http\Requests\UpdateMatchingRequest;
 use App\Models\Activity;
 use App\Models\Matching;
 use App\Models\Participation;
 use App\Services\MatchingService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
 class MatchingController extends Controller
 {
     public function __construct(
-        protected MatchingService $service
+        protected MatchingService $matchingService
     ) {
     }
 
-    public function create(): View
+    public function configure(int $id): View
     {
-        $activities = Activity::query()
-            ->where('type', 'matching')
-            ->orderBy('id')
-            ->get();
+        $activity = Activity::findOrFail($id);
 
-        return view('teacher.activities.matching.create', compact('activities'));
-    }
-
-    public function store(StoreMatchingRequest $request): \Illuminate\Http\RedirectResponse
-    {
-        $data = $request->validated();
-
-        $activity = Activity::findOrFail($data['activity_id']);
-
-        $this->service->buildMatching($activity, $data['items']);
-
-        return redirect()
-            ->route('matchings.show', $activity->matching)
-            ->with('status', 'Actividad de unir conceptos generada correctamente.');
-    }
-
-    public function show(Matching $matching): View
-    {
-        return view('teacher.activities.matching.show', [
-            'matching' => $matching,
-            'items' => $matching->items()->orderBy('left_text')->get(),
+        return view('teacher.activities.matching.form', [
+            'activity' => $activity,
+            'matching' => null,
+            'editing' => false,
         ]);
     }
 
-    public function play(Matching $matching): View
+    public function store(StoreMatchingRequest $request, int $id): RedirectResponse
     {
+        $activity = Activity::findOrFail($id);
+
+        $data = $request->validated();
+
+        $this->matchingService->buildMatching($activity, $data['items']);
+
+        return redirect()
+            ->route('teacher.matching.edit', $id)
+            ->with('status', 'Actividad de unir conceptos guardada correctamente.');
+    }
+
+    public function edit(int $id): View
+    {
+        $activity = Activity::findOrFail($id);
+
+        $matching = $activity->matching;
+
+        return view('teacher.activities.matching.form', [
+            'activity' => $activity,
+            'matching' => $matching,
+            'editing' => (bool) $matching,
+        ]);
+    }
+
+    public function update(UpdateMatchingRequest $request, int $id): RedirectResponse
+    {
+        $activity = Activity::findOrFail($id);
+
+        $data = $request->validated();
+
+        $this->matchingService->buildMatching($activity, $data['items']);
+
+        return redirect()
+            ->route('teacher.matching.edit', $id)
+            ->with('status', 'Actividad de unir conceptos actualizada correctamente.');
+    }
+
+    public function play(int $id): View
+    {
+        $activity = Activity::findOrFail($id);
+
+        $matching = $activity->matching;
+
+        abort_unless($matching, 404, 'Esta actividad aún no tiene una actividad de unir conceptos.');
+
         $participation = $this->resolveParticipation($matching);
 
         $items = $matching->items()->get();
@@ -61,20 +88,22 @@ class MatchingController extends Controller
             'participation' => $participation,
             'items' => $items,
             'rightOptions' => $items->shuffle(),
-            'correctIds' => $this->service->correctItemIds($matching, $participation),
-            'earnedPoints' => $this->service->earnedScore($matching, $participation),
-            'maxScore' => $this->service->maxScore($matching),
+            'correctIds' => $this->matchingService->correctItemIds($matching, $participation),
+            'earnedPoints' => $this->matchingService->earnedScore($matching, $participation),
+            'maxScore' => $this->matchingService->maxScore($matching),
         ]);
     }
 
-    public function answer(AnswerMatchingRequest $request, Matching $matching): JsonResponse
+    public function answer(AnswerMatchingRequest $request): JsonResponse
     {
         $data = $request->validated();
+
+        $matching = Matching::findOrFail((int) $data['matching_id']);
 
         $participation = $this->resolveParticipation($matching);
 
         return response()->json(
-            $this->service->checkAnswer(
+            $this->matchingService->checkAnswer(
                 $matching,
                 $participation,
                 (int) $data['matching_item_id'],
