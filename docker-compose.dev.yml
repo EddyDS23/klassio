@@ -38,6 +38,7 @@ services:
       - klassio-network
     volumes:
       - .:/var/www/html
+      - view-cache:/var/www/html/storage/framework/views
     depends_on:
       mariadb:
         condition: service_healthy
@@ -72,3 +73,4 @@ networks:
   proxy_network:
 volumes:
   klassio-data:
+  view-cache:
