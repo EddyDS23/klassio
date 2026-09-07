@@ -6,6 +6,7 @@ use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CrosswordController;
 use App\Http\Controllers\KahootController;
+use App\Http\Controllers\ParticipationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn()=>redirect('login'));
@@ -66,4 +67,8 @@ Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:
     Route::post('/crossword/answer',[CrosswordController::class, 'answer'])->name('crossword.answer');
     Route::get('/activities/{id}/kahoot/play',[KahootController::class, 'play'])->name('kahoot.play');
     Route::post('/kahoot/answer',[KahootController::class, 'answer'])->name('kahoot.answer');
+    Route::post('/activities/{id}/start',[ParticipationController::class, 'start'])->name('participation.start');
+    Route::post('/activities/{id}/finish',[ParticipationController::class, 'finish'])->name('participation.finish');
+    Route::post('/activities/{id}/abandon',[ParticipationController::class, 'abandon'])->name('participation.abandon');
+    Route::get('/activities/{id}/result',[ParticipationController::class, 'result'])->name('participation.result');
 });
