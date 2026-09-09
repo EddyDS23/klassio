@@ -54,6 +54,8 @@ class WordsearchGameTest extends TestCase
     {
         $wordsearch = $activity->wordsearch;
         $word = $wordsearch->words->first();
+        [$dr, $dc] = $this->service->directionDelta($word->direction);
+        $length = mb_strlen($word->word) - 1;
 
         return [
             'wordsearch' => $wordsearch,
@@ -61,8 +63,8 @@ class WordsearchGameTest extends TestCase
                 'wordsearch_id' => $wordsearch->id,
                 'start_row' => $word->row,
                 'start_column' => $word->column,
-                'end_row' => $word->direction === 'horizontal' ? $word->row : $word->row + mb_strlen($word->word) - 1,
-                'end_column' => $word->direction === 'horizontal' ? $word->column + mb_strlen($word->word) - 1 : $word->column,
+                'end_row' => $word->row + $dr * $length,
+                'end_column' => $word->column + $dc * $length,
             ],
         ];
     }
@@ -207,7 +209,7 @@ class WordsearchGameTest extends TestCase
     }
 
     #[Test]
-    public function rechaza_una_seleccion_diagonal(): void
+    public function rechaza_una_seleccion_en_zigzag(): void
     {
         $activity = $this->makeActivity();
         $this->service->buildWordsearch($activity, 10, 10, [
@@ -219,7 +221,7 @@ class WordsearchGameTest extends TestCase
             'start_row' => 1,
             'start_column' => 1,
             'end_row' => 3,
-            'end_column' => 3,
+            'end_column' => 2,
         ]);
 
         $response->assertJson(['correct' => false]);

@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Participation;
 use App\Models\SchoolClass;
 use App\Models\User;
+use App\Models\Word;
 use App\Services\WordSearchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -31,7 +32,7 @@ class WordSearchServiceTest extends TestCase
         $class = SchoolClass::create([
             'teacher_id' => $teacher->id,
             'name' => 'Clase demo',
-            'code' => 'WS0001',
+            'code' => 'WST' . strtoupper(uniqid()),
         ]);
 
         return Activity::create([
@@ -66,28 +67,45 @@ class WordSearchServiceTest extends TestCase
     }
 
     #[Test]
-    public function coloca_palabras_horizontales(): void
+    public function coloca_palabras_en_las_8_direcciones_soportadas(): void
     {
-        $result = $this->service->generate(10, 10, [
+        $result = $this->service->generate(15, 15, [
             ['word' => 'API', 'score' => 10],
             ['word' => 'PHP', 'score' => 5],
-        ]);
-
-        $horizontal = collect($result['placements'])
-            ->filter(fn ($p) => $p['direction'] === 'horizontal');
-
-        $this->assertCount(2, $horizontal);
-    }
-
-    #[Test]
-    public function coloca_palabras_verticales_cuando_encajan(): void
-    {
-        $result = $this->service->generate(7, 3, [
             ['word' => 'LARAVEL', 'score' => 10],
         ]);
 
-        $this->assertCount(1, $result['placements']);
-        $this->assertSame('vertical', $result['placements'][0]['direction']);
+        $this->assertNotEmpty($result['placements']);
+
+        foreach ($result['placements'] as $placement) {
+            $this->assertContains($placement['direction'], $this->service->directions());
+        }
+    }
+
+    #[Test]
+    public function coloca_las_palabras_legibles_en_el_grid(): void
+    {
+        $result = $this->service->generate(15, 15, [
+            ['word' => 'API', 'score' => 10],
+            ['word' => 'PHP', 'score' => 5],
+            ['word' => 'LARAVEL', 'score' => 10],
+        ]);
+
+        $this->assertSame([], $result['failed']);
+
+        foreach ($result['placements'] as $placement) {
+            $read = '';
+
+            [$dr, $dc] = $this->service->directionDelta($placement['direction']);
+            $word = $placement['word'];
+            $length = mb_strlen($word);
+
+            for ($i = 0; $i < $length; $i++) {
+                $read .= $result['grid'][$placement['row'] + $dr * $i][$placement['column'] + $dc * $i];
+            }
+
+            $this->assertSame($word, $read);
+        }
     }
 
     #[Test]
@@ -101,7 +119,7 @@ class WordSearchServiceTest extends TestCase
             ['word' => 'MYSQL', 'score' => 10],
         ];
 
-        $result = $this->service->generate(10, 10, $words);
+        $result = $this->service->generate(12, 12, $words);
 
         $placed = collect($result['placements'])->pluck('word')->sort()->values()->all();
 
@@ -112,15 +130,19 @@ class WordSearchServiceTest extends TestCase
     #[Test]
     public function la_palabra_colocada_se_refleja_en_el_grid(): void
     {
-        $result = $this->service->generate(3, 4, [
+        $result = $this->service->generate(5, 5, [
             ['word' => 'HOLA', 'score' => 10],
         ]);
 
         $placement = $result['placements'][0];
+        [$dr, $dc] = $this->service->directionDelta($placement['direction']);
 
-        $this->assertSame('horizontal', $placement['direction']);
+        $rowLetters = [];
+        $length = mb_strlen($placement['word']);
 
-        $rowLetters = $result['grid'][$placement['row']];
+        for ($i = 0; $i < $length; $i++) {
+            $rowLetters[] = $result['grid'][$placement['row'] + $dr * $i][$placement['column'] + $dc * $i];
+        }
 
         $this->assertSame(['H', 'O', 'L', 'A'], $rowLetters);
     }
@@ -178,36 +200,39 @@ class WordSearchServiceTest extends TestCase
         $this->assertCount(10, $wordsearch->grid);
 
         foreach ($words as $word) {
-            $this->assertContains($word->direction, ['horizontal', 'vertical']);
+            $this->assertContains($word->direction, $this->service->directions());
             $this->assertNotNull($word->row);
             $this->assertNotNull($word->column);
         }
     }
 
     #[Test]
-    public function detecta_una_palabra_correcta(): void
+    public function detecta_una_palabra_correcta_en_cualquier_direccion(): void
     {
         $activity = $this->makeActivity();
 
         $wordsearch = $this->service->buildWordsearch($activity, 10, 10, [
             ['word' => 'HTTP', 'score' => 10],
+            ['word' => 'LARAVEL', 'score' => 10],
+            ['word' => 'MYSQL', 'score' => 10],
         ]);
 
-        $word = $wordsearch->words->first();
         $participation = $this->makeParticipation($activity);
 
-        $result = $this->service->checkAnswer(
-            $wordsearch,
-            $participation,
-            $word->row,
-            $word->column,
-            $this->endRow($word),
-            $this->endColumn($word)
-        );
+        foreach ($wordsearch->words as $word) {
+            $result = $this->service->checkAnswer(
+                $wordsearch,
+                $participation,
+                $word->row,
+                $word->column,
+                $this->endRow($word),
+                $this->endColumn($word)
+            );
 
-        $this->assertTrue($result['correct']);
-        $this->assertSame('HTTP', $result['word']);
-        $this->assertSame(10, $result['score']);
+            $this->assertTrue($result['correct']);
+            $this->assertSame($this->normalizeWord($word), $result['word']);
+            $this->assertSame($word->score, $result['score']);
+        }
     }
 
     #[Test]
@@ -232,7 +257,33 @@ class WordSearchServiceTest extends TestCase
         );
 
         $this->assertTrue($result['correct']);
-        $this->assertSame('HTTP', $result['word']);
+        $this->assertSame($this->normalizeWord($word), $result['word']);
+    }
+
+    #[Test]
+    public function acepta_una_seleccion_diagonal_cuando_corresponde_a_una_palabra(): void
+    {
+        $activity = $this->makeActivity();
+
+        $wordsearch = $this->service->buildWordsearch($activity, 12, 12, [
+            ['word' => 'VARIABLE', 'score' => 10],
+            ['word' => 'DIAGONAL', 'score' => 10],
+            ['word' => 'BLOQUE', 'score' => 10],
+        ]);
+
+        $word = $wordsearch->words->first();
+        $participation = $this->makeParticipation($activity);
+
+        $result = $this->service->checkAnswer(
+            $wordsearch,
+            $participation,
+            $word->row,
+            $word->column,
+            $this->endRow($word),
+            $this->endColumn($word)
+        );
+
+        $this->assertTrue($result['correct']);
     }
 
     #[Test]
@@ -261,7 +312,7 @@ class WordSearchServiceTest extends TestCase
     }
 
     #[Test]
-    public function rechaza_una_seleccion_diagonal(): void
+    public function rechaza_una_seleccion_en_zigzag(): void
     {
         $activity = $this->makeActivity();
 
@@ -271,7 +322,7 @@ class WordSearchServiceTest extends TestCase
 
         $participation = $this->makeParticipation($activity);
 
-        $result = $this->service->checkAnswer($wordsearch, $participation, 1, 1, 3, 3);
+        $result = $this->service->checkAnswer($wordsearch, $participation, 1, 1, 3, 2);
 
         $this->assertFalse($result['correct']);
     }
@@ -311,17 +362,22 @@ class WordSearchServiceTest extends TestCase
         $this->assertDatabaseCount('wordsearch_answers', 1);
     }
 
-    private function endRow($word): int
+    private function normalizeWord(Word $word): string
     {
-        return $word->direction === 'horizontal'
-            ? $word->row
-            : $word->row + mb_strlen($word->word) - 1;
+        return mb_strtoupper(trim($word->word));
     }
 
-    private function endColumn($word): int
+    private function endRow(Word $word): int
     {
-        return $word->direction === 'horizontal'
-            ? $word->column + mb_strlen($word->word) - 1
-            : $word->column;
+        [$dr, $dc] = $this->service->directionDelta($word->direction);
+
+        return $word->row + $dr * (mb_strlen($word->word) - 1);
+    }
+
+    private function endColumn(Word $word): int
+    {
+        [$dr, $dc] = $this->service->directionDelta($word->direction);
+
+        return $word->column + $dc * (mb_strlen($word->word) - 1);
     }
 }

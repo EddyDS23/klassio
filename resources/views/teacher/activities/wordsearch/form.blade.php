@@ -131,7 +131,7 @@
                             <td><strong>{{ $word->word }}</strong></td>
                             <td>{{ $word->row }}</td>
                             <td>{{ $word->column }}</td>
-                            <td>{{ $word->direction }}</td>
+                            <td>{{ app(\App\Services\WordSearchService::class)->directionLabel($word->direction) }}</td>
                             <td>{{ $word->score }}</td>
                         </tr>
                     @endforeach

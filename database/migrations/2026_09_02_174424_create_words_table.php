@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('word');
             $table->unsignedTinyInteger('row');
             $table->unsignedTinyInteger('column');
-            $table->enum('direction',['horizontal','vertical']);
+            $table->string('direction', 32);
             $table->unsignedInteger('score');
             $table->timestamps();
         });
