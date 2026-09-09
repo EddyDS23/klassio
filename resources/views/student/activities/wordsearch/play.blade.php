@@ -158,15 +158,20 @@
         const br = parseInt(b.dataset.row, 10);
         const bc = parseInt(b.dataset.column, 10);
 
+        const dr = br - ar;
+        const dc = bc - ac;
+
+        if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) {
+            return [];
+        }
+
+        const stepR = dr === 0 ? 0 : Math.sign(dr);
+        const stepC = dc === 0 ? 0 : Math.sign(dc);
+        const steps = Math.max(Math.abs(dr), Math.abs(dc));
+
         const out = [];
-        if (ar === br) {
-            for (let c = Math.min(ac, bc); c <= Math.max(ac, bc); c++) {
-                out.push(document.getElementById('cell-' + ar + '-' + c));
-            }
-        } else if (ac === bc) {
-            for (let r = Math.min(ar, br); r <= Math.max(ar, br); r++) {
-                out.push(document.getElementById('cell-' + r + '-' + ac));
-            }
+        for (let i = 0; i <= steps; i++) {
+            out.push(document.getElementById('cell-' + (ar + stepR * i) + '-' + (ac + stepC * i)));
         }
         return out;
     }
