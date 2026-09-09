@@ -60,19 +60,56 @@
 
     <hr>
 
-    {{-- Participación activa --}}
+    {{-- Detectar participación activa según modo individual o equipo --}}
     @php
-        $activeParticipation = $activity->participations()
-            ->where('student_id', auth()->id())
-            ->where('status', 'started')
-            ->latest()
-            ->first();
+        use Illuminate\Support\Facades\Route;
 
-        $lastParticipation = $activity->participations()
-            ->where('student_id', auth()->id())
-            ->whereIn('status', ['completed', 'abandoned', 'expired'])
-            ->latest()
-            ->first();
+        $studentId = auth()->id();
+
+        if ($activity->mode === 'team') {
+            // Buscar el equipo del estudiante para esta actividad
+            $myTeam = $activity->teams()
+                ->whereHas('members', fn($q) => $q->where('student_id', $studentId))
+                ->first();
+
+            $activeParticipation = $myTeam
+                ? $activity->participations()
+                    ->where('team_id', $myTeam->id)
+                    ->where('status', 'started')
+                    ->latest()
+                    ->first()
+                : null;
+
+            $lastParticipation = $myTeam
+                ? $activity->participations()
+                    ->where('team_id', $myTeam->id)
+                    ->whereIn('status', ['completed', 'abandoned', 'expired'])
+                    ->latest()
+                    ->first()
+                : null;
+        } else {
+            $activeParticipation = $activity->participations()
+                ->where('student_id', $studentId)
+                ->where('status', 'started')
+                ->latest()
+                ->first();
+
+            $lastParticipation = $activity->participations()
+                ->where('student_id', $studentId)
+                ->whereIn('status', ['completed', 'abandoned', 'expired'])
+                ->latest()
+                ->first();
+        }
+
+        $playRoute = match($activity->type) {
+            'crossword'   => 'student.crossword.play',
+            'kahoot'      => 'student.kahoot.play',
+            'word_search' => 'student.wordsearch.play',
+            'matching'    => 'student.matching.play',
+            default       => null,
+        };
+
+        $playRouteExists = $playRoute && Route::has($playRoute);
     @endphp
 
     <section>
@@ -80,20 +117,10 @@
 
         @if ($activeParticipation)
 
-            {{-- Ya tiene un intento activo: llevar al juego o permitir abandonar --}}
+            {{-- Intento activo: continuar, finalizar o abandonar --}}
             <p>Tienes un intento en curso (intento #{{ $activeParticipation->attempt }}).</p>
 
-            @php
-                $playRoute = match($activity->type) {
-                    'crossword'   => 'student.crossword.play',
-                    'kahoot'      => 'student.kahoot.play',
-                    'word_search' => 'student.wordsearch.play',
-                    'matching'    => 'student.matching.play',
-                    default       => null,
-                };
-            @endphp
-
-            @if ($playRoute && \Illuminate\Support\Facades\Route::has($playRoute))
+            @if ($playRouteExists)
                 <a href="{{ route($playRoute, $activity->id) }}">
                     Continuar actividad
                 </a>
@@ -103,14 +130,14 @@
 
             <form method="POST"
                   action="{{ route('student.participation.finish', $activity->id) }}"
-                  style="display:inline;">
+                  style="display: inline;">
                 @csrf
                 <button type="submit">Finalizar actividad</button>
             </form>
 
             <form method="POST"
                   action="{{ route('student.participation.abandon', $activity->id) }}"
-                  style="display:inline;">
+                  style="display: inline;">
                 @csrf
                 <button type="submit"
                         onclick="return confirm('¿Estás seguro de que quieres abandonar?')">
@@ -129,9 +156,14 @@
                 </a>
             @endif
 
+        @elseif ($activity->mode === 'team' && ! isset($myTeam))
+
+            {{-- Sin equipo asignado --}}
+            <p>Aún no perteneces a ningún equipo en esta actividad. Espera a que tu maestro te asigne uno.</p>
+
         @else
 
-            {{-- Sin intento activo: mostrar botón de inicio --}}
+            {{-- Sin intento activo: mostrar historial y botón de inicio --}}
             @if ($lastParticipation)
                 <p>
                     Último intento: #{{ $lastParticipation->attempt }}
@@ -149,13 +181,17 @@
                 </a>
             @endif
 
-            <form method="POST"
-                  action="{{ route('student.participation.start', $activity->id) }}">
-                @csrf
-                <button type="submit">
-                    {{ $lastParticipation ? 'Intentar de nuevo' : 'Iniciar actividad' }}
-                </button>
-            </form>
+            @if ($playRouteExists)
+                <form method="POST"
+                      action="{{ route('student.participation.start', $activity->id) }}">
+                    @csrf
+                    <button type="submit">
+                        {{ $lastParticipation ? 'Intentar de nuevo' : 'Iniciar actividad' }}
+                    </button>
+                </form>
+            @else
+                <p>Este juego aún no está disponible.</p>
+            @endif
 
         @endif
 

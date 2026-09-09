@@ -6,7 +6,6 @@ use App\Models\Activity;
 use App\Models\Enrollment;
 use App\Models\Participation;
 use App\Models\Team;
-use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use RuntimeException;
@@ -47,17 +46,7 @@ class ParticipationService
             throw new RuntimeException('No estás inscrito en la clase de esta actividad.');
         }
 
-        // Bloquear si ya tiene una participación activa (sin importar time_limit)
-        $hasActive = Participation::where('activity_id', $activity->id)
-            ->where('student_id', $student->id)
-            ->where('status', 'started')
-            ->exists();
-
-        if ($hasActive) {
-            throw new RuntimeException('Ya tienes un intento activo en esta actividad.');
-        }
-
-        // Expirar participaciones anteriores que quedaron en started y ya vencieron
+        // Expirar participaciones anteriores colgadas antes de validar activos
         $this->expireStale($activity, $student->id);
 
         return $activity->mode === 'team'
@@ -70,11 +59,21 @@ class ParticipationService
      */
     private function startIndividual(Activity $activity, User $student): Participation
     {
+        // Bloquear si ya tiene una participación activa
+        $hasActive = Participation::where('activity_id', $activity->id)
+            ->where('student_id', $student->id)
+            ->where('status', 'started')
+            ->exists();
+
+        if ($hasActive) {
+            throw new RuntimeException('Ya tienes un intento activo en esta actividad.');
+        }
+
         $attempt = Participation::where('activity_id', $activity->id)
             ->where('student_id', $student->id)
             ->max('attempt') ?? 0;
 
-        // started_at lo pone la BD por DEFAULT current_timestamp()
+        // started_at lo asigna la BD por DEFAULT current_timestamp()
         return Participation::create([
             'activity_id' => $activity->id,
             'student_id'  => $student->id,
@@ -87,7 +86,8 @@ class ParticipationService
 
     /**
      * Crea participación por equipo.
-     * Verifica que el estudiante pertenezca a un equipo de la actividad.
+     * Verifica que el estudiante pertenezca a un equipo de la actividad
+     * y que ese equipo no tenga ya un intento activo.
      */
     private function startTeam(Activity $activity, User $student): Participation
     {
@@ -100,7 +100,7 @@ class ParticipationService
             throw new RuntimeException('No perteneces a ningún equipo en esta actividad.');
         }
 
-        // Verificar que el equipo no tenga ya una participación activa
+        // Bloquear si el equipo ya tiene una participación activa
         $teamHasActive = Participation::where('activity_id', $activity->id)
             ->where('team_id', $team->id)
             ->where('status', 'started')
@@ -125,7 +125,7 @@ class ParticipationService
     }
 
     // -------------------------------------------------------------------------
-    // 6.3 — Obtener participación activa verificando propietario
+    // 6.3 — Obtener participación activa
     // -------------------------------------------------------------------------
 
     /**
@@ -143,7 +143,6 @@ class ParticipationService
             ->latest();
 
         if ($activity->mode === 'team') {
-            // Buscar el equipo del estudiante para esta actividad
             $team = Team::where('activity_id', $activity->id)
                 ->whereHas('members', fn($q) => $q->where('student_id', $student->id))
                 ->first();
@@ -173,7 +172,7 @@ class ParticipationService
     }
 
     // -------------------------------------------------------------------------
-    // 6.5 — Finalizar participación
+    // 6.5 — Finalizar
     // -------------------------------------------------------------------------
 
     /**
@@ -200,9 +199,6 @@ class ParticipationService
     // 6.6 — Abandonar y expirar
     // -------------------------------------------------------------------------
 
-    /**
-     * Marca la participación como abandonada.
-     */
     public function abandon(Participation $participation): void
     {
         if ($participation->status !== 'started') {
@@ -212,17 +208,11 @@ class ParticipationService
         $participation->update(['status' => 'abandoned']);
     }
 
-    /**
-     * Marca la participación como expirada.
-     */
     public function expire(Participation $participation): void
     {
         $participation->update(['status' => 'expired']);
     }
 
-    /**
-     * Determina si una participación superó el time_limit de la actividad.
-     */
     public function hasExpired(Participation $participation, Activity $activity): bool
     {
         if ($activity->time_limit === null || $activity->time_limit <= 0) {
@@ -235,8 +225,8 @@ class ParticipationService
     }
 
     /**
-     * Expira participaciones que quedaron en 'started' y ya superaron el time_limit.
-     * Se llama al iniciar una nueva participación para limpiar estados colgados.
+     * Expira participaciones colgadas en 'started' que ya superaron el time_limit.
+     * Solo aplica para modo individual (team se resuelve por equipo).
      */
     private function expireStale(Activity $activity, int $studentId): void
     {
@@ -253,13 +243,9 @@ class ParticipationService
     }
 
     // -------------------------------------------------------------------------
-    // 6.7 — Resultado individual
+    // 6.7 — Resultado
     // -------------------------------------------------------------------------
 
-    /**
-     * Retorna los datos del resultado de una participación.
-     * Incluye respuestas según el tipo de actividad.
-     */
     public function getResult(Participation $participation): array
     {
         $activity = $participation->activity;

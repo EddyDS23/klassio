@@ -19,8 +19,8 @@ class Participation extends Model
     protected function casts()
     {
         return [
-            'started_at'=>'datetime',
-            'completed_at'=>'datetime',
+            'started_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 
@@ -44,12 +44,18 @@ class Participation extends Model
         return $this->hasMany(SearchwordAnswer::class);
     }
 
-    public function crosswordAnswers(): HasMany{
+    public function crosswordAnswers(): HasMany
+    {
         return $this->hasMany(CrosswordAnswer::class);
     }
 
     public function matchingAnswers(): HasMany
     {
         return $this->hasMany(MatchingAnswer::class);
+    }
+
+    public function kahootAnswers(): HasMany
+    {
+        return $this->hasMany(KahootAnswer::class);
     }
 }

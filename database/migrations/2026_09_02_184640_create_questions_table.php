@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('question');
             $table->unsignedTinyInteger('position');
             $table->unsignedInteger('time_limit');
-            $table->unsignedInteger('score');
+            $table->unsignedSmallInteger('score');
             $table->timestamps();
             $table->unique(['kahoot_id', 'position']);
         });

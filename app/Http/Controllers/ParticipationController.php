@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Participation;
+use App\Models\Team;
 use App\Services\ParticipationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 use RuntimeException;
 
@@ -31,8 +33,6 @@ class ParticipationController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
 
-        // Redirigir al juego correspondiente según el tipo de actividad
-        // Solo redirige a juegos implementados; los demás vuelven a la actividad
         $playRoute = match ($activity->type) {
             'crossword'   => 'student.crossword.play',
             'kahoot'      => 'student.kahoot.play',
@@ -41,7 +41,7 @@ class ParticipationController extends Controller
             default       => null,
         };
 
-        if ($playRoute === null || ! \Illuminate\Support\Facades\Route::has($playRoute)) {
+        if ($playRoute === null || ! Route::has($playRoute)) {
             return redirect()
                 ->route('student.activities.show', $activity->id)
                 ->with('error', 'Este tipo de actividad aún no tiene un juego disponible.');
@@ -119,22 +119,39 @@ class ParticipationController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // El maestro propietario puede ver el resultado de cualquier estudiante,
-        // pero necesita un participation_id específico (futuro: via query param).
-        // Por ahora resolvemos el intento según el rol.
-        if ($user->role === 'teacher' && $activity->teacher_id === $user->id) {
-            // El maestro ve la lista de participaciones desde la vista de actividad,
-            // aquí solo soportamos acceso por student autenticado.
-            // Esto se ampliará en Fase 7.
-            abort(403, 'Acceso no disponible desde esta ruta para maestros.');
-        }
+        // Resolver la participación según el rol y el modo de la actividad
+        if ($user->role === 'teacher') {
+            // El maestro puede acceder si es propietario de la actividad.
+            // Necesita que se le pase un participation_id por query string.
+            // Esto se amplía en Fase 7 con ranking completo.
+            $participationId = request()->query('participation_id');
 
-        // Estudiante: buscar su último intento no activo
-        $participation = Participation::where('activity_id', $activity->id)
-            ->where('student_id', $user->id)
-            ->whereIn('status', ['completed', 'abandoned', 'expired'])
-            ->latest()
-            ->firstOrFail();
+            abort_if($participationId === null, 400, 'Se requiere participation_id.');
+
+            $participation = Participation::where('id', $participationId)
+                ->where('activity_id', $activity->id)
+                ->firstOrFail();
+        } elseif ($activity->mode === 'team') {
+            // Estudiante en modo equipo: buscar por team_id
+            $team = Team::where('activity_id', $activity->id)
+                ->whereHas('members', fn($q) => $q->where('student_id', $user->id))
+                ->first();
+
+            abort_if($team === null, 404, 'No perteneces a ningún equipo en esta actividad.');
+
+            $participation = Participation::where('activity_id', $activity->id)
+                ->where('team_id', $team->id)
+                ->whereIn('status', ['completed', 'abandoned', 'expired'])
+                ->latest()
+                ->firstOrFail();
+        } else {
+            // Estudiante individual
+            $participation = Participation::where('activity_id', $activity->id)
+                ->where('student_id', $user->id)
+                ->whereIn('status', ['completed', 'abandoned', 'expired'])
+                ->latest()
+                ->firstOrFail();
+        }
 
         Gate::authorize('result', $participation);
 

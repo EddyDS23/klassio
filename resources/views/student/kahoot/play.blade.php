@@ -95,7 +95,7 @@
         .option-btn:nth-child(3) { background: #ca8a04; }
         .option-btn:nth-child(4) { background: #16a34a; }
 
-        .option-btn.correct   { outline: 4px solid #34d399; }
+        .option-btn.correct   { outline: 4px solid #34d399; opacity: 1; }
         .option-btn.incorrect { outline: 4px solid #f87171; opacity: 0.5; }
 
         /* Pantalla de resultado por pregunta */
@@ -112,6 +112,18 @@
             font-size: 16px;
             border-radius: 8px;
             cursor: pointer;
+        }
+
+        /* Error inline */
+        #error-msg {
+            display: none;
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-size: 14px;
+            text-align: center;
         }
 
         /* Pantalla final */
@@ -135,14 +147,14 @@
 </head>
 <body>
 
-{{-- ----------------------------- Pantalla inicio ----------------------------- --}}
+{{-- Pantalla inicio --}}
 <div id="screen-start">
     <h1>{{ $activity->title }}</h1>
     <p>{{ count($questions) }} preguntas · Responde una a la vez</p>
     <button id="btn-start" onclick="startGame()">Iniciar</button>
 </div>
 
-{{-- ----------------------------- Pantalla pregunta ----------------------------- --}}
+{{-- Pantalla pregunta --}}
 <div id="screen-question">
     <div id="progress-bar-wrap">
         <div id="progress-bar" style="width: 0%"></div>
@@ -157,11 +169,11 @@
     </div>
 
     <div id="question-text"></div>
-
     <div id="options-grid"></div>
+    <div id="error-msg"></div>
 </div>
 
-{{-- ----------------------------- Pantalla resultado ----------------------------- --}}
+{{-- Pantalla resultado por pregunta --}}
 <div id="screen-result">
     <div id="result-icon"></div>
     <div id="result-text"></div>
@@ -170,7 +182,7 @@
     <button id="btn-next" onclick="nextQuestion()">Siguiente pregunta →</button>
 </div>
 
-{{-- ----------------------------- Pantalla final ----------------------------- --}}
+{{-- Pantalla final --}}
 <div id="screen-finish">
     <h1>¡Kahoot completado!</h1>
     <div id="final-score"></div>
@@ -187,20 +199,19 @@
     const PARTICIPATION_ID = {{ $participation->id }};
     const CSRF_TOKEN       = '{{ csrf_token() }}';
     const ANSWER_URL       = '{{ route('student.kahoot.answer') }}';
-
-    const QUESTIONS    = @json($questions);
-    const ANSWERED_IDS = @json($answeredIds);
+    const QUESTIONS        = @json($questions);
+    const ANSWERED_IDS     = @json($answeredIds);
 
     // -------------------------------------------------------------------------
-    // Estado del juego
+    // Estado
     // -------------------------------------------------------------------------
-    let currentIndex = 0;
-    let totalScore   = 0;
+    let currentIndex  = 0;
+    let totalScore    = 0;
     let timerInterval = null;
     let timeLeft      = 0;
     let answered      = false;
 
-    // Saltar las ya respondidas al inicio
+    // Saltar preguntas ya respondidas
     while (currentIndex < QUESTIONS.length && ANSWERED_IDS.includes(QUESTIONS[currentIndex].id)) {
         currentIndex++;
     }
@@ -223,31 +234,28 @@
     // -------------------------------------------------------------------------
     function showQuestion(index) {
         answered = false;
-        const q  = QUESTIONS[index];
+        hideError();
+
+        const q     = QUESTIONS[index];
         const total = QUESTIONS.length;
 
-        // Progreso
         document.getElementById('progress-bar').style.width =
             `${(index / total) * 100}%`;
         document.getElementById('question-counter').textContent =
             `Pregunta ${index + 1} de ${total}`;
-
-        // Texto
         document.getElementById('question-text').textContent = q.question;
 
-        // Opciones
         const grid = document.getElementById('options-grid');
         grid.innerHTML = '';
         q.options.forEach(opt => {
             const btn = document.createElement('button');
             btn.classList.add('option-btn');
-            btn.textContent = opt.text;
-            btn.dataset.optionId = opt.id;
+            btn.textContent       = opt.text;
+            btn.dataset.optionId  = opt.id;
             btn.onclick = () => submitAnswer(opt.id, q.id);
             grid.appendChild(btn);
         });
 
-        // Temporizador
         startTimer(q.time_limit, q.id);
     }
 
@@ -263,14 +271,14 @@
 
         timerText.textContent = timeLeft;
         timerText.classList.remove('danger');
-        timerBar.style.width = '100%';
+        timerBar.style.width      = '100%';
         timerBar.style.background = '#34d399';
 
         timerInterval = setInterval(() => {
             timeLeft--;
 
-            timerText.textContent = timeLeft;
-            timerBar.style.width  = `${(timeLeft / seconds) * 100}%`;
+            timerText.textContent    = timeLeft;
+            timerBar.style.width     = `${(timeLeft / seconds) * 100}%`;
 
             if (timeLeft <= 5) {
                 timerText.classList.add('danger');
@@ -280,38 +288,40 @@
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 if (!answered) {
-                    timeExpired(questionId);
+                    timeExpired();
                 }
             }
         }, 1000);
     }
 
     // -------------------------------------------------------------------------
-    // Tiempo expirado sin respuesta
+    // Tiempo expirado
     // -------------------------------------------------------------------------
-    function timeExpired(questionId) {
+    function timeExpired() {
         answered = true;
         disableOptions();
         showResult(false, 0, null, '⏰ Tiempo agotado');
     }
 
     // -------------------------------------------------------------------------
-    // Enviar respuesta
+    // Enviar respuesta — con manejo completo de errores HTTP
     // -------------------------------------------------------------------------
     async function submitAnswer(optionId, questionId) {
         if (answered) return;
         answered = true;
         clearInterval(timerInterval);
-
         disableOptions();
+        hideError();
 
-        let result;
+        let res, result;
+
         try {
-            const res = await fetch(ANSWER_URL, {
+            res = await fetch(ANSWER_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Accept':       'application/json',
                 },
                 body: JSON.stringify({
                     participation_id: PARTICIPATION_ID,
@@ -319,19 +329,43 @@
                     option_id:        optionId,
                 }),
             });
+        } catch (networkErr) {
+            // Error de red (sin conexión, timeout, etc.)
+            showError('Error de conexión. Intenta de nuevo.');
+            answered = false;
+            enableOptions();
+            return;
+        }
+
+        try {
             result = await res.json();
-        } catch (err) {
-            console.error('Error al enviar respuesta:', err);
+        } catch (parseErr) {
+            showError('Respuesta inesperada del servidor.');
+            answered = false;
+            enableOptions();
             return;
         }
 
-        if (result.error) {
-            // Ya fue respondida (edge case)
-            nextQuestion();
+        // Manejar errores HTTP (4xx, 5xx)
+        if (!res.ok) {
+            if (res.status === 409) {
+                // Ya fue respondida — avanzar silenciosamente
+                nextQuestion();
+                return;
+            }
+
+            if (res.status === 403) {
+                showError('No tienes permiso para responder esta pregunta.');
+                return;
+            }
+
+            // Cualquier otro error del servidor
+            const msg = result?.message || result?.error || 'Error del servidor.';
+            showError(msg);
             return;
         }
 
-        // Resaltar correcta e incorrecta
+        // Respuesta exitosa — resaltar opciones
         const buttons = document.querySelectorAll('.option-btn');
         buttons.forEach(btn => {
             const bid = parseInt(btn.dataset.optionId);
@@ -346,18 +380,33 @@
             totalScore += result.score;
         }
 
-        showResult(
-            result.is_correct,
-            result.score,
-            result.correct_option_id,
-            null
-        );
+        showResult(result.is_correct, result.score, result.correct_option_id, null);
     }
 
+    // -------------------------------------------------------------------------
+    // Helpers de opciones
+    // -------------------------------------------------------------------------
     function disableOptions() {
-        document.querySelectorAll('.option-btn').forEach(btn => {
-            btn.disabled = true;
-        });
+        document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+    }
+
+    function enableOptions() {
+        document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers de error inline
+    // -------------------------------------------------------------------------
+    function showError(msg) {
+        const el = document.getElementById('error-msg');
+        el.textContent    = msg;
+        el.style.display  = 'block';
+    }
+
+    function hideError() {
+        const el = document.getElementById('error-msg');
+        el.style.display = 'none';
+        el.textContent   = '';
     }
 
     // -------------------------------------------------------------------------
@@ -379,12 +428,10 @@
         document.getElementById('result-correct-text').textContent =
             `Puntaje acumulado: ${totalScore}`;
 
-        // Si es la última pregunta, cambiar botón
         const remaining = QUESTIONS.slice(currentIndex + 1)
             .filter(q => !ANSWERED_IDS.includes(q.id));
 
-        const btnNext = document.getElementById('btn-next');
-        btnNext.textContent = remaining.length > 0
+        document.getElementById('btn-next').textContent = remaining.length > 0
             ? 'Siguiente pregunta →'
             : 'Ver resultados';
     }
@@ -395,7 +442,6 @@
     function nextQuestion() {
         currentIndex++;
 
-        // Saltar ya respondidas
         while (currentIndex < QUESTIONS.length && ANSWERED_IDS.includes(QUESTIONS[currentIndex].id)) {
             currentIndex++;
         }
