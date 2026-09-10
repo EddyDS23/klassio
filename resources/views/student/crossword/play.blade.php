@@ -56,33 +56,39 @@
     </nav>
 
     @php
-        $wordsJson = $words->map(fn ($word) => [
-            'id'        => $word->id,
-            'word'      => $word->word,
-            'clue'      => $word->clue,
-            'row'       => $word->row,
-            'column'    => $word->column,
-            'direction' => $word->direction,
-            'score'     => $word->score,
-            'answered'  => false,
-        ]);
+        $wordsJson = $words->map(
+            fn($word) => [
+                'id' => $word->id,
+                'word' => $word->word,
+                'clue' => $word->clue,
+                'row' => $word->row,
+                'column' => $word->column,
+                'direction' => $word->direction,
+                'score' => $word->score,
+                'answered' => false,
+            ],
+        );
     @endphp
 
     <script>
         const PARTICIPATION_ID = {{ $participation->id }};
-        const CSRF_TOKEN       = '{{ csrf_token() }}';
-        const GRID             = @json($crossword->grid);
-        const WORDS            = @json($wordsJson);
+        const CSRF_TOKEN = '{{ csrf_token() }}';
+        const GRID = @json($crossword->grid);
+        const WORDS = @json($wordsJson);
 
         const ROWS = GRID.length;
         const COLS = ROWS > 0 ? GRID[0].length : 0;
 
-        const cellMap     = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
-        const cellNumbers = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-        const inputRefs   = {};
+        const cellMap = Array.from({
+            length: ROWS
+        }, () => Array(COLS).fill(false));
+        const cellNumbers = Array.from({
+            length: ROWS
+        }, () => Array(COLS).fill(null));
+        const inputRefs = {};
 
         let currentDirection = 'horizontal';
-        let totalScore       = 0;
+        let totalScore = 0;
 
         // -------------------------------------------------------------------------
         // Construir mapa de celdas y números de pista
@@ -95,8 +101,8 @@
             const length = word.word.length;
 
             for (let i = 0; i < length; i++) {
-                const row    = word.direction === 'horizontal' ? word.row           : word.row + i;
-                const column = word.direction === 'horizontal' ? word.column + i    : word.column;
+                const row = word.direction === 'horizontal' ? word.row : word.row + i;
+                const column = word.direction === 'horizontal' ? word.column + i : word.column;
                 cellMap[row][column] = true;
             }
 
@@ -114,17 +120,17 @@
         // -------------------------------------------------------------------------
 
         const gridElement = document.getElementById('crossword-grid');
-        gridElement.style.display             = 'inline-grid';
+        gridElement.style.display = 'inline-grid';
         gridElement.style.gridTemplateColumns = `repeat(${COLS}, 36px)`;
-        gridElement.style.gridTemplateRows    = `repeat(${ROWS}, 36px)`;
-        gridElement.style.gap                 = '2px';
+        gridElement.style.gridTemplateRows = `repeat(${ROWS}, 36px)`;
+        gridElement.style.gap = '2px';
 
         for (let row = 0; row < ROWS; row++) {
             for (let column = 0; column < COLS; column++) {
 
                 const cell = document.createElement('div');
-                cell.style.width    = '36px';
-                cell.style.height   = '36px';
+                cell.style.width = '36px';
+                cell.style.height = '36px';
                 cell.style.position = 'relative';
 
                 // Celda bloqueada
@@ -136,33 +142,33 @@
 
                 // Número de pista
                 if (cellNumbers[row][column] !== null) {
-                    const number       = document.createElement('span');
+                    const number = document.createElement('span');
                     number.textContent = cellNumbers[row][column];
                     number.style.position = 'absolute';
-                    number.style.top      = '1px';
-                    number.style.left     = '2px';
+                    number.style.top = '1px';
+                    number.style.left = '2px';
                     number.style.fontSize = '9px';
-                    number.style.zIndex   = '1';
+                    number.style.zIndex = '1';
                     cell.appendChild(number);
                 }
 
                 // Input
-                const input       = document.createElement('input');
-                input.type        = 'text';
-                input.maxLength   = 1;
-                input.dataset.row    = row;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 1;
+                input.dataset.row = row;
                 input.dataset.column = column;
-                input.style.width       = '36px';
-                input.style.height      = '36px';
-                input.style.boxSizing   = 'border-box';
-                input.style.textAlign   = 'center';
+                input.style.width = '36px';
+                input.style.height = '36px';
+                input.style.boxSizing = 'border-box';
+                input.style.textAlign = 'center';
                 input.style.textTransform = 'uppercase';
-                input.style.fontSize    = '16px';
-                input.style.fontWeight  = 'bold';
+                input.style.fontSize = '16px';
+                input.style.fontWeight = 'bold';
 
-                input.addEventListener('input',   onInput);
+                input.addEventListener('input', onInput);
                 input.addEventListener('keydown', onKeyDown);
-                input.addEventListener('focus',   onFocus);
+                input.addEventListener('focus', onFocus);
 
                 cell.appendChild(input);
                 inputRefs[`${row}-${column}`] = input;
@@ -175,11 +181,11 @@
         // -------------------------------------------------------------------------
 
         const cluesHorizontal = document.getElementById('clues-horizontal');
-        const cluesVertical   = document.getElementById('clues-vertical');
+        const cluesVertical = document.getElementById('clues-vertical');
 
         WORDS.forEach(word => {
-            const clue       = document.createElement('li');
-            clue.id          = `clue-${word.id}`;
+            const clue = document.createElement('li');
+            clue.id = `clue-${word.id}`;
             clue.textContent = `${wordClueNumbers[word.id]}. ${word.clue}`;
             clue.style.cursor = 'pointer';
             clue.addEventListener('click', () => focusWord(word));
@@ -207,9 +213,9 @@
                 moveNext(input);
             }
 
-            const row    = parseInt(input.dataset.row);
+            const row = parseInt(input.dataset.row);
             const column = parseInt(input.dataset.column);
-            const word   = getWordAtCell(row, column);
+            const word = getWordAtCell(row, column);
 
             if (word && isWordComplete(word)) {
                 submitWord(word);
@@ -221,18 +227,30 @@
         // -------------------------------------------------------------------------
 
         function onKeyDown(event) {
-            const input  = event.target;
-            const row    = parseInt(input.dataset.row);
+            const input = event.target;
+            const row = parseInt(input.dataset.row);
             const column = parseInt(input.dataset.column);
 
             if (event.key === 'Backspace' && input.value === '') {
                 movePrevious(input);
             }
 
-            if (event.key === 'ArrowRight') { event.preventDefault(); focusCell(row, column + 1); }
-            if (event.key === 'ArrowLeft')  { event.preventDefault(); focusCell(row, column - 1); }
-            if (event.key === 'ArrowDown')  { event.preventDefault(); focusCell(row + 1, column); }
-            if (event.key === 'ArrowUp')    { event.preventDefault(); focusCell(row - 1, column); }
+            if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                focusCell(row, column + 1);
+            }
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                focusCell(row, column - 1);
+            }
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                focusCell(row + 1, column);
+            }
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                focusCell(row - 1, column);
+            }
         }
 
         // -------------------------------------------------------------------------
@@ -240,7 +258,7 @@
         // -------------------------------------------------------------------------
 
         function onFocus(event) {
-            const row    = parseInt(event.target.dataset.row);
+            const row = parseInt(event.target.dataset.row);
             const column = parseInt(event.target.dataset.column);
             highlightWord(row, column);
         }
@@ -262,7 +280,7 @@
         }
 
         function moveNext(input) {
-            const row    = parseInt(input.dataset.row);
+            const row = parseInt(input.dataset.row);
             const column = parseInt(input.dataset.column);
 
             if (currentDirection === 'horizontal') {
@@ -273,7 +291,7 @@
         }
 
         function movePrevious(input) {
-            const row    = parseInt(input.dataset.row);
+            const row = parseInt(input.dataset.row);
             const column = parseInt(input.dataset.column);
 
             if (currentDirection === 'horizontal') {
@@ -300,9 +318,9 @@
             currentDirection = word.direction;
 
             for (let i = 0; i < word.word.length; i++) {
-                const wordRow    = word.direction === 'horizontal' ? word.row        : word.row + i;
+                const wordRow = word.direction === 'horizontal' ? word.row : word.row + i;
                 const wordColumn = word.direction === 'horizontal' ? word.column + i : word.column;
-                const input      = inputRefs[`${wordRow}-${wordColumn}`];
+                const input = inputRefs[`${wordRow}-${wordColumn}`];
 
                 if (input && !input.classList.contains('correct') && !input.classList.contains('incorrect')) {
                     input.style.background = '#fef9c3';
@@ -340,7 +358,7 @@
 
         function cellBelongsToWord(row, column, word) {
             for (let i = 0; i < word.word.length; i++) {
-                const wordRow    = word.direction === 'horizontal' ? word.row        : word.row + i;
+                const wordRow = word.direction === 'horizontal' ? word.row : word.row + i;
                 const wordColumn = word.direction === 'horizontal' ? word.column + i : word.column;
                 if (wordRow === row && wordColumn === column) return true;
             }
@@ -353,9 +371,9 @@
 
         function isWordComplete(word) {
             for (let i = 0; i < word.word.length; i++) {
-                const row    = word.direction === 'horizontal' ? word.row        : word.row + i;
+                const row = word.direction === 'horizontal' ? word.row : word.row + i;
                 const column = word.direction === 'horizontal' ? word.column + i : word.column;
-                const input  = inputRefs[`${row}-${column}`];
+                const input = inputRefs[`${row}-${column}`];
                 if (!input || !input.value) return false;
             }
             return true;
@@ -368,9 +386,9 @@
         function getWordResponse(word) {
             let response = '';
             for (let i = 0; i < word.word.length; i++) {
-                const row    = word.direction === 'horizontal' ? word.row        : word.row + i;
+                const row = word.direction === 'horizontal' ? word.row : word.row + i;
                 const column = word.direction === 'horizontal' ? word.column + i : word.column;
-                response    += inputRefs[`${row}-${column}`]?.value || '';
+                response += inputRefs[`${row}-${column}`]?.value || '';
             }
             return response;
         }
@@ -390,12 +408,12 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': CSRF_TOKEN,
-                        'Accept':       'application/json',
+                        'Accept': 'application/json',
                     },
                     body: JSON.stringify({
-                        participation_id:  PARTICIPATION_ID,
+                        participation_id: PARTICIPATION_ID,
                         crossword_word_id: word.id,
-                        response:          response,
+                        response: response,
                     }),
                 });
 
@@ -415,9 +433,9 @@
             word.answered = true;
 
             for (let i = 0; i < word.word.length; i++) {
-                const row    = word.direction === 'horizontal' ? word.row        : word.row + i;
+                const row = word.direction === 'horizontal' ? word.row : word.row + i;
                 const column = word.direction === 'horizontal' ? word.column + i : word.column;
-                const input  = inputRefs[`${row}-${column}`];
+                const input = inputRefs[`${row}-${column}`];
 
                 if (input) {
                     input.disabled = true;
@@ -434,11 +452,11 @@
 
             // Mostrar resultado en el panel
             const resultsElement = document.getElementById('results');
-            const resultItem     = document.createElement('p');
+            const resultItem = document.createElement('p');
 
-            resultItem.textContent = result.is_correct
-                ? `✓ "${word.clue}" — Correcto (+${result.score} pts)`
-                : `✗ "${word.clue}" — Incorrecto (la respuesta era: ${result.correct_word})`;
+            resultItem.textContent = result.is_correct ?
+                `✓ "${word.clue}" — Correcto (+${result.score} pts)` :
+                `✗ "${word.clue}" — Incorrecto (la respuesta era: ${result.correct_word})`;
 
             resultsElement.appendChild(resultItem);
 
@@ -450,10 +468,27 @@
             document.getElementById('score-display').textContent = totalScore;
 
             // Comprobar si se completó todo el crucigrama
-            if (WORDS.every(w => w.answered)) {
-                const completed       = document.createElement('p');
-                completed.textContent = '¡Crucigrama completado!';
+            // Comprobar si se completó todo el crucigrama
+            if (result.completed) {
+
+                const completed = document.createElement('p');
+
+                completed.textContent =
+                    '¡Crucigrama completado! Redirigiendo al resultado...';
+
                 resultsElement.appendChild(completed);
+
+                // Deshabilitar todas las entradas
+                Object.values(inputRefs).forEach(input => {
+                    input.disabled = true;
+                });
+
+                // Redirigir al resultado de Participation
+                setTimeout(() => {
+
+                    window.location.href = @json(route('student.participation.result', $activity->id));
+
+                }, 1200);
             }
         }
     </script>

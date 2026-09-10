@@ -9,12 +9,13 @@ use App\Models\KahootAnswer;
 use App\Models\Participation;
 use App\Models\Question;
 use App\Services\KahootService;
+use App\Services\ParticipationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class KahootController extends Controller
 {
-    public function __construct(private KahootService $kahootService) {}
+    public function __construct(private KahootService $kahootService, private ParticipationService $participationService) {}
 
     // -------------------------------------------------------------------------
     // Maestro — configuración
@@ -45,7 +46,7 @@ class KahootController extends Controller
     /**
      * Guardar preguntas y opciones por primera vez.
      */
-    public function store(StoreKahootRequest $request,int $id)
+    public function store(StoreKahootRequest $request, int $id)
     {
         $activity = Activity::findOrFail($id);
 
@@ -115,7 +116,7 @@ class KahootController extends Controller
     public function play(int $id)
     {
         $activity = Activity::findOrFail($id);
-        
+
         abort_if($activity->type !== 'kahoot', 404);
         abort_if($activity->status !== 'published', 403);
 
@@ -152,17 +153,40 @@ class KahootController extends Controller
     public function answer(Request $request)
     {
         $validated = $request->validate([
-            'participation_id' => ['required', 'integer', 'exists:participations,id'],
-            'question_id'      => ['required', 'integer', 'exists:questions,id'],
-            'option_id'        => ['required', 'integer', 'exists:options,id'],
+            'participation_id' => [
+                'required',
+                'integer',
+                'exists:participations,id'
+            ],
+            'question_id' => [
+                'required',
+                'integer',
+                'exists:questions,id'
+            ],
+            'option_id' => [
+                'required',
+                'integer',
+                'exists:options,id'
+            ],
         ]);
 
-        $participation = Participation::findOrFail($validated['participation_id']);
+        $participation = Participation::findOrFail(
+            $validated['participation_id']
+        );
 
-        abort_if($participation->student_id !== Auth::id(), 403);
-        abort_if($participation->status !== 'started', 409);
+        abort_if(
+            $participation->student_id !== Auth::id(),
+            403
+        );
 
-        $question = Question::findOrFail($validated['question_id']);
+        abort_if(
+            $participation->status !== 'started',
+            409
+        );
+
+        $question = Question::findOrFail(
+            $validated['question_id']
+        );
 
         $result = $this->kahootService->submitAnswer(
             $participation,
@@ -170,15 +194,50 @@ class KahootController extends Controller
             $validated['option_id']
         );
 
-        // El service devuelve ['error' => ..., 'status' => 409] si ya fue respondida
+        /*
+     * La pregunta ya había sido respondida.
+     */
         if (isset($result['error'])) {
-            return response()->json(['error' => $result['error']], $result['status']);
+            return response()->json(
+                ['error' => $result['error']],
+                $result['status']
+            );
+        }
+
+        /*
+     * Comprobar si ya se respondieron todas
+     * las preguntas del Kahoot.
+     */
+        $totalQuestions = $participation
+            ->activity
+            ->kahoot
+            ->questions()
+            ->count();
+
+        $answeredQuestions = KahootAnswer::where(
+            'participation_id',
+            $participation->id
+        )->count();
+
+        $completed =
+            $totalQuestions > 0 &&
+            $answeredQuestions >= $totalQuestions;
+
+        /*
+     * Si terminó todas las preguntas,
+     * finalizar la Participation.
+     */
+        if ($completed) {
+            $this->participationService->finish(
+                $participation->fresh()
+            );
         }
 
         return response()->json([
             'is_correct'        => $result['is_correct'],
             'score'             => $result['score'],
             'correct_option_id' => $result['correct_option_id'],
+            'completed'         => $completed,
         ]);
     }
 }
