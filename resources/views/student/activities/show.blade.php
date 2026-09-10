@@ -50,19 +50,34 @@
     <section>
         <h2>Acciones</h2>
 
-        @if($activity->type === 'crossword')
+        @switch($activity->type)
+            @case("crossword")
+                
+                <a href="{{ route('student.crossword.play', $activity->id) }}">
+                    Iniciar crucigrama
+                </a>
 
-            <a href="{{ route('student.crossword.play', $activity->id) }}">
-                Iniciar crucigrama
-            </a>
+                @break
+            @case("kahoot")
+                
+                <a href="{{ route('student.kahoot.play', $activity->id) }}">
+                    Iniciar Kahoot
+                </a>
 
-        @else
+                @break
+            @case("matching")
 
-            <p>
-                Esta actividad todavía no tiene un juego disponible.
-            </p>
+                    <a href="{{ route('student.matching.play', $activity->id) }}">
+                        Iniciar Unir Palabras
+                    </a>
 
-        @endif
+                @break
+            @default
+                <p>
+                    Esta actividad todavía no tiene un juego disponible.
+                </p>   
+        @endswitch
+
     </section>
 
     <hr>

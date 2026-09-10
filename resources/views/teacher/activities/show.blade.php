@@ -152,7 +152,7 @@
             {{-- Unir conceptos --}}
             @case('matching')
 
-                @if ($activity->matching && $activity->matching->pairs()->exists())
+                @if ($activity->matching && $activity->matching->items()->exists())
                     <p>
                         <a href="{{ route('teacher.matching.edit', $activity->id) }}">
                             Editar unir conceptos
