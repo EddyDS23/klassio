@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('row');
             $table->unsignedTinyInteger('column');
             $table->enum('direction',['horizontal','vertical']);
-            $table->unsignedInteger('score');
+            $table->unsignedSmallInteger('score');
             $table->timestamps();
         });
     }

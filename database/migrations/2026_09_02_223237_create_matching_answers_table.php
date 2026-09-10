@@ -26,7 +26,7 @@ return new class extends Migration
 
             $table->boolean('is_correct')->default(false);
 
-            $table->unsignedInteger('score')->default(0);
+            $table->unsignedSmallInteger('score')->default(0);
 
             $table->timestamp('answered_at')->useCurrent();
 

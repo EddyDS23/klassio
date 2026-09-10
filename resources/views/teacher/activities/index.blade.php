@@ -158,6 +158,23 @@
                             </p>
                         @endif
                     @endif
+
+                    {{-- Configuración del Unir Palabras --}}
+                    @if ($activity->type === 'matching')
+                        @if ($activity->matching && $activity->matching->items()->exists())
+                            <p>
+                                <a href="{{ route('teacher.matching.edit', $activity->id) }}">
+                                    Editar unir palabras
+                                </a>
+                            </p>
+                        @else
+                            <p>
+                                <a href="{{ route('teacher.matching.configure', $activity->id) }}">
+                                    Configurar unir palabras
+                                </a>
+                            </p>
+                        @endif
+                    @endif
                 @endif
 
             </div>

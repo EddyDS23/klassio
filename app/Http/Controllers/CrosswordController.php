@@ -9,12 +9,13 @@ use App\Models\CrosswordAnswer;
 use App\Models\CrosswordWord;
 use App\Models\Participation;
 use App\Services\CrosswordService;
+use App\Services\ParticipationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CrosswordController extends Controller
 {
-    public function __construct(private CrosswordService $crosswordService) {}
+    public function __construct(private CrosswordService $crosswordService, private ParticipationService $participationService) {}
 
     /**
      * Mostrar formulario de configuración inicial del crucigrama.
@@ -160,37 +161,78 @@ class CrosswordController extends Controller
     public function answer(Request $request)
     {
         $validated = $request->validate([
-            'participation_id'  => ['required', 'integer', 'exists:participations,id'],
-            'crossword_word_id' => ['required', 'integer', 'exists:crossword_words,id'],
-            'response'          => ['required', 'string', 'max:100'],
+            'participation_id' => [
+                'required',
+                'integer',
+                'exists:participations,id'
+            ],
+            'crossword_word_id' => [
+                'required',
+                'integer',
+                'exists:crossword_words,id'
+            ],
+            'response' => [
+                'required',
+                'string',
+                'max:100'
+            ],
         ]);
 
-        $participation = Participation::findOrFail($validated['participation_id']);
+        $participation = Participation::findOrFail(
+            $validated['participation_id']
+        );
 
-        // Verificar que la participación pertenece al estudiante autenticado
-        abort_if($participation->student_id !== Auth::id(), 403);
-        abort_if($participation->status !== 'started', 409);
-
-        $crosswordWord = CrosswordWord::findOrFail($validated['crossword_word_id']);
-
-        // Verificar que la palabra pertenece a la actividad de la participación
+        // Verificar que la participación pertenece al estudiante
         abort_if(
-            $crosswordWord->crossword->activity_id !== $participation->activity_id,
+            $participation->student_id !== Auth::id(),
             403
         );
 
-        // Verificar que no haya sido respondida ya
-        $alreadyAnswered = CrosswordAnswer::where('participation_id', $participation->id)
-            ->where('crossword_word_id', $crosswordWord->id)
+        // Solo se puede responder mientras está activa
+        abort_if(
+            $participation->status !== 'started',
+            409
+        );
+
+        $crosswordWord = CrosswordWord::findOrFail(
+            $validated['crossword_word_id']
+        );
+
+        // Verificar que la palabra pertenece a la actividad
+        abort_if(
+            $crosswordWord->crossword->activity_id !==
+                $participation->activity_id,
+            403
+        );
+
+        // Verificar que no haya sido respondida anteriormente
+        $alreadyAnswered = CrosswordAnswer::where(
+            'participation_id',
+            $participation->id
+        )
+            ->where(
+                'crossword_word_id',
+                $crosswordWord->id
+            )
             ->exists();
 
         if ($alreadyAnswered) {
-            return response()->json(['error' => 'Esta palabra ya fue respondida.'], 409);
+            return response()->json([
+                'error' => 'Esta palabra ya fue respondida.'
+            ], 409);
         }
 
-        $isCorrect = $this->crosswordService->validateAnswer($crosswordWord, $validated['response']);
-        $score     = $isCorrect ? $crosswordWord->score : 0;
+        // Validar respuesta
+        $isCorrect = $this->crosswordService->validateAnswer(
+            $crosswordWord,
+            $validated['response']
+        );
 
+        $score = $isCorrect
+            ? $crosswordWord->score
+            : 0;
+
+        // Guardar respuesta
         CrosswordAnswer::create([
             'participation_id'  => $participation->id,
             'crossword_word_id' => $crosswordWord->id,
@@ -199,15 +241,45 @@ class CrosswordController extends Controller
             'score'             => $score,
         ]);
 
-        // Actualizar score acumulado en la participación
+        // Actualizar score
         if ($isCorrect) {
             $participation->increment('score', $score);
+        }
+
+        /*
+     * Comprobar si ya se respondieron
+     * todas las palabras.
+     */
+        $totalWords = $crosswordWord
+            ->crossword
+            ->words()
+            ->count();
+
+        $answeredWords = CrosswordAnswer::where(
+            'participation_id',
+            $participation->id
+        )->count();
+
+        $completed =
+            $totalWords > 0 &&
+            $answeredWords >= $totalWords;
+
+        /*
+     * Finalizar Participation.
+     */
+        if ($completed) {
+            $this->participationService->finish(
+                $participation->fresh()
+            );
         }
 
         return response()->json([
             'is_correct'   => $isCorrect,
             'score'        => $score,
-            'correct_word' => $isCorrect ? null : $crosswordWord->word,
+            'correct_word' => $isCorrect
+                ? null
+                : $crosswordWord->word,
+            'completed'    => $completed,
         ]);
     }
 }
