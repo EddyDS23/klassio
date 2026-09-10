@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('matching_id')->constrained('matchings','id')->cascadeOnDelete();
             $table->string('left_text');
             $table->string('right_text');
-            $table->unsignedInteger('score');
+            $table->unsignedSmallInteger('score');
             $table->timestamps();
         });
     }

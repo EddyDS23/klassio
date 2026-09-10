@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CrosswordController;
 use App\Http\Controllers\KahootController;
 use App\Http\Controllers\MatchingController;
+use App\Http\Controllers\ParticipationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn()=>redirect('login'));

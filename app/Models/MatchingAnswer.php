@@ -13,6 +13,14 @@ class MatchingAnswer extends Model
 {
     public $timestamps = true;
 
+    protected function casts(): array
+    {
+        return [
+            'is_correct'  => 'boolean',
+            'answered_at' => 'datetime',
+        ];
+    }
+
     public function participation(): BelongsTo
     {
         return $this->belongsTo(Participation::class);

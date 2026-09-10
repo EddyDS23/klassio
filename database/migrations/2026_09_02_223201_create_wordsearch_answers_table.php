@@ -22,7 +22,7 @@ return new class extends Migration
                 ->constrained('words')
                 ->cascadeOnDelete();
 
-            $table->unsignedInteger('score')->default(0);
+            $table->unsignedSmallInteger('score')->default(0);
 
             $table->timestamp('found_at')->useCurrent();
 
