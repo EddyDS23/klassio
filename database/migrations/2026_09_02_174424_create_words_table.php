@@ -13,11 +13,20 @@ return new class extends Migration
     {
         Schema::create('words', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('wordsearch_id')->constrained('worksearches','id')->cascadeOnDelete();
+            $table->foreignId('wordsearch_id')->constrained('worksearches', 'id')->cascadeOnDelete();
             $table->string('word');
             $table->unsignedTinyInteger('row');
             $table->unsignedTinyInteger('column');
-            $table->enum('direction',['horizontal','vertical']);
+            $table->enum('direction', [
+                'horizontal',
+                'vertical',
+                'diagonal',
+                'horizontal_reverse',
+                'vertical_reverse',
+                'diagonal_reverse',
+                'diagonal_alt',
+                'diagonal_alt_reverse',
+            ]);
             $table->unsignedSmallInteger('score');
             $table->timestamps();
         });

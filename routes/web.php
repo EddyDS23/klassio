@@ -8,6 +8,7 @@ use App\Http\Controllers\CrosswordController;
 use App\Http\Controllers\KahootController;
 use App\Http\Controllers\MatchingController;
 use App\Http\Controllers\ParticipationController;
+use App\Http\Controllers\WordsearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect('login'));
@@ -58,6 +59,11 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
     Route::post('/activities/{id}/matching', [MatchingController::class, 'store'])->name('matching.store');
     Route::get('/activities/{id}/matching/edit', [MatchingController::class, 'edit'])->name('matching.edit');
     Route::put('/activities/{id}/matching', [MatchingController::class, 'update'])->name('matching.update');
+    Route::get('/activities/{id}/wordsearch/configure', [WordsearchController::class, 'configure'])->name('wordsearch.configure');
+    Route::post('/activities/{id}/wordsearch', [WordsearchController::class, 'store'])->name('wordsearch.store');
+    Route::get('/activities/{id}/wordsearch/edit', [WordsearchController::class, 'edit'])->name('wordsearch.edit');
+    Route::put('/activities/{id}/wordsearch', [WordsearchController::class, 'update'])->name('wordsearch.update');
+    
 });
 
 Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:student'])->group(function () {
@@ -74,6 +80,8 @@ Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:
     Route::post('/kahoot/answer', [KahootController::class, 'answer'])->name('kahoot.answer');
     Route::get('/activities/{id}/matching/play', [MatchingController::class, 'play'])->name('matching.play');
     Route::post('/matching/answer', [MatchingController::class, 'answer'])->name('matching.answer');
+    Route::get('/activities/{id}/wordsearch/play', [WordsearchController::class, 'play'])->name('wordsearch.play');
+    Route::post('/wordsearch/answer', [WordsearchController::class, 'answer'])->name('wordsearch.answer');
     Route::post('/activities/{id}/start', [ParticipationController::class, 'start'])->name('participation.start');
     Route::post('/activities/{id}/finish', [ParticipationController::class, 'finish'])->name('participation.finish');
     Route::post('/activities/{id}/abandon', [ParticipationController::class, 'abandon'])->name('participation.abandon');

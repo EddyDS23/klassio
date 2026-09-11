@@ -168,6 +168,24 @@
 
                 @break
 
+            {{-- Sopa de crucigrama --}}
+            @case('word_search')
+
+                @if ($activity->wordsearch && $activity->wordsearch->words()->exists())
+                    <p>
+                        <a href="{{ route('teacher.wordsearch.edit', $activity->id) }}">
+                            Editar sopa de letras
+                        </a>
+                    </p>
+                @else
+                    <p>
+                        <a href="{{ route('teacher.wordsearch.configure', $activity->id) }}">
+                            Configurar sopa de letras
+                        </a>
+                    </p>
+                @endif
+
+                @break
 
             {{-- Tipo de actividad sin configuración --}}
             @default

@@ -39,9 +39,9 @@ class Participation extends Model
         return $this->belongsTo(Team::class);
     }
 
-    public function searchwordAnswers(): HasMany
+    public function wordsearchAnswers(): HasMany
     {
-        return $this->hasMany(SearchwordAnswer::class);
+        return $this->hasMany(WordsearchAnswer::class);
     }
 
     public function crosswordAnswers(): HasMany

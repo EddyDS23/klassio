@@ -308,12 +308,13 @@ class ParticipationService
 
     private function wordsearchAnswers(Participation $participation): array
     {
-        return $participation->searchwordAnswers()
+        return $participation->wordsearchAnswers()
             ->with('word')
             ->get()
-            ->map(fn($a) => [
-                'word'  => $a->word->word,
-                'score' => $a->score,
+            ->map(fn($answer) => [
+                'word' => $answer->word->word,
+                'score' => $answer->score,
+                'is_correct' => true,
             ])
             ->toArray();
     }
@@ -331,5 +332,24 @@ class ParticipationService
                 'score'      => $a->score,
             ])
             ->toArray();
+    }
+
+
+    public function addScore(
+        Participation $participation,
+        int $points
+    ): Participation {
+        $maxScore = (int) $participation->activity->max_score;
+
+        $newScore = min(
+            $participation->score + $points,
+            $maxScore
+        );
+
+        $participation->update([
+            'score' => $newScore,
+        ]);
+
+        return $participation->fresh();
     }
 }
