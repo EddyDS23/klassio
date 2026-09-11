@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Override;
 
-#[Fillable(['class_id','teacher_id','title','description','type','mode','max_score','time_limit','due_at','status'])]
+#[Fillable(['class_id','teacher_id','title','description','type','mode','max_score','time_limit','attempts','due_at','status'])]
 #[Hidden(['created_at','updated_at'])]
 class Activity extends Model
 {

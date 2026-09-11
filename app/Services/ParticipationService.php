@@ -73,6 +73,18 @@ class ParticipationService
             ->where('student_id', $student->id)
             ->max('attempt') ?? 0;
 
+
+        $nextAttempt = $attempt + 1;
+
+        if (
+            $activity->attempts !== null &&
+            $nextAttempt > $activity->attempts
+        ) {
+            throw new RuntimeException(
+                'Has alcanzado el límite de intentos para esta actividad.'
+            );
+        }
+
         // started_at lo asigna la BD por DEFAULT current_timestamp()
         return Participation::create([
             'activity_id' => $activity->id,
@@ -113,6 +125,18 @@ class ParticipationService
         $attempt = Participation::where('activity_id', $activity->id)
             ->where('team_id', $team->id)
             ->max('attempt') ?? 0;
+
+
+        $nextAttempt = $attempt + 1;
+
+        if (
+            $activity->attempts !== null &&
+            $nextAttempt > $activity->attempts
+        ) {
+            throw new RuntimeException(
+                'Alcanzaron el límite de intentos para esta actividad.'
+            );
+        }
 
         return Participation::create([
             'activity_id' => $activity->id,
@@ -181,10 +205,27 @@ class ParticipationService
     public function finish(Participation $participation): Participation
     {
         if ($participation->status !== 'started') {
-            throw new RuntimeException('Solo se puede finalizar una participación activa.');
+            throw new RuntimeException(
+                'Solo se puede finalizar una participación activa.'
+            );
         }
 
+        $activity = $participation->activity;
+
         $elapsed = (int) $participation->started_at->diffInSeconds(now());
+
+        // Si terminó después del límite, la participación expira.
+        if (
+            $activity->time_limit !== null &&
+            $activity->time_limit > 0 &&
+            $elapsed >= $activity->time_limit
+        ) {
+            $this->expire($participation);
+
+            throw new RuntimeException(
+                'El tiempo de la actividad ha terminado.'
+            );
+        }
 
         $participation->update([
             'status'          => 'completed',
@@ -210,7 +251,30 @@ class ParticipationService
 
     public function expire(Participation $participation): void
     {
-        $participation->update(['status' => 'expired']);
+        if ($participation->status !== 'started') {
+            return;
+        }
+
+        $elapsed = (int) $participation->started_at->diffInSeconds(now());
+
+        $participation->update([
+            'status'          => 'expired',
+            'completed_at'    => now(),
+            'elapsed_seconds' => $elapsed,
+        ]);
+    }
+
+    public function remainingSeconds(
+        Participation $participation,
+        Activity $activity
+    ): ?int {
+        if ($activity->time_limit === null || $activity->time_limit <= 0) {
+            return null;
+        }
+
+        $elapsed = (int) $participation->started_at->diffInSeconds(now());
+
+        return max(0, $activity->time_limit - $elapsed);
     }
 
     public function hasExpired(Participation $participation, Activity $activity): bool
@@ -221,8 +285,59 @@ class ParticipationService
 
         $elapsed = (int) $participation->started_at->diffInSeconds(now());
 
-        return $elapsed > $activity->time_limit;
+        return $elapsed >= $activity->time_limit;
     }
+
+
+    public function getLatest(Activity $activity): ?Participation
+    {
+        /** @var User $student */
+        $student = Auth::user();
+
+        $query = Participation::where('activity_id', $activity->id)
+            ->latest();
+
+        if ($activity->mode === 'team') {
+            $team = Team::where('activity_id', $activity->id)
+                ->whereHas(
+                    'members',
+                    fn($q) => $q->where('student_id', $student->id)
+                )
+                ->first();
+
+            if ($team === null) {
+                return null;
+            }
+
+            $query->where('team_id', $team->id);
+        } else {
+            $query->where('student_id', $student->id);
+        }
+
+        return $query->first();
+    }
+
+    public function getForPlay(Activity $activity): Participation
+    {
+        $participation = $this->getLatest($activity);
+
+        if ($participation === null) {
+            abort(404, 'No tienes una participación en esta actividad.');
+        }
+
+        if ($participation->status === 'started') {
+            if ($this->hasExpired($participation, $activity)) {
+                $this->expire($participation);
+
+                return $participation->fresh();
+            }
+
+            return $participation;
+        }
+
+        return $participation;
+    }
+
 
     /**
      * Expira participaciones colgadas en 'started' que ya superaron el time_limit.
@@ -237,7 +352,7 @@ class ParticipationService
 
         foreach ($stale as $p) {
             if ($this->hasExpired($p, $activity)) {
-                $p->update(['status' => 'expired']);
+                $this->expire($p);
             }
         }
     }

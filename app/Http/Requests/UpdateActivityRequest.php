@@ -57,12 +57,21 @@ class UpdateActivityRequest extends FormRequest
                 'required',
                 'integer',
                 'min:1',
+                'max:60000',
+                
             ],
 
             'time_limit' => [
                 'required',
                 'integer',
                 'min:1',
+            ],
+
+            'attempts' => [
+                'nullable',
+                'integer',
+                'min:1',
+                'max:100',
             ],
 
             'due_at' => [

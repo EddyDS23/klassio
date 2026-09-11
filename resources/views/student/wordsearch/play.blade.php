@@ -141,6 +141,10 @@
     <div class="wrap">
         <div class="card">
             <h1>Sopa de Letras</h1>
+            <div id="timer">
+                Tiempo restante:
+                <span id="timer-value">--:--</span>
+            </div>
             <p class="scoreline">
                 Actividad {{ $wordsearch->activity->title }} ·
                 Puntos: <strong id="points">{{ $earnedPoints }}</strong>
@@ -176,6 +180,11 @@
             <div id="finish" class="finish">¡Completaste la sopa de letras!</div>
         </div>
     </div>
+
+    <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
+        style="display: none;">
+        @csrf
+    </form>
 
     <script>
         const cells = Array.from(document.querySelectorAll('.cell'));
@@ -401,6 +410,39 @@
         });
 
         updateFound();
+        let remainingSeconds = @json($remainingSeconds);
+
+        const timerValue = document.getElementById('timer-value');
+
+        function updateTimer() {
+            if (remainingSeconds === null) {
+                timerValue.textContent = '--:--';
+                return;
+            }
+
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+
+            timerValue.textContent =
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+
+            if (remainingSeconds <= 0) {
+                clearInterval(timer);
+
+                timerValue.textContent = '00:00';
+
+                document.getElementById('expire-form').submit();
+
+                return;
+            }
+
+            remainingSeconds--;
+        }
+
+        let timer = setInterval(updateTimer, 1000);
+
+        updateTimer();
     </script>
 </body>
 

@@ -1,49 +1,39 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear actividad</title>
 </head>
+
 <body>
 
     <h1>Crear actividad</h1>
 
     <p>Clase: {{ $class->name }}</p>
 
-    @if($errors->any())
+    @if ($errors->any())
         <ul>
-            @foreach($errors->all() as $error)
+            @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
             @endforeach
         </ul>
     @endif
 
-    <form
-        action="{{ route('teacher.activities.store', $class->id) }}"
-        method="POST"
-    >
+    <form action="{{ route('teacher.activities.store', $class->id) }}" method="POST">
         @csrf
 
         <div>
             <label for="title">Título</label>
-            <input
-                type="text"
-                id="title"
-                name="title"
-                value="{{ old('title') }}"
-                required
-            >
+            <input type="text" id="title" name="title" value="{{ old('title') }}" required>
         </div>
 
         <br>
 
         <div>
             <label for="description">Descripción</label>
-            <textarea
-                id="description"
-                name="description"
-            >{{ old('description') }}</textarea>
+            <textarea id="description" name="description">{{ old('description') }}</textarea>
         </div>
 
         <br>
@@ -54,23 +44,19 @@
             <select id="type" name="type" required>
                 <option value="">Seleccionar</option>
 
-                <option value="word_search"
-                    {{ old('type') === 'word_search' ? 'selected' : '' }}>
+                <option value="word_search" {{ old('type') === 'word_search' ? 'selected' : '' }}>
                     Sopa de letras
                 </option>
 
-                <option value="crossword"
-                    {{ old('type') === 'crossword' ? 'selected' : '' }}>
+                <option value="crossword" {{ old('type') === 'crossword' ? 'selected' : '' }}>
                     Crucigrama
                 </option>
 
-                <option value="matching"
-                    {{ old('type') === 'matching' ? 'selected' : '' }}>
+                <option value="matching" {{ old('type') === 'matching' ? 'selected' : '' }}>
                     Relacionar
                 </option>
 
-                <option value="kahoot"
-                    {{ old('type') === 'kahoot' ? 'selected' : '' }}>
+                <option value="kahoot" {{ old('type') === 'kahoot' ? 'selected' : '' }}>
                     Kahoot
                 </option>
             </select>
@@ -82,13 +68,11 @@
             <label for="mode">Modo</label>
 
             <select id="mode" name="mode" required>
-                <option value="individual"
-                    {{ old('mode') === 'individual' ? 'selected' : '' }}>
+                <option value="individual" {{ old('mode') === 'individual' ? 'selected' : '' }}>
                     Individual
                 </option>
 
-                <option value="team"
-                    {{ old('mode') === 'team' ? 'selected' : '' }}>
+                <option value="team" {{ old('mode') === 'team' ? 'selected' : '' }}>
                     Equipo
                 </option>
             </select>
@@ -99,14 +83,16 @@
         <div>
             <label for="max_score">Puntuación máxima</label>
 
-            <input
-                type="number"
-                id="max_score"
-                name="max_score"
-                value="{{ old('max_score') }}"
-                min="1"
-                required
-            >
+            <input type="number" id="max_score" name="max_score" value="{{ old('max_score') }}" min="1"
+                required>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="attempts">Intentos permitidos</label>
+
+            <input type="number" name="attempts" id="attempts" min="1" value="{{ old('attempts') }}">
         </div>
 
         <br>
@@ -114,14 +100,8 @@
         <div>
             <label for="time_limit">Tiempo límite (segundos)</label>
 
-            <input
-                type="number"
-                id="time_limit"
-                name="time_limit"
-                value="{{ old('time_limit') }}"
-                min="1"
-                required
-            >
+            <input type="number" id="time_limit" name="time_limit" value="{{ old('time_limit') }}" min="1"
+                required>
         </div>
 
         <br>
@@ -129,12 +109,7 @@
         <div>
             <label for="due_at">Fecha límite</label>
 
-            <input
-                type="datetime-local"
-                id="due_at"
-                name="due_at"
-                value="{{ old('due_at') }}"
-            >
+            <input type="datetime-local" id="due_at" name="due_at" value="{{ old('due_at') }}">
         </div>
 
         <br>
@@ -152,5 +127,5 @@
     </a>
 
 </body>
-</html>
 
+</html>

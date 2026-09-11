@@ -111,7 +111,7 @@ class MatchingController extends Controller
      *
      * Aquí solamente recuperamos la participación activa.
      */
-    public function play(int $id): View
+    public function play(int $id)
     {
         $activity = Activity::findOrFail($id);
 
@@ -123,7 +123,14 @@ class MatchingController extends Controller
             'Esta actividad aún no tiene una actividad de unir conceptos.'
         );
 
-        $participation = $this->resolveParticipation($activity);
+        $participation = $this->participationService->getForPlay($activity);
+
+        if ($participation->status === 'expired') {
+            return redirect()->route(
+                'student.participation.result',
+                $activity->id
+            );
+        }
 
         $items = $matching->items()->get();
 

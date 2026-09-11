@@ -86,4 +86,5 @@ Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:
     Route::post('/activities/{id}/finish', [ParticipationController::class, 'finish'])->name('participation.finish');
     Route::post('/activities/{id}/abandon', [ParticipationController::class, 'abandon'])->name('participation.abandon');
     Route::get('/activities/{id}/result', [ParticipationController::class, 'result'])->name('participation.result');
+    Route::post('/activities/{id}/expire',[ParticipationController::class, 'expire'])->name('participation.expire');
 });

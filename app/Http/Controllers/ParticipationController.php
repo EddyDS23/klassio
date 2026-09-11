@@ -159,4 +159,28 @@ class ParticipationController extends Controller
 
         return view('student.participation.result', $result);
     }
+
+    // -------------------------------------------------------------------------
+    // 6.5 — Expirar por tiempo
+    // -------------------------------------------------------------------------
+
+    public function expire(int $id): RedirectResponse
+    {
+        $activity = Activity::findOrFail($id);
+
+        try {
+            $participation = $this->participationService->getActive($activity);
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('student.participation.result', $activity->id);
+        }
+
+        Gate::authorize('finish', $participation);
+
+        $this->participationService->expire($participation);
+
+        return redirect()
+            ->route('student.participation.result', $activity->id)
+            ->with('error', 'El tiempo de la actividad ha terminado.');
+    }
 }

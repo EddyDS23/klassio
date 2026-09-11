@@ -109,6 +109,14 @@
         <br>
 
         <div>
+            <label for="attempts">Intentos permitidos</label>
+
+            <input type="number" name="attempts" id="attempts" min="1" value="{{ old('attempts') }}">
+        </div>
+
+        <br>
+
+        <div>
             <label for="time_limit">Límite de tiempo (minutos):</label>
 
             <input

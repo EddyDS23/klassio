@@ -100,7 +100,7 @@ class WordsearchController extends Controller
     // Student — Juego
     // -------------------------------------------------------------------------
 
-    public function play(int $id): View
+    public function play(int $id)
     {
         $activity = Activity::findOrFail($id);
 
@@ -112,7 +112,19 @@ class WordsearchController extends Controller
             'Esta actividad aún no tiene una sopa de letras.'
         );
 
-        $participation = $this->participationService->getActive($activity);
+        $participation = $this->participationService->getForPlay($activity);
+
+        if ($participation->status === 'expired') {
+            return redirect()->route(
+                'student.participation.result',
+                $activity->id
+            );
+        }
+
+        $remainingSeconds = $this->participationService->remainingSeconds(
+            $participation,
+            $activity
+        );
 
         $found = $this->wordSearchService->foundWords(
             $wordsearch,
@@ -125,9 +137,11 @@ class WordsearchController extends Controller
             ->get();
 
         return view('student.wordsearch.play', [
+            'activity' => $activity,
             'wordsearch' => $wordsearch,
             'participation' => $participation,
             'grid' => $wordsearch->grid,
+            'remainingSeconds' => $remainingSeconds,
 
             'words' => $wordsearch
                 ->words()

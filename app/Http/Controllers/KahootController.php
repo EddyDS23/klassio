@@ -124,12 +124,14 @@ class KahootController extends Controller
         abort_if($kahoot === null, 404);
         abort_if(! $kahoot->questions()->exists(), 404);
 
-        $participation = Participation::where('activity_id', $activity->id)
-            ->where('student_id', Auth::id())
-            ->where('status', 'started')
-            ->latest()
-            ->firstOrFail();
+        $participation = $this->participationService->getForPlay($activity);
 
+        if ($participation->status === 'expired') {
+            return redirect()->route(
+                'student.participation.result',
+                $activity->id
+            );
+        }
         // Preguntas sin revelar is_correct
         $questions = $this->kahootService->getQuestionsForPlay($kahoot);
 

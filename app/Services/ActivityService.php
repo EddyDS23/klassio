@@ -13,7 +13,7 @@ class ActivityService
     public function create(SchoolClass $class, array $data): Activity
     {
         return DB::transaction(function () use ($class, $data) {
-            $activity = Activity::create(['class_id' => $class->id, 'teacher_id' => $class->teacher_id, 'title' => $data['title'], 'description' => $data['description'] ?? null, 'type' => $data['type'], 'mode' => $data['mode'], 'max_score' => $data['max_score'], 'time_limit' => $data['time_limit'], 'due_at' => $data['due_at'] ?? null, 'status' => 'draft',]);
+            $activity = Activity::create(['class_id' => $class->id, 'teacher_id' => $class->teacher_id, 'title' => $data['title'], 'description' => $data['description'] ?? null, 'type' => $data['type'], 'mode' => $data['mode'], 'max_score' => $data['max_score'], 'time_limit' => $data['time_limit'],'attempts'=>$data['attempts'], 'due_at' => $data['due_at'] ?? null, 'status' => 'draft',]);
             $this->createConfiguration($activity);
             return $activity;
         });
