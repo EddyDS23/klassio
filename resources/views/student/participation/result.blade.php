@@ -86,7 +86,6 @@
         <div class="label">Respuestas correctas</div>
         @php
             $correctCount = collect($answers)->where('is_correct', true)->count();
-            $total        = count($answers);
         @endphp
         <div class="value {{ $correctCount === $total && $total > 0 ? 'good' : ($correctCount > 0 ? 'info' : 'bad') }}">
             {{ $correctCount }} / {{ $total }}

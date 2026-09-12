@@ -382,6 +382,7 @@ class ParticipationService
             'participation' => $participation,
             'elapsed'       => $elapsed,
             'answers'       => $answers,
+            'total' => $this->getTotalItems($activity),
         ];
     }
 
@@ -466,5 +467,16 @@ class ParticipationService
         ]);
 
         return $participation->fresh();
+    }
+
+    private function getTotalItems(Activity $activity): int
+    {
+        return match ($activity->type) {
+            'crossword' => $activity->crossword?->words()->count() ?? 0,
+            'kahoot' => $activity->kahoot?->questions()->count() ?? 0,
+            'word_search' => $activity->wordsearch?->words()->count() ?? 0,
+            'matching' => $activity->matching?->items()->count() ?? 0,
+            default => 0,
+        };
     }
 }

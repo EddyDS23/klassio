@@ -135,6 +135,11 @@ class KahootController extends Controller
         // Preguntas sin revelar is_correct
         $questions = $this->kahootService->getQuestionsForPlay($kahoot);
 
+        $remainingSeconds = $this->participationService->remainingSeconds(
+            $participation,
+            $activity
+        );
+
         // IDs de preguntas ya respondidas por esta participación
         $answeredIds = KahootAnswer::where('participation_id', $participation->id)
             ->pluck('question_id')
@@ -144,7 +149,8 @@ class KahootController extends Controller
             'activity',
             'participation',
             'questions',
-            'answeredIds'
+            'answeredIds',
+            'remainingSeconds'
         ));
     }
 

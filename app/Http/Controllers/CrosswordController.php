@@ -148,11 +148,16 @@ class CrosswordController extends Controller
         }
         $words = $crossword->words;
 
+        $remainingSeconds = $this->participationService->remainingSeconds(
+            $participation,
+            $activity
+        );
         return view('student.crossword.play', compact(
             'activity',
             'crossword',
             'words',
-            'participation'
+            'participation',
+            'remainingSeconds'
         ));
     }
 

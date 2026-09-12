@@ -132,12 +132,19 @@ class MatchingController extends Controller
             );
         }
 
+        $remainingSeconds = $this->participationService->remainingSeconds(
+            $participation,
+            $activity
+        );
+
         $items = $matching->items()->get();
 
         return view('student.matching.play', [
+            'activity' => $activity,
             'matching' => $matching,
             'participation' => $participation,
             'items' => $items,
+            'remainingSeconds' => $remainingSeconds,
             'rightOptions' => $items->shuffle(),
             'correctIds' => $this->matchingService->correctItemIds(
                 $matching,

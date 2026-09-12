@@ -13,6 +13,10 @@
     <h1>{{ $activity->title }}</h1>
 
     <h2>Crucigrama</h2>
+    <div id="timer">
+        Tiempo restante:
+        <span id="timer-value">--:--</span>
+    </div>
 
     <p>
         Completa las palabras utilizando las pistas.
@@ -70,11 +74,50 @@
         );
     @endphp
 
+    <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
+        style="display: none;">
+        @csrf
+    </form>
+
     <script>
         const PARTICIPATION_ID = {{ $participation->id }};
         const CSRF_TOKEN = '{{ csrf_token() }}';
         const GRID = @json($crossword->grid);
         const WORDS = @json($wordsJson);
+
+        let remainingSeconds = @json($remainingSeconds);
+
+        const timerValue = document.getElementById('timer-value');
+
+        function updateTimer() {
+            if (remainingSeconds === null) {
+                timerValue.textContent = '--:--';
+                return;
+            }
+
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+
+            timerValue.textContent =
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+
+            if (remainingSeconds <= 0) {
+                clearInterval(timer);
+
+                timerValue.textContent = '00:00';
+
+                document.getElementById('expire-form').submit();
+
+                return;
+            }
+
+            remainingSeconds--;
+        }
+
+        let timer = setInterval(updateTimer, 1000);
+
+        updateTimer();
 
         const ROWS = GRID.length;
         const COLS = ROWS > 0 ? GRID[0].length : 0;

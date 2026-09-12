@@ -132,6 +132,10 @@
     <div class="wrap">
         <div class="card">
             <h1>Unir Conceptos</h1>
+            <div id="timer">
+                Tiempo restante:
+                <span id="timer-value">--:--</span>
+            </div>
             <p class="scoreline">
                 Actividad {{ $matching->activity->title }} ·
                 Puntos: <strong id="points">{{ $earnedPoints }}</strong>
@@ -166,8 +170,46 @@
         </div>
     </div>
 
+    <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
+        style="display: none;">
+        @csrf
+    </form>
+
     <script>
         const items = @json($items->map(fn($item) => ['id' => $item->id, 'left' => $item->left_text, 'right' => $item->right_text]));
+        let remainingSeconds = @json($remainingSeconds);
+
+        const timerValue = document.getElementById('timer-value');
+
+        function updateTimer() {
+            if (remainingSeconds === null) {
+                timerValue.textContent = '--:--';
+                return;
+            }
+
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+
+            timerValue.textContent =
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+
+            if (remainingSeconds <= 0) {
+                clearInterval(timer);
+
+                timerValue.textContent = '00:00';
+
+                document.getElementById('expire-form').submit();
+
+                return;
+            }
+
+            remainingSeconds--;
+        }
+
+        let timer = setInterval(updateTimer, 1000);
+
+        updateTimer();
         const correctIds = @json($correctIds);
         const leftCards = Array.from(document.querySelectorAll('.card-item.left'));
         const rightCards = Array.from(document.querySelectorAll('.card-item.right'));
@@ -355,8 +397,11 @@
         }
 
         function updateMatched() {
-            document.getElementById('matched-count').textContent = document.querySelectorAll('.card-item.matched').length;
-            if (document.querySelectorAll('.card-item.matched').length === leftCards.length) {
+            const matchedPairs = document.querySelectorAll('.card-item.left.matched').length;
+
+            document.getElementById('matched-count').textContent = matchedPairs;
+
+            if (matchedPairs === leftCards.length) {
                 document.getElementById('finish').style.display = 'block';
             }
         }
