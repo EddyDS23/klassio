@@ -248,10 +248,7 @@ class WordsearchService
                 'found_at' => now(),
             ]);
 
-            $this->participationService->addScore(
-                $participation,
-                (int) $answer->score
-            );
+            $this->participationService->syncScore($participation);
 
             return [
                 'correct' => true,

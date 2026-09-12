@@ -10,6 +10,9 @@ use App\Models\Participation;
 
 class MatchingService
 {
+
+    public function __construct(private ParticipationService $participationService){}
+
     public function buildMatching(Activity $activity, array $items): Matching
     {
         $normalized = array_map(
@@ -178,15 +181,9 @@ class MatchingService
         /*
          * Actualizar el score acumulado.
          */
-        $earnedScore = $this->earnedScore(
-            $matching,
-            $participation
-        );
+        $this->participationService->syncScore($participation);
 
-        $participation->update([
-            'score' => $earnedScore,
-        ]);
-
+        
         /*
          * Comprobar si ya encontró todos los pares.
          */

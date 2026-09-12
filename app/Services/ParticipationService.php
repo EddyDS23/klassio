@@ -479,4 +479,81 @@ class ParticipationService
             default => 0,
         };
     }
+
+    public function syncScore(Participation $participation): Participation
+    {
+        $activity = $participation->activity;
+
+        [$obtained, $possible] = match ($activity->type) {
+            'word_search' => $this->wordsearchScore($participation),
+            'crossword'   => $this->crosswordScore($participation),
+            'matching'    => $this->matchingScore($participation),
+            'kahoot'      => $this->kahootScore($participation),
+            default       => [0, 0],
+        };
+
+        $maxScore = (int) $activity->max_score;
+
+        $finalScore = $possible > 0
+            ? (int) round(($obtained / $possible) * $maxScore)
+            : 0;
+
+        $finalScore = max(0, min($finalScore, $maxScore));
+
+        $participation->update([
+            'score' => $finalScore,
+        ]);
+
+        return $participation->fresh();
+    }
+
+    private function wordsearchScore(Participation $participation): array
+    {
+        $wordsearch = $participation->activity->wordsearch;
+
+        $possible = (int) $wordsearch->words()->sum('score');
+
+        $obtained = (int) $participation->wordsearchAnswers()
+            ->sum('score');
+
+        return [$obtained, $possible];
+    }
+
+    private function crosswordScore(Participation $participation): array
+    {
+        $crossword = $participation->activity->crossword;
+
+        $possible = (int) $crossword->words()->sum('score');
+
+        $obtained = (int) $participation->crosswordAnswers()
+            ->sum('score');
+
+        return [$obtained, $possible];
+    }
+
+    private function matchingScore(Participation $participation): array
+    {
+        $matching = $participation->activity->matching;
+
+        $possible = (int) $matching->items()->sum('score');
+
+        $obtained = (int) $participation->matchingAnswers()
+            ->sum('score');
+
+        return [$obtained, $possible];
+    }
+
+    private function kahootScore(Participation $participation): array
+    {
+        $kahoot = $participation->activity->kahoot;
+
+        $possible = (int) $kahoot->questions()->sum('score');
+
+        $obtained = (int) $participation->kahootAnswers()
+            ->sum('score');
+
+        return [$obtained, $possible];
+    }
+
+    
 }

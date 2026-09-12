@@ -11,6 +11,8 @@ use App\Models\Question;
 
 class KahootService
 {
+
+    public function __construct(private ParticipationService $participationService){}
     // -------------------------------------------------------------------------
     // Configuración
     // -------------------------------------------------------------------------
@@ -126,9 +128,7 @@ class KahootService
             'score'            => $result['score'],
         ]);
 
-        if ($result['is_correct']) {
-            $participation->increment('score', $result['score']);
-        }
+        $this->participationService->syncScore($participation);
 
         return $result;
     }

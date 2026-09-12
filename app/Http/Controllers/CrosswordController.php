@@ -249,9 +249,7 @@ class CrosswordController extends Controller
         ]);
 
         // Actualizar score
-        if ($isCorrect) {
-            $participation->increment('score', $score);
-        }
+        $this->participationService->syncScore($participation);
 
         /*
      * Comprobar si ya se respondieron
