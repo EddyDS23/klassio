@@ -100,8 +100,7 @@
         <div>
             <label for="time_limit">Tiempo límite (segundos)</label>
 
-            <input type="number" id="time_limit" name="time_limit" value="{{ old('time_limit') }}" min="1"
-                required>
+            <input type="number" id="time_limit" name="time_limit" value="{{ old('time_limit') }}" min="1" max="60000">
         </div>
 
         <br>

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->enum('type', ['word_search', 'crossword', 'matching', 'kahoot']);
             $table->enum('mode', ['individual', 'team'])->default('individual');
             $table->unsignedSmallInteger('max_score');
-            $table->unsignedInteger('time_limit');
+            $table->unsignedInteger('time_limit')->nullable();
             $table->unsignedInteger('attempts')->nullable();
             $table->datetime('due_at')->nullable();
             $table->enum('status', ['draft', 'published', 'closed'])->default('draft');

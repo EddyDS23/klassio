@@ -61,7 +61,7 @@ class StoreActivityRequest extends FormRequest
             ],
 
             'time_limit' => [
-                'required',
+                'nullable',
                 'integer',
                 'min:1',
                 
