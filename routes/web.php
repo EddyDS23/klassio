@@ -43,6 +43,7 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
     Route::get('/classes/{id}/activities/create', [ActivityController::class, 'teacherCreate'])->name('activities.create');
     Route::post('/classes/{id}/activities', [ActivityController::class, 'teacherStore'])->name('activities.store');
     Route::get('/activities/{id}', [ActivityController::class, 'teacherShow'])->name('activities.show');
+    Route::get('/activities/{id}/results',[ParticipationController::class, 'teacherResults'])->name('activities.results');
     Route::get('/activities/{id}/edit', [ActivityController::class, 'teacherEdit'])->name('activities.edit');
     Route::put('/activities/{id}', [ActivityController::class, 'teacherUpdate'])->name('activities.update');
     Route::post('/activities/{id}/publish', [ActivityController::class, 'publish'])->name('activities.publish');

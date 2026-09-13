@@ -88,10 +88,8 @@
         <h3>Configuración del juego</h3>
 
         @switch($activity->type)
-
             {{-- Crucigrama --}}
             @case('crossword')
-
                 @if ($activity->crossword && $activity->crossword->words()->exists())
                     <p>
                         <a href="{{ route('teacher.crossword.edit', $activity->id) }}">
@@ -105,13 +103,10 @@
                         </a>
                     </p>
                 @endif
-
-                @break
-
+            @break
 
             {{-- Kahoot --}}
             @case('kahoot')
-
                 @if ($activity->kahoot && $activity->kahoot->questions()->exists())
                     <p>
                         <a href="{{ route('teacher.kahoot.edit', $activity->id) }}">
@@ -125,13 +120,10 @@
                         </a>
                     </p>
                 @endif
-
-                @break
-
+            @break
 
             {{-- Sopa de letras --}}
             @case('wordsearch')
-
                 @if ($activity->wordsearch && $activity->wordsearch->words()->exists())
                     <p>
                         <a href="{{ route('teacher.wordsearch.edit', $activity->id) }}">
@@ -145,13 +137,10 @@
                         </a>
                     </p>
                 @endif
-
-                @break
-
+            @break
 
             {{-- Unir conceptos --}}
             @case('matching')
-
                 @if ($activity->matching && $activity->matching->items()->exists())
                     <p>
                         <a href="{{ route('teacher.matching.edit', $activity->id) }}">
@@ -165,12 +154,10 @@
                         </a>
                     </p>
                 @endif
-
-                @break
+            @break
 
             {{-- Sopa de crucigrama --}}
             @case('word_search')
-
                 @if ($activity->wordsearch && $activity->wordsearch->words()->exists())
                     <p>
                         <a href="{{ route('teacher.wordsearch.edit', $activity->id) }}">
@@ -184,16 +171,14 @@
                         </a>
                     </p>
                 @endif
-
-                @break
+            @break
 
             {{-- Tipo de actividad sin configuración --}}
-            @default
 
+            @default
                 <p>
                     Este tipo de actividad no tiene configuración adicional.
                 </p>
-
         @endswitch
 
     @endif
@@ -221,6 +206,17 @@
             </button>
         </form>
     @endif
+
+    <hr>
+
+    <h2>Resultados</h2>
+
+    <p>
+        <a href="{{ route('teacher.activities.results', $activity->id) }}">
+            Ver resultados de los alumnos
+        </a>
+    </p>
+
 
     <hr>
 

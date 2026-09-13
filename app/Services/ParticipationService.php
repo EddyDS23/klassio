@@ -394,6 +394,69 @@ class ParticipationService
         ];
     }
 
+    /**
+     * -------------------------------------------------------------------------
+     * 6.8 — Resultados del profesor
+     * -------------------------------------------------------------------------
+     *
+     * Obtiene el resultado más reciente de cada alumno inscrito en la clase.
+     * También incluye alumnos que nunca han realizado la actividad.
+     */
+    public function getTeacherResults(Activity $activity)
+    {
+        $class = $activity->schoolClass;
+
+        $enrollments = $class->enrollments()
+            ->where('status', 'active')
+            ->with('student')
+            ->get();
+
+        return $enrollments->map(function ($enrollment) use ($activity) {
+
+            $student = $enrollment->student;
+
+            // -------------------------------------------------------------
+            // Modo individual
+            // -------------------------------------------------------------
+            if ($activity->mode === 'individual') {
+
+                $participation = Participation::where('activity_id', $activity->id)
+                    ->where('student_id', $student->id)
+                    ->latest('attempt')
+                    ->first();
+            } else {
+
+                // ---------------------------------------------------------
+                // Modo equipo
+                // ---------------------------------------------------------
+                $team = Team::where('activity_id', $activity->id)
+                    ->whereHas(
+                        'members',
+                        fn($query) => $query->where('student_id', $student->id)
+                    )
+                    ->first();
+
+                $participation = null;
+
+                if ($team) {
+                    $participation = Participation::where('activity_id', $activity->id)
+                        ->where('team_id', $team->id)
+                        ->latest('attempt')
+                        ->first();
+                }
+            }
+
+            return [
+                'student' => $student,
+                'participation' => $participation,
+                'status' => $participation?->status ?? 'not_started',
+                'attempt' => $participation?->attempt,
+                'score' => $participation?->score,
+                'elapsed_seconds' => $participation?->elapsed_seconds,
+            ];
+        });
+    }
+
     private function formatElapsed(int $seconds): string
     {
         $m = intdiv($seconds, 60);

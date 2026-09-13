@@ -160,6 +160,27 @@ class ParticipationController extends Controller
         return view('student.participation.result', $result);
     }
 
+
+    // -------------------------------------------------------------------------
+    // 6.8 — Resultados del profesor
+    // -------------------------------------------------------------------------
+
+    public function teacherResults(int $id): View
+    {
+        $activity = Activity::findOrFail($id);
+
+        // Solo el profesor propietario de la actividad
+        Gate::authorize('view', $activity);
+
+        $results = $this->participationService
+            ->getTeacherResults($activity);
+
+        return view('teacher.activities.results', [
+            'activity' => $activity,
+            'results' => $results,
+        ]);
+    }
+
     // -------------------------------------------------------------------------
     // 6.5 — Expirar por tiempo
     // -------------------------------------------------------------------------
