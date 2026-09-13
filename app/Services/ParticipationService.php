@@ -243,10 +243,18 @@ class ParticipationService
     public function abandon(Participation $participation): void
     {
         if ($participation->status !== 'started') {
-            throw new RuntimeException('Solo se puede abandonar una participación activa.');
+            throw new RuntimeException(
+                'Solo se puede abandonar una participación activa.'
+            );
         }
 
-        $participation->update(['status' => 'abandoned']);
+        $elapsed = (int) $participation->started_at->diffInSeconds(now());
+
+        $participation->update([
+            'status'          => 'abandoned',
+            'completed_at'    => now(),
+            'elapsed_seconds' => $elapsed,
+        ]);
     }
 
     public function expire(Participation $participation): void
@@ -554,6 +562,4 @@ class ParticipationService
 
         return [$obtained, $possible];
     }
-
-    
 }

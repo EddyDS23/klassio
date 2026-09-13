@@ -296,6 +296,16 @@
         <div id="question-text"></div>
         <div id="options-grid"></div>
         <div id="error-msg"></div>
+
+        <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+            onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+            style="margin-top: 1.5rem; text-align: center;">
+            @csrf
+
+            <button type="submit">
+                Abandonar actividad
+            </button>
+        </form>
     </div>
 
     {{-- Pantalla resultado por pregunta --}}

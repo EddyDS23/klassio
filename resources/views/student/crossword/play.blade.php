@@ -53,6 +53,17 @@
 
     <hr>
 
+    <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+        onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+        style="margin: 1rem 0; text-align: center;">
+        @csrf
+
+        <button type="submit">
+            Abandonar actividad
+        </button>
+    </form>
+
+
     <nav>
         <a href="{{ route('student.activities.show', $activity->id) }}">
             Volver a la actividad

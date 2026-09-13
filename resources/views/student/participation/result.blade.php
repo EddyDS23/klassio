@@ -72,7 +72,7 @@
 <div class="summary">
     <div class="summary-card">
         <div class="label">Puntaje</div>
-        <div class="value info">{{ $participation->score }}</div>
+        <div class="value info">{{ $participation->score }} /  {{ $activity->max_score }}</div>
     </div>
 
     <div class="summary-card">

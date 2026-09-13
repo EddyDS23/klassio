@@ -104,7 +104,7 @@ class ParticipationController extends Controller
         }
 
         return redirect()
-            ->route('student.activities.show', $activity->id)
+            ->route('student.participation.result', $activity->id)
             ->with('success', 'Actividad abandonada.');
     }
 

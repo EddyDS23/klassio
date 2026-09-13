@@ -56,7 +56,7 @@ class ActivityController extends Controller
         $configureRoutes = [
             'crossword' => 'teacher.crossword.configure',
             'kahoot'    => 'teacher.kahoot.configure',
-            'wordsearch' => 'teacher.wordsearch.configure',
+            'word_search' => 'teacher.wordsearch.configure',
             'matching'  => 'teacher.matching.configure',
         ];
 

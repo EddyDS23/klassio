@@ -178,6 +178,15 @@
             </div>
 
             <div id="finish" class="finish">¡Completaste la sopa de letras!</div>
+            <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+                onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+                style="margin-top: 1rem; text-align: center;">
+                @csrf
+
+                <button type="submit">
+                    Abandonar actividad
+                </button>
+            </form>
         </div>
     </div>
 
