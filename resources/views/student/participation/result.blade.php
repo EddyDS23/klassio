@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultado — {{ $activity->title }}</title>
     <style>
+        a { text-decoration: none; }
         body { font-family: sans-serif; padding: 24px; max-width: 680px; margin: 0 auto; }
         h1 { margin-bottom: 4px; }
         .meta { color: #555; font-size: 14px; margin-bottom: 24px; }

@@ -30,7 +30,7 @@ class ActivityController extends Controller
             $query->where('title', 'like', '%' . request('search') . '%');
         }
 
-        $activities = $query->latest()->get();
+        $activities = $query->latest()->paginate(12)->withQueryString();
 
         return view('teacher.activities.index', compact('class', 'activities'));
     }
@@ -99,7 +99,11 @@ class ActivityController extends Controller
     {
         $activity = Activity::findOrFail($id);
         Gate::authorize('publish', $activity);
-        $this->activityService->publish($activity);
+        try {
+            $this->activityService->publish($activity);
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
         return redirect()->back()->with('success', 'Actividad publicada correctamente.');
     }
 
@@ -107,7 +111,11 @@ class ActivityController extends Controller
     {
         $activity = Activity::findOrFail($id);
         Gate::authorize('close', $activity);
-        $this->activityService->close($activity);
+        try {
+            $this->activityService->close($activity);
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
         return redirect()->back()->with('success', 'Actividad cerrada correctamente.');
     }
 
@@ -126,7 +134,7 @@ class ActivityController extends Controller
             $query->where('title', 'like', '%' . request('search') . '%');
         }
 
-        $activities = $query->latest()->get();
+        $activities = $query->latest()->paginate(12)->withQueryString();
 
         return view('student.activities.index', compact('class', 'activities'));
     }

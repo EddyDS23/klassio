@@ -7,12 +7,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Unir Conceptos — Jugar</title>
     <style>
+        a { text-decoration: none; }
         body {
             font-family: system-ui, sans-serif;
-            background: #0f172a;
+            background: #f0fdfa;
             margin: 0;
             padding: 2rem;
-            color: #e2e8f0;
+            color: #1e293b;
         }
 
         .wrap {
@@ -21,17 +22,25 @@
         }
 
         .card {
-            background: #1e293b;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: .75rem;
             padding: 2rem;
+            box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08);
         }
 
         h1 {
             margin: 0 0 .25rem;
+            color: #0e7490;
+        }
+
+        #timer {
+            color: #475569;
+            font-weight: 600;
         }
 
         .scoreline {
-            color: #94a3b8;
+            color: #475569;
             margin-bottom: 1.5rem;
         }
 
@@ -40,6 +49,7 @@
             grid-template-columns: 1fr 1fr;
             gap: 2rem;
             align-items: start;
+            position: relative;
         }
 
         .col {
@@ -49,7 +59,7 @@
         }
 
         .col-title {
-            color: #94a3b8;
+            color: #0e7490;
             font-weight: 700;
             margin-bottom: .25rem;
             text-align: center;
@@ -58,35 +68,41 @@
         .card-item {
             padding: .9rem 1rem;
             border-radius: .45rem;
-            background: #0f172a;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            color: #1e293b;
             cursor: pointer;
-            border: 2px solid transparent;
             font-weight: 600;
             text-align: center;
             transition: border-color .15s, background .15s, transform .1s;
         }
 
         .card-item:hover {
-            border-color: #38bdf8;
+            border-color: #0891b2;
         }
 
         .card-item.selected {
-            border-color: #38bdf8;
-            background: #0c4a6e;
+            border-color: #0891b2;
+            background: #cffafe;
+            color: #0e7490;
         }
 
         .card-item.matched {
-            background: #14532d;
+            background: #dcfce7;
             border-color: #22c55e;
-            color: #bbf7d0;
+            color: #15803d;
             cursor: default;
         }
 
         .card-item.wrong {
-            background: #7f1d1d;
+            background: #fee2e2;
             border-color: #ef4444;
-            color: #fecaca;
+            color: #b91c1c;
         }
+
+        #connections { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+        .connection-line { stroke: #22c55e; stroke-width: 4; stroke-linecap: round; opacity: .9; }
+        .how-to { padding: .65rem .8rem; border-radius: .6rem; background: #cffafe; color: #0e7490; margin: 0 0 1rem; }
 
         .result {
             padding: .8rem;
@@ -99,25 +115,35 @@
 
         .result.ok {
             display: block;
-            background: #052e16;
-            color: #22c55e;
+            background: #dcfce7;
+            color: #15803d;
         }
 
         .result.bad {
             display: block;
-            background: #450a0a;
-            color: #f87171;
+            background: #fee2e2;
+            color: #b91c1c;
         }
 
         .finish {
             display: none;
             padding: .8rem;
             border-radius: .45rem;
-            background: #14532d;
-            color: #bbf7d0;
+            background: #dcfce7;
+            color: #15803d;
             font-weight: 700;
             text-align: center;
             margin-top: 1rem;
+        }
+
+        form button[type="submit"] {
+            border: 0;
+            border-radius: .6rem;
+            padding: .6rem 1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            color: #475569;
+            cursor: pointer;
         }
 
         @media (max-width: 640px) {
@@ -142,10 +168,12 @@
                 / {{ $maxScore }} · Parejas: <strong
                     id="matched-count">{{ count($correctIds) }}</strong>/{{ $items->count() }}
             </p>
+            <p class="how-to">🔗 <strong>Cómo jugar:</strong> arrastra un concepto hacia su definición o selecciónalos uno después del otro.</p>
 
             <div id="result" class="result"></div>
 
             <div class="layout">
+                <svg id="connections" aria-hidden="true"></svg>
                 <div class="col">
                     <div class="col-title">Conceptos</div>
                     @foreach ($items as $item)
@@ -222,8 +250,29 @@
         const correctIds = @json($correctIds);
         const leftCards = Array.from(document.querySelectorAll('.card-item.left'));
         const rightCards = Array.from(document.querySelectorAll('.card-item.right'));
+        const layout = document.querySelector('.layout');
+        const connectionLayer = document.getElementById('connections');
+        const connections = [];
         let selectedLeft = null;
+        let dragLeftCard = null;
+        let suppressRightClick = false;
         let points = {{ $earnedPoints }};
+
+        function renderConnections() {
+            const bounds = layout.getBoundingClientRect();
+            connectionLayer.replaceChildren();
+            connections.forEach(({ left, right }) => {
+                const from = left.getBoundingClientRect();
+                const to = right.getBoundingClientRect();
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', from.right - bounds.left);
+                line.setAttribute('y1', from.top + from.height / 2 - bounds.top);
+                line.setAttribute('x2', to.left - bounds.left);
+                line.setAttribute('y2', to.top + to.height / 2 - bounds.top);
+                line.setAttribute('class', 'connection-line');
+                connectionLayer.appendChild(line);
+            });
+        }
 
         leftCards.forEach((card) => {
             if (card.dataset.matched !== undefined) {
@@ -237,10 +286,17 @@
                 card.classList.add('selected');
                 selectedLeft = parseInt(card.dataset.itemId, 10);
             });
+            card.addEventListener('pointerdown', (event) => {
+                if (card.classList.contains('matched')) return;
+                event.preventDefault();
+                dragLeftCard = card;
+                card.classList.add('selected');
+            });
         });
 
         rightCards.forEach((card) => {
             card.addEventListener('click', () => {
+                if (suppressRightClick) return;
                 if (!selectedLeft) {
                     showResult('Selecciona primero un concepto de la izquierda.', false);
                     return;
@@ -251,6 +307,17 @@
                 const leftCard = leftCards.find((c) => parseInt(c.dataset.itemId, 10) === selectedLeft);
                 fetchAnswer(leftCard, card);
             });
+        });
+
+        layout.addEventListener('pointerup', (event) => {
+            if (!dragLeftCard) return;
+            const rightCard = document.elementFromPoint(event.clientX, event.clientY)?.closest('.card-item.right');
+            if (rightCard && !rightCard.classList.contains('matched')) {
+                suppressRightClick = true;
+                fetchAnswer(dragLeftCard, rightCard);
+                setTimeout(() => { suppressRightClick = false; }, 0);
+            }
+            dragLeftCard = null;
         });
 
         function showResult(message, ok) {
@@ -304,6 +371,8 @@
                         leftCard.classList.add('matched');
 
                         rightCard.classList.add('matched');
+                        connections.push({ left: leftCard, right: rightCard });
+                        renderConnections();
 
                         points += data.score;
 
@@ -416,6 +485,17 @@
         }
 
         updateMatched();
+        items.forEach((item) => {
+            if (!correctIds.includes(item.id)) return;
+            const left = leftCards.find((card) => parseInt(card.dataset.itemId, 10) === item.id);
+            const right = rightCards.find((card) => card.dataset.text === item.right);
+            if (left && right) {
+                right.classList.add('matched');
+                connections.push({ left, right });
+            }
+        });
+        renderConnections();
+        window.addEventListener('resize', renderConnections);
     </script>
 </body>
 

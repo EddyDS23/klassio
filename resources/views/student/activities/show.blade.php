@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $activity->title }}</title>
+    @include('partials.assets', ['theme' => 'student'])
 </head>
 
-<body>
+<body class="student-activity">
 
     <h1>{{ $activity->title }}</h1>
 

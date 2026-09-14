@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Registro - AulaPlay</title>
+    @include('partials.assets')
 </head>
-<body>
+<body class="student-activity">
     <h1>Registro</h1>
 
     @if($errors->any())

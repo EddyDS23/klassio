@@ -105,7 +105,10 @@ class ClassService
     }
 
 
-    public function join(string $code)
+    /**
+     * @return array{class: SchoolClass, alreadyJoined: bool}
+     */
+    public function join(string $code): array
     {
 
         $class = SchoolClass::where('code', $code)->first();
@@ -126,7 +129,7 @@ class ClassService
         if ($enrollment) {
 
             if ($enrollment->status === 'active') {
-                abort(409, 'Ya estás agregado a esta clase');
+                return ['class' => $class, 'alreadyJoined' => true];
             }
 
             if ($enrollment->status === 'removed') {
@@ -134,7 +137,7 @@ class ClassService
                     'status' => 'active'
                 ]);
 
-                return $class;
+                return ['class' => $class, 'alreadyJoined' => false];
             }
         }
 
@@ -143,7 +146,7 @@ class ClassService
             'student_id' => $user->id,
         ]);
 
-        return $class;
+        return ['class' => $class, 'alreadyJoined' => false];
     }
 
     public function getClassesStudent(): Collection

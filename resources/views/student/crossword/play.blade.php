@@ -6,6 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>{{ $activity->title }}</title>
+    @include('partials.assets', ['theme' => 'student'])
+    <style>
+        body { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem 3rem; color: #172554; }
+        body > h1 { display: inline-block; margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 800; color: #0f766e; }
+        body > h2 { margin: .5rem 0 1.5rem; color: #475569; font-size: 1.2rem; }
+        #timer { float: right; margin-top: .25rem; padding: .75rem 1rem; border-radius: 1rem; background: #fff; box-shadow: 0 .5rem 1.5rem rgb(15 23 42 / .1); font-weight: 700; color: #0f766e; }
+        #timer-value { color: #7c3aed; font-variant-numeric: tabular-nums; }
+        body > p { max-width: 700px; color: #475569; }
+        body > section { background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin: 1.25rem 0; box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08); }
+        section h2 { margin-top: 0; color: #0f766e; font-weight: 800; }
+        #crossword-grid { max-width: 100%; overflow: auto; padding: .75rem; border-radius: 1rem; background: #0f172a; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1); }
+        #crossword-grid input { border: 2px solid #cbd5e1; border-radius: .35rem; color: #0f172a; outline: none; transition: transform .15s, border-color .15s; }
+        #crossword-grid input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgb(20 184 166 / .25); transform: scale(1.05); }
+        #clues-horizontal, #clues-vertical { padding-left: 1.25rem; }
+        #clues-horizontal li, #clues-vertical li { margin: .6rem 0; padding: .65rem .8rem; border-radius: .75rem; background: #f0fdfa; color: #334155; }
+        #results p { padding: .75rem 1rem; border-radius: .75rem; background: #eff6ff; margin: .5rem 0; }
+        button { border: 0; border-radius: .8rem; padding: .75rem 1rem; font-weight: 700; background: #e11d48; color: #fff; cursor: pointer; }
+        nav a { display: inline-block; color: #0f766e; font-weight: 700; text-decoration: none; padding: .7rem 1rem; }
+        @media (max-width: 600px) { #timer { float: none; display: inline-block; margin-bottom: 1rem; } body > section { padding: 1rem; } }
+    </style>
 </head>
 
 <body>

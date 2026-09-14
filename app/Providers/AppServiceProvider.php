@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Blade;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // El proyecto carga Tailwind y Bootstrap desde CDN. Esta directiva
+        // mantiene compatibles las vistas existentes sin iniciar Vite.
+        Blade::directive('vite', fn () => "<?php echo view('partials.assets', ['theme' => request()->routeIs('teacher.*') ? 'teacher' : (request()->routeIs('student.*') ? 'student' : 'guest')])->render(); ?>");
+
         RateLimiter::for('auth',function(Request $request){
                 return Limit::perMinute(10)->by($request->ip());
         });

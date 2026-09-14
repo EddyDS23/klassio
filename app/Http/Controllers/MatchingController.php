@@ -28,10 +28,12 @@ class MatchingController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
+        $matching = $activity->matching;
+
         return view('teacher.matching.configure', [
             'activity' => $activity,
-            'matching' => null,
-            'editing' => false,
+            'matching' => $matching,
+            'editing' => (bool) $matching,
         ]);
     }
 
@@ -54,7 +56,7 @@ class MatchingController extends Controller
         return redirect()
             ->route('teacher.matching.edit', $id)
             ->with(
-                'status',
+                'success',
                 'Actividad de unir conceptos guardada correctamente.'
             );
     }
@@ -94,7 +96,7 @@ class MatchingController extends Controller
         return redirect()
             ->route('teacher.matching.edit', $id)
             ->with(
-                'status',
+                'success',
                 'Actividad de unir conceptos actualizada correctamente.'
             );
     }

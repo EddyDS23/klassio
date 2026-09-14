@@ -135,10 +135,12 @@ class ClassController extends Controller
     public function join(JoinClassRequest $request)
     {
 
-        $class = $this->classService->join($request->validated('code'));
+        $result = $this->classService->join($request->validated('code'));
 
-        return redirect()->route('student.class.show', $class->id)
-            ->with('success', 'Te has unido a la clase correctamente');
+        return redirect()->route('student.class.show', $result['class']->id)
+            ->with('success', $result['alreadyJoined']
+                ? 'Ya pertenecías a esta clase.'
+                : 'Te has unido a la clase correctamente.');
     }
 
     public function studentShow(int $id): View

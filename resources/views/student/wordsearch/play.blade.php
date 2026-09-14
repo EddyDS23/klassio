@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sopa de Letras — Jugar</title>
     <style>
+        a { text-decoration: none; }
         body {
             font-family: system-ui, sans-serif;
             background: #0f172a;
@@ -61,11 +62,13 @@
             font-weight: bold;
             cursor: pointer;
             border-radius: .15rem;
+            touch-action: none;
         }
 
         .cell.selected {
             background: #38bdf8;
             color: #0f172a;
+            box-shadow: inset 0 0 0 2px #e0f2fe;
         }
 
         .cell.found {
@@ -97,6 +100,8 @@
         .hints {
             min-width: 220px;
         }
+
+        .how-to { margin: 1rem 0; padding: .75rem 1rem; border: 1px solid #0ea5e9; border-radius: .7rem; background: #082f49; color: #bae6fd; }
 
         .result {
             padding: .8rem;
@@ -151,6 +156,7 @@
                 / {{ $maxScore }} · Palabras: <strong
                     id="words-count">{{ $foundCount }}</strong>/{{ $words->count() }}
             </p>
+            <p class="how-to">👆 <strong>Cómo jugar:</strong> mantén presionada la primera letra y arrastra hasta la última letra de cada palabra.</p>
 
             <div id="result" class="result"></div>
 
@@ -402,20 +408,48 @@
             }
         }
 
+        let dragging = false;
+        let end = null;
+
+        function clearPreview() {
+            cells.forEach((cell) => cell.classList.remove('selected'));
+        }
+
+        function previewSelection(lastCell) {
+            clearPreview();
+            if (!start || !lastCell) return;
+            cellsBetween(start, lastCell).forEach((cell) => cell?.classList.add('selected'));
+        }
+
         cells.forEach((cell) => {
-            cell.addEventListener('click', () => {
-                if (cell.dataset.found === '1') {
-                    return;
-                }
-                if (start === null) {
-                    start = cell;
-                    cell.classList.add('selected');
-                } else {
-                    cellsBetween(start, cell).forEach((c) => c.classList.remove('selected'));
-                    cell.classList.add('selected');
-                    fetchAnswer(start, cell);
-                }
+            cell.addEventListener('pointerdown', (event) => {
+                if (cell.dataset.found === '1') return;
+                event.preventDefault();
+                dragging = true;
+                start = cell;
+                end = cell;
+                previewSelection(cell);
             });
+        });
+
+        document.getElementById('grid').addEventListener('pointermove', (event) => {
+            if (!dragging || !start) return;
+            const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.cell');
+            if (target && target.dataset.found !== '1') {
+                end = target;
+                previewSelection(target);
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            if (!dragging) return;
+            dragging = false;
+            if (start && end && start !== end) {
+                fetchAnswer(start, end);
+            } else {
+                clearPreview();
+                start = null;
+            }
         });
 
         updateFound();

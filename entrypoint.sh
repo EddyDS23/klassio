@@ -3,11 +3,15 @@ set -e
 
 if [ "$1" = 'php-fpm' ] || [ -z "$1" ]; then
 
-    echo "Instalando dependencias..."
-    composer install --no-interaction --prefer-dist --optimize-autoloader
+    if [ ! -f vendor/autoload.php ]; then
+        echo "Instalando dependencias..."
+        composer install --no-interaction --prefer-dist --optimize-autoloader
+    fi
 
-    echo "Generando app key..."
-    php artisan key:generate --force
+    if [ -z "${APP_KEY}" ]; then
+        echo "Generando app key..."
+        php artisan key:generate --force
+    fi
 
     echo "Esperando a MariaDB..."
     until php -r "
@@ -29,12 +33,6 @@ if [ "$1" = 'php-fpm' ] || [ -z "$1" ]; then
 
     echo "Ejecutando migraciones..."
     php artisan migrate --force
-
-    echo "Limpiando caché..."
-    php artisan config:clear
-    php artisan cache:clear
-    php artisan view:clear
-    php artisan route:clear
 
     echo "Ajustando permisos..."
     chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
