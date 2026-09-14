@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -45,7 +46,7 @@
             {{ $activity->max_score }}
         </p>
 
-        @if($activity->time_limit)
+        @if ($activity->time_limit)
             <p>
                 <strong>Tiempo límite:</strong>
                 {{ $activity->time_limit }} segundos
@@ -61,17 +62,28 @@
         <table>
 
             <tr>
-                <th>Estudiantes inscritos</th>
-                <td>{{ $summary['total_students'] }}</td>
+                <th>
+                    {{ $activity->mode === 'team' ? 'Equipos' : 'Estudiantes inscritos' }}
+                </th>
+
+                <td>
+                    {{ $activity->mode === 'team' ? $summary['total_teams'] : $summary['total_students'] }}
+                </td>
             </tr>
 
             <tr>
-                <th>Participaron</th>
+                <th>
+                    {{ $activity->mode === 'team' ? 'Equipos que participaron' : 'Estudiantes que participaron' }}
+                </th>
+
                 <td>{{ $summary['participated'] }}</td>
             </tr>
 
             <tr>
-                <th>No participaron</th>
+                <th>
+                    {{ $activity->mode === 'team' ? 'Equipos que no participaron' : 'Estudiantes que no participaron' }}
+                </th>
+
                 <td>{{ $summary['not_participated'] }}</td>
             </tr>
 
@@ -82,7 +94,10 @@
 
     <section>
 
-        <h2>Estado de las participaciones</h2>
+        <h2>
+            Estado de las
+            {{ $activity->mode === 'team' ? 'participaciones por equipo' : 'participaciones' }}
+        </h2>
 
         <table>
 
@@ -121,7 +136,7 @@
                 <th>Promedio de puntuación</th>
 
                 <td>
-                    @if($summary['average_score'] !== null)
+                    @if ($summary['average_score'] !== null)
                         {{ $summary['average_score'] }}
                         / {{ $activity->max_score }}
                     @else
@@ -134,7 +149,7 @@
                 <th>Mejor puntuación</th>
 
                 <td>
-                    @if($summary['best_score'] !== null)
+                    @if ($summary['best_score'] !== null)
                         {{ $summary['best_score'] }}
                         / {{ $activity->max_score }}
                     @else
@@ -147,21 +162,10 @@
                 <th>Tiempo promedio</th>
 
                 <td>
-                    @if($summary['average_time'] !== null)
-
-                        {{ floor($summary['average_time'] / 60) }}:{{
-                            str_pad(
-                                $summary['average_time'] % 60,
-                                2,
-                                '0',
-                                STR_PAD_LEFT
-                            )
-                        }}
-
+                    @if ($summary['average_time'] !== null)
+                        {{ floor($summary['average_time'] / 60) }}:{{ str_pad($summary['average_time'] % 60, 2, '0', STR_PAD_LEFT) }}
                     @else
-
                         -
-
                     @endif
                 </td>
             </tr>
@@ -192,4 +196,5 @@
     </section>
 
 </body>
+
 </html>
