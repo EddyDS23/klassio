@@ -217,6 +217,18 @@
         </a>
     </p>
 
+    <p>
+        <a href="{{ route('teacher.activities.ranking', $activity->id) }}">
+            Ver ranking
+        </a>
+    </p>
+
+    <p>
+        <a href="{{ route('teacher.activities.report', $activity->id) }}">
+             Ver reporte 
+        </a>
+    </p>
+
 
     <hr>
 
