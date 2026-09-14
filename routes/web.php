@@ -8,6 +8,7 @@ use App\Http\Controllers\CrosswordController;
 use App\Http\Controllers\KahootController;
 use App\Http\Controllers\MatchingController;
 use App\Http\Controllers\ParticipationController;
+use App\Http\Controllers\RankingController;
 use App\Http\Controllers\WordsearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +45,8 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
     Route::post('/classes/{id}/activities', [ActivityController::class, 'teacherStore'])->name('activities.store');
     Route::get('/activities/{id}', [ActivityController::class, 'teacherShow'])->name('activities.show');
     Route::get('/activities/{id}/results',[ParticipationController::class, 'teacherResults'])->name('activities.results');
+    Route::get('/activities/{id}/ranking', [RankingController::class, 'ranking'])->name('activities.ranking');
+    Route::get('/activities/{id}/report', [RankingController::class, 'report'])->name('activities.report');
     Route::get('/activities/{id}/edit', [ActivityController::class, 'teacherEdit'])->name('activities.edit');
     Route::put('/activities/{id}', [ActivityController::class, 'teacherUpdate'])->name('activities.update');
     Route::post('/activities/{id}/publish', [ActivityController::class, 'publish'])->name('activities.publish');
