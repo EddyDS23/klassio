@@ -207,7 +207,15 @@
         </form>
     @endif
 
-    <hr>
+    
+
+    @if ($activity->mode === 'team' && $activity->status === 'draft')
+        <a href="{{ route('teacher.teams.index', $activity->id) }}">
+            Administrar equipos
+        </a>
+
+        <hr>
+    @endif
 
     <h2>Resultados</h2>
 
@@ -225,7 +233,7 @@
 
     <p>
         <a href="{{ route('teacher.activities.report', $activity->id) }}">
-             Ver reporte 
+            Ver reporte
         </a>
     </p>
 
