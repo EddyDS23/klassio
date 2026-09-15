@@ -9,66 +9,71 @@ class ReportService
 {
     /**
      * Obtiene el resumen general de una actividad.
-     *
-     * El estado se determina por estudiante y no por intento.
-     *
-     * Prioridad:
-     * completed
-     * started
-     * expired
-     * abandoned
-     * not_participated
      */
     public function getActivitySummary(Activity $activity): array
     {
-        $participations = Participation::query()
-            ->where('activity_id', $activity->id)
-            ->get();
+        $participations = Participation::where(
+            'activity_id',
+            $activity->id
+        )->get();
+
+        /*
+         * =========================================================
+         * MODO TEAM
+         * =========================================================
+         */
+        if ($activity->mode === 'team') {
+            return $this->getTeamSummary(
+                $activity,
+                $participations
+            );
+        }
+
+        /*
+         * =========================================================
+         * MODO INDIVIDUAL
+         * =========================================================
+         *
+         * Esta parte conserva la lógica que ya funcionaba.
+         */
 
         $totalStudents = $activity->schoolClass
             ->enrollments()
             ->where('status', 'active')
             ->count();
 
-        /*
-         * Agrupamos las participaciones por estudiante.
-         */
-        $byStudent = $participations
-            ->filter(fn (Participation $participation) =>
-                $participation->student_id !== null
-            )
-            ->groupBy('student_id');
-
-        /*
-         * Un estudiante cuenta como participante si
-         * tiene al menos una participación.
-         */
-        $participated = $byStudent->count();
-
-        /*
-         * Determinamos un único estado para cada estudiante.
-         *
-         * Esto NO cambia aunque tenga múltiples intentos.
-         */
-        $studentStatuses = $byStudent->map(
-            fn ($studentParticipations) =>
-                $this->resolveStudentStatus($studentParticipations)
-        );
-
-        $completed = $studentStatuses
-            ->where('completed')
+        $participated = $participations
+            ->pluck('student_id')
+            ->filter()
+            ->unique()
             ->count();
 
-        $started = $studentStatuses
-            ->where('started')
+        $completed = $participations
+            ->where('status', 'completed')
+            ->pluck('student_id')
+            ->filter()
+            ->unique()
             ->count();
 
-        $expired = $studentStatuses
-            ->where('expired')
+        $started = $participations
+            ->where('status', 'started')
+            ->pluck('student_id')
+            ->filter()
+            ->unique()
             ->count();
 
-        $abandoned = $studentStatuses
-            ->where('abandoned')
+        $abandoned = $participations
+            ->where('status', 'abandoned')
+            ->pluck('student_id')
+            ->filter()
+            ->unique()
+            ->count();
+
+        $expired = $participations
+            ->where('status', 'expired')
+            ->pluck('student_id')
+            ->filter()
+            ->unique()
             ->count();
 
         $notParticipated = max(
@@ -77,59 +82,17 @@ class ReportService
         );
 
         /*
-         * --------------------------------------------
-         * RENDIMIENTO
-         * --------------------------------------------
-         *
-         * Para el rendimiento tomamos un solo resultado
-         * por estudiante: su mayor puntuación.
-         *
-         * Se consideran:
-         * - completed
-         * - expired
-         * - abandoned
-         *
-         * Siempre que tengan score.
-         *
-         * Un estudiante nunca se cuenta dos veces.
+         * Para rendimiento usamos únicamente
+         * participaciones completadas.
          */
-        $bestResults = $byStudent
-            ->map(function ($studentParticipations) {
+        $completedParticipations = $participations
+            ->where('status', 'completed');
 
-                return $studentParticipations
-                    ->filter(fn (Participation $participation) =>
-                        in_array(
-                            $participation->status,
-                            ['completed', 'expired', 'abandoned']
-                        )
-                        && $participation->score !== null
-                    )
-                    ->sort(function (
-                        Participation $a,
-                        Participation $b
-                    ) {
-                        /*
-                         * Mayor puntuación primero.
-                         */
-                        if ($a->score !== $b->score) {
-                            return $b->score <=> $a->score;
-                        }
+        $scores = $completedParticipations
+            ->pluck('score')
+            ->filter(fn ($score) => $score !== null);
 
-                        /*
-                         * Si empatan, tomamos el menor tiempo.
-                         */
-                        return ($a->elapsed_seconds ?? PHP_INT_MAX)
-                            <=> ($b->elapsed_seconds ?? PHP_INT_MAX);
-                    })
-                    ->first();
-
-            })
-            ->filter();
-
-        $scores = $bestResults
-            ->pluck('score');
-
-        $times = $bestResults
+        $times = $completedParticipations
             ->pluck('elapsed_seconds')
             ->filter(fn ($time) => $time !== null);
 
@@ -163,53 +126,153 @@ class ReportService
     }
 
     /**
-     * Determina el estado global de un estudiante.
-     *
-     * Un estudiante puede tener múltiples intentos,
-     * pero solamente tendrá un estado en el resumen.
+     * Obtiene el resumen para una actividad en modo team.
      */
-    protected function resolveStudentStatus($participations): string
-    {
+    protected function getTeamSummary(
+        Activity $activity,
+        $participations
+    ): array {
         /*
-         * Si alguna vez completó, permanece como completado.
+         * Los equipos pertenecen directamente a la actividad.
          */
-        if ($participations->contains(
-            fn (Participation $participation) =>
-                $participation->status === 'completed'
-        )) {
-            return 'completed';
-        }
+        $totalTeams = $activity->teams()->count();
 
         /*
-         * Si no completó pero tiene un intento activo.
+         * Participaciones de equipos.
+         *
+         * Una participación de team tiene:
+         *
+         * student_id = null
+         * team_id    = ID del equipo
          */
-        if ($participations->contains(
-            fn (Participation $participation) =>
-                $participation->status === 'started'
-        )) {
-            return 'started';
-        }
+        $teamParticipations = $participations
+            ->filter(fn (Participation $participation) =>
+                $participation->team_id !== null
+            );
 
         /*
-         * Si no completó ni está activo, pero expiró.
+         * Cada equipo cuenta una sola vez.
          */
-        if ($participations->contains(
-            fn (Participation $participation) =>
-                $participation->status === 'expired'
-        )) {
-            return 'expired';
-        }
+        $participated = $teamParticipations
+            ->pluck('team_id')
+            ->unique()
+            ->count();
 
         /*
-         * Si solamente abandonó sus intentos.
+         * =========================================================
+         * ESTADOS
+         * =========================================================
          */
-        if ($participations->contains(
-            fn (Participation $participation) =>
-                $participation->status === 'abandoned'
-        )) {
-            return 'abandoned';
-        }
 
-        return 'not_participated';
+        $completed = $teamParticipations
+            ->where('status', 'completed')
+            ->pluck('team_id')
+            ->unique()
+            ->count();
+
+        $started = $teamParticipations
+            ->where('status', 'started')
+            ->pluck('team_id')
+            ->unique()
+            ->count();
+
+        $abandoned = $teamParticipations
+            ->where('status', 'abandoned')
+            ->pluck('team_id')
+            ->unique()
+            ->count();
+
+        $expired = $teamParticipations
+            ->where('status', 'expired')
+            ->pluck('team_id')
+            ->unique()
+            ->count();
+
+        $notParticipated = max(
+            0,
+            $totalTeams - $participated
+        );
+
+        /*
+         * =========================================================
+         * RENDIMIENTO
+         * =========================================================
+         *
+         * Para mantener la misma lógica que el reporte individual,
+         * aquí usamos participaciones completadas.
+         *
+         * Pero evitamos contar varias veces al mismo equipo.
+         *
+         * Si un equipo tiene varios intentos, tomamos el mejor.
+         */
+
+        $bestByTeam = $teamParticipations
+            ->where('status', 'completed')
+            ->groupBy('team_id')
+            ->map(function ($teamAttempts) {
+
+                return $teamAttempts
+                    ->filter(fn (Participation $participation) =>
+                        $participation->score !== null
+                    )
+                    ->sort(function (
+                        Participation $a,
+                        Participation $b
+                    ) {
+                        /*
+                         * Mayor puntuación primero.
+                         */
+                        if ($a->score !== $b->score) {
+                            return $b->score <=> $a->score;
+                        }
+
+                        /*
+                         * En empate, menor tiempo.
+                         */
+                        return ($a->elapsed_seconds ?? PHP_INT_MAX)
+                            <=> ($b->elapsed_seconds ?? PHP_INT_MAX);
+                    })
+                    ->first();
+            })
+            ->filter();
+
+        $scores = $bestByTeam
+            ->pluck('score');
+
+        $times = $bestByTeam
+            ->pluck('elapsed_seconds')
+            ->filter(fn ($time) => $time !== null);
+
+        return [
+            /*
+             * La vista de reporte utilizará total_teams
+             * cuando la actividad sea team.
+             */
+            'total_teams' => $totalTeams,
+
+            'participated' => $participated,
+
+            'not_participated' => $notParticipated,
+
+            'completed' => $completed,
+
+            'started' => $started,
+
+            'abandoned' => $abandoned,
+
+            'expired' => $expired,
+
+            'average_score' => $scores->isNotEmpty()
+                ? round($scores->avg(), 2)
+                : null,
+
+            'best_score' => $scores->isNotEmpty()
+                ? $scores->max()
+                : null,
+
+            'average_time' => $times->isNotEmpty()
+                ? round($times->avg())
+                : null,
+        ];
     }
 }
