@@ -514,21 +514,37 @@
         const body = document.getElementById('pairs-body');
         const mobileBody = document.getElementById('mobile-pairs');
 
-        document.getElementById('matching-form').addEventListener('submit', () => {
-            // Solo enviar los inputs visibles: en PC la tabla, en móvil las tarjetas.
-            // Si se envían ambos, PHP se queda con el último y se corrompe (ej: "Protocolo de transferenciaRAM").
+        // La validación del navegador corre ANTES del submit, así que lo oculto
+        // debe desactivarse desde el inicio, no solo al enviar.
+        function syncVisibleInputs() {
             const isDesktop = window.matchMedia('(min-width: 768px)').matches;
             if (isDesktop) {
                 mobileBody.querySelectorAll('input').forEach((input) => {
                     input.disabled = true;
                     input.removeAttribute('required');
                 });
+                body.querySelectorAll('input').forEach((input) => {
+                    input.disabled = false;
+                    input.setAttribute('required', 'required');
+                });
             } else {
                 body.querySelectorAll('input').forEach((input) => {
                     input.disabled = true;
                     input.removeAttribute('required');
                 });
+                mobileBody.querySelectorAll('input').forEach((input) => {
+                    input.disabled = false;
+                    input.setAttribute('required', 'required');
+                });
             }
+        }
+
+        syncVisibleInputs();
+        window.matchMedia('(min-width: 768px)').addEventListener('change', syncVisibleInputs);
+
+        document.getElementById('matching-form').addEventListener('submit', () => {
+            // Refuerzo: solo enviar los inputs visibles.
+            syncVisibleInputs();
             const submitButton = document.querySelector('#matching-form button[type="submit"]');
             submitButton.disabled = true;
             submitButton.classList.add('cursor-wait', 'opacity-75');
@@ -684,6 +700,7 @@
 
             index++;
             reindex();
+            syncVisibleInputs();
         });
 
         function removePair(target) {
@@ -713,6 +730,7 @@
             }
 
             reindex();
+            syncVisibleInputs();
         }
 
         body.addEventListener('click', (event) => {

@@ -124,6 +124,37 @@
             visibility: hidden;
         }
 
+        /* Títulos larguísimos (p. ej. el nombre de la actividad) sin romper el layout */
+        section p.max-w-xs, aside p {
+            overflow-wrap: anywhere;
+        }
+
+        /* ---------- Modo negro para los componentes propios de esta vista ---------- */
+        html[data-theme="dark"] .glass-card {
+            background: rgb(30 41 59 / .94);
+            border-color: #334155;
+            box-shadow: 0 18px 45px rgb(0 0 0 / .45);
+        }
+        html[data-theme="dark"] .form-input {
+            background: #0b1426;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+        html[data-theme="dark"] .form-input::placeholder { color: #64748b; }
+        html[data-theme="dark"] .form-input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 4px rgb(16 185 129 / .25);
+        }
+        html[data-theme="dark"] .table-wrapper { border-color: #334155; }
+        html[data-theme="dark"] .words-table th { background: #273449; color: #6ee7b7; }
+        html[data-theme="dark"] .words-table td { border-color: #334155; color: #e2e8f0; }
+        html[data-theme="dark"] .words-table tr:hover td { background: rgb(148 163 184 / .08); }
+        html[data-theme="dark"] .preview-grid { background: #334155; }
+        html[data-theme="dark"] .preview-cell { background: #0f172a; color: #5eead4; }
+        html[data-theme="dark"] .preview-cell:hover { background: rgb(16 185 129 / .25); }
+        html[data-theme="dark"] .remove-button { background: rgb(244 63 94 / .15); color: #fda4af; }
+        html[data-theme="dark"] .remove-button:hover { background: rgb(244 63 94 / .28); }
+
         @media (max-width: 640px) {
             .preview-cell {
                 width: 1.65rem;

@@ -6,14 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sopa de Letras — Jugar</title>
+    <script>
+        try {
+            if (localStorage.getItem('klassio-theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        } catch (e) {}
+    </script>
     <style>
         a { text-decoration: none; }
         body {
             font-family: system-ui, sans-serif;
-            background: #0f172a;
+            background: #f0fdfa;
             margin: 0;
             padding: 2rem;
-            color: #e2e8f0;
+            color: #1e293b;
         }
 
         .wrap {
@@ -22,17 +29,22 @@
         }
 
         .card {
-            background: #1e293b;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: .75rem;
             padding: 2rem;
+            box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08);
         }
 
         h1 {
             margin: 0 0 .25rem;
+            color: #0e7490;
         }
 
+        #timer { color: #475569; font-weight: 600; }
+
         .scoreline {
-            color: #94a3b8;
+            color: #475569;
             margin-bottom: 1.5rem;
         }
 
@@ -46,7 +58,7 @@
         .grid {
             display: inline-grid;
             gap: 2px;
-            background: #334155;
+            background: #e2e8f0;
             padding: 2px;
             border-radius: .4rem;
             user-select: none;
@@ -58,7 +70,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #0f172a;
+            background: #ffffff;
+            color: #334155;
             font-weight: bold;
             cursor: pointer;
             border-radius: .15rem;
@@ -66,14 +79,14 @@
         }
 
         .cell.selected {
-            background: #38bdf8;
-            color: #0f172a;
-            box-shadow: inset 0 0 0 2px #e0f2fe;
+            background: #0891b2;
+            color: #ffffff;
+            box-shadow: inset 0 0 0 2px #a5f3fc;
         }
 
         .cell.found {
             background: #22c55e;
-            color: #052e16;
+            color: #ffffff;
             cursor: default;
         }
 
@@ -85,7 +98,9 @@
         .hint {
             padding: .55rem .75rem;
             border-radius: .45rem;
-            background: #0f172a;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
             margin-bottom: .4rem;
             display: flex;
             justify-content: space-between;
@@ -93,7 +108,7 @@
         }
 
         .hint.found {
-            color: #22c55e;
+            color: #16a34a;
             text-decoration: line-through;
         }
 
@@ -101,7 +116,9 @@
             min-width: 220px;
         }
 
-        .how-to { margin: 1rem 0; padding: .75rem 1rem; border: 1px solid #0ea5e9; border-radius: .7rem; background: #082f49; color: #bae6fd; }
+        .hints > strong { color: #0e7490 !important; }
+
+        .how-to { margin: 1rem 0; padding: .75rem 1rem; border: 1px solid #0891b2; border-radius: .7rem; background: #cffafe; color: #0e7490; }
 
         .result {
             padding: .8rem;
@@ -113,26 +130,65 @@
 
         .result.ok {
             display: block;
-            background: #052e16;
-            color: #22c55e;
+            background: #dcfce7;
+            color: #15803d;
         }
 
         .result.bad {
             display: block;
-            background: #450a0a;
-            color: #f87171;
+            background: #fee2e2;
+            color: #b91c1c;
         }
 
         .finish {
             display: none;
             padding: .8rem;
             border-radius: .45rem;
-            background: #14532d;
-            color: #bbf7d0;
+            background: #dcfce7;
+            color: #15803d;
             font-weight: 700;
             text-align: center;
             margin-top: 1rem;
         }
+
+        form button[type="submit"] {
+            border: 0;
+            border-radius: .6rem;
+            padding: .6rem 1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .klassio-theme-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: .6rem;
+            background: #fff;
+            color: #475569;
+            padding: .6rem 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* Negro solo si el alumno lo activa */
+        html[data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
+        html[data-theme="dark"] .card { background: #1e293b; border-color: #1e293b; box-shadow: none; }
+        html[data-theme="dark"] h1 { color: #f1f5f9; }
+        html[data-theme="dark"] #timer, html[data-theme="dark"] .scoreline { color: #94a3b8; }
+        html[data-theme="dark"] .grid { background: #334155; }
+        html[data-theme="dark"] .cell { background: #0f172a; color: #e2e8f0; }
+        html[data-theme="dark"] .cell.selected { background: #38bdf8; color: #0f172a; box-shadow: inset 0 0 0 2px #e0f2fe; }
+        html[data-theme="dark"] .cell.found { background: #22c55e; color: #052e16; }
+        html[data-theme="dark"] .hint { background: #0f172a; border-color: #0f172a; color: #e2e8f0; }
+        html[data-theme="dark"] .hint.found { color: #22c55e; }
+        html[data-theme="dark"] .hints > strong { color: #94a3b8 !important; }
+        html[data-theme="dark"] .how-to { background: #082f49; border-color: #0ea5e9; color: #bae6fd; }
+        html[data-theme="dark"] .result.ok { background: #052e16; color: #22c55e; }
+        html[data-theme="dark"] .result.bad { background: #450a0a; color: #f87171; }
+        html[data-theme="dark"] .finish { background: #14532d; color: #bbf7d0; }
+        html[data-theme="dark"] form button[type="submit"] { background: #334155; color: #e2e8f0; }
+        html[data-theme="dark"] .klassio-theme-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
 
         @media (max-width: 720px) {
             .grid {
@@ -184,15 +240,37 @@
             </div>
 
             <div id="finish" class="finish">¡Completaste la sopa de letras!</div>
-            <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-                onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
-                style="margin-top: 1rem; text-align: center;">
-                @csrf
+            <div style="margin-top: 1rem; text-align: center;">
+                <button type="button" id="theme-btn" class="klassio-theme-btn">🌙 Negro</button>
+                <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+                    onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+                    style="display: inline;">
+                    @csrf
 
-                <button type="submit">
-                    Abandonar actividad
-                </button>
-            </form>
+                    <button type="submit">
+                        Abandonar actividad
+                    </button>
+                </form>
+            </div>
+            <script>
+                (function () {
+                    var btn = document.getElementById('theme-btn');
+                    function label() {
+                        return document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Claro' : '🌙 Negro';
+                    }
+                    btn.textContent = label();
+                    btn.addEventListener('click', function () {
+                        var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+                        if (dark) {
+                            document.documentElement.setAttribute('data-theme', 'dark');
+                        } else {
+                            document.documentElement.removeAttribute('data-theme');
+                        }
+                        try { localStorage.setItem('klassio-theme', dark ? 'dark' : 'light'); } catch (e) {}
+                        btn.textContent = label();
+                    });
+                })();
+            </script>
         </div>
     </div>
 

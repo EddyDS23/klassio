@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Unir Conceptos — Jugar</title>
+    <script>
+        try {
+            if (localStorage.getItem('klassio-theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        } catch (e) {}
+    </script>
     <style>
         a { text-decoration: none; }
         body {
@@ -71,11 +78,16 @@
             background: #f8fafc;
             border: 2px solid #e2e8f0;
             color: #1e293b;
-            cursor: pointer;
+            cursor: grab;
             font-weight: 600;
             text-align: center;
             transition: border-color .15s, background .15s, transform .1s;
+            user-select: none;
+            -webkit-user-select: none;
         }
+
+        .card-item.left { touch-action: none; }
+        .card-item.left:active { cursor: grabbing; }
 
         .card-item:hover {
             border-color: #0891b2;
@@ -102,6 +114,7 @@
 
         #connections { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
         .connection-line { stroke: #22c55e; stroke-width: 4; stroke-linecap: round; opacity: .9; }
+        .connection-line.drag-line { stroke-dasharray: 8 6; opacity: .55; }
         .how-to { padding: .65rem .8rem; border-radius: .6rem; background: #cffafe; color: #0e7490; margin: 0 0 1rem; }
 
         .result {
@@ -145,6 +158,34 @@
             color: #475569;
             cursor: pointer;
         }
+
+        .klassio-theme-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: .6rem;
+            background: #fff;
+            color: #475569;
+            padding: .6rem 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* Negro solo si el alumno lo activa */
+        html[data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
+        html[data-theme="dark"] .card { background: #1e293b; border-color: #1e293b; box-shadow: none; }
+        html[data-theme="dark"] h1 { color: #f1f5f9; }
+        html[data-theme="dark"] #timer, html[data-theme="dark"] .scoreline { color: #94a3b8; }
+        html[data-theme="dark"] .col-title { color: #94a3b8; }
+        html[data-theme="dark"] .card-item { background: #0f172a; border-color: #0f172a; color: #e2e8f0; }
+        html[data-theme="dark"] .card-item.selected { background: #0c4a6e; border-color: #38bdf8; color: #e0f2fe; }
+        html[data-theme="dark"] .card-item.matched { background: #14532d; border-color: #22c55e; color: #bbf7d0; }
+        html[data-theme="dark"] .card-item.wrong { background: #7f1d1d; border-color: #ef4444; color: #fecaca; }
+        html[data-theme="dark"] .how-to { background: #0c4a6e; color: #bae6fd; }
+        html[data-theme="dark"] .result.ok { background: #052e16; color: #22c55e; }
+        html[data-theme="dark"] .result.bad { background: #450a0a; color: #f87171; }
+        html[data-theme="dark"] .finish { background: #14532d; color: #bbf7d0; }
+        html[data-theme="dark"] .connection-line { stroke: #22c55e; }
+        html[data-theme="dark"] form button[type="submit"] { background: #334155; color: #e2e8f0; }
+        html[data-theme="dark"] .klassio-theme-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
 
         @media (max-width: 640px) {
             .layout {
@@ -195,15 +236,37 @@
             </div>
 
             <div id="finish" class="finish">¡Completaste la actividad!</div>
-            <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-                onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
-                style="margin-top: 1rem; text-align: center;">
-                @csrf
+            <div style="margin-top: 1rem; text-align: center;">
+                <button type="button" id="theme-btn" class="klassio-theme-btn">🌙 Negro</button>
+                <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+                    onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+                    style="display: inline;">
+                    @csrf
 
-                <button type="submit">
-                    Abandonar actividad
-                </button>
-            </form>
+                    <button type="submit">
+                        Abandonar actividad
+                    </button>
+                </form>
+            </div>
+            <script>
+                (function () {
+                    var btn = document.getElementById('theme-btn');
+                    function label() {
+                        return document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Claro' : '🌙 Negro';
+                    }
+                    btn.textContent = label();
+                    btn.addEventListener('click', function () {
+                        var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+                        if (dark) {
+                            document.documentElement.setAttribute('data-theme', 'dark');
+                        } else {
+                            document.documentElement.removeAttribute('data-theme');
+                        }
+                        try { localStorage.setItem('klassio-theme', dark ? 'dark' : 'light'); } catch (e) {}
+                        btn.textContent = label();
+                    });
+                })();
+            </script>
         </div>
     </div>
 
@@ -274,6 +337,34 @@
             });
         }
 
+        // Línea temporal que sigue al dedo/mouse mientras arrastras: conectar de verdad.
+        let dragLine = null;
+
+        function clearDragLine() {
+            if (dragLine) {
+                dragLine.remove();
+                dragLine = null;
+            }
+        }
+
+        document.addEventListener('pointermove', (event) => {
+            if (!dragLeftCard) return;
+            const bounds = layout.getBoundingClientRect();
+            const from = dragLeftCard.getBoundingClientRect();
+            if (!dragLine) {
+                dragLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                dragLine.setAttribute('class', 'connection-line drag-line');
+                connectionLayer.appendChild(dragLine);
+            }
+            dragLine.setAttribute('x1', from.right - bounds.left);
+            dragLine.setAttribute('y1', from.top + from.height / 2 - bounds.top);
+            dragLine.setAttribute('x2', event.clientX - bounds.left);
+            dragLine.setAttribute('y2', event.clientY - bounds.top);
+        });
+
+        document.addEventListener('pointerup', clearDragLine);
+        document.addEventListener('pointercancel', clearDragLine);
+
         leftCards.forEach((card) => {
             if (card.dataset.matched !== undefined) {
                 card.classList.add('matched');
@@ -310,6 +401,7 @@
         });
 
         layout.addEventListener('pointerup', (event) => {
+            clearDragLine();
             if (!dragLeftCard) return;
             const rightCard = document.elementFromPoint(event.clientX, event.clientY)?.closest('.card-item.right');
             if (rightCard && !rightCard.classList.contains('matched')) {

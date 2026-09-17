@@ -3,6 +3,10 @@ services:
   mariadb:
     image: mariadb:11.8
     container_name: klassio_db
+    command:
+      - --innodb-buffer-pool-size=256M
+      - --innodb-log-file-size=64M
+      - --skip-name-resolve
     environment:
       - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - MARIADB_DATABASE=${DB_DATABASE}
@@ -15,7 +19,7 @@ services:
     networks:
       - klassio-network
     healthcheck:
-      test: ["CMD", "mariadb-admin","ping","-h","localhost",-u,"root","-p${DB_PASSWORD}",]
+      test: ["CMD", "mariadb-admin","ping","-h","localhost","-u","root","-p${DB_ROOT_PASSWORD}",]
       interval: 20s
       timeout: 5s
       retries: 5
@@ -40,8 +44,14 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
-    mem_limit: 512m
-    cpus: "0.5"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"exit(@fsockopen('127.0.0.1',9000)?0:1);\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    mem_limit: 1g
+    cpus: "1.0"
 
   nginx:
     image: nginx:alpine
@@ -54,7 +64,7 @@ services:
       - proxy_network
     depends_on:
         app:
-          condition: service_started
+          condition: service_healthy
     restart: unless-stopped
     labels:
         - "traefik.enable=true"
@@ -63,13 +73,13 @@ services:
         - "traefik.http.routers.klassio.entrypoints=web"
         - "traefik.http.services.klassio.loadbalancer.server.port=80"
     healthcheck:
-      test: ["CMD", "curl","-fsS", "http://localhost/up"]
-      interval: 20s
+      test: ["CMD", "wget","--no-verbose","--tries=1","--spider", "http://127.0.0.1/robots.txt"]
+      interval: 30s
       timeout: 5s
-      retries: 5
+      retries: 3
       start_period: 30s
     mem_limit: 256m
-    cpus: "0.25"
+    cpus: "0.5"
     
 networks:
   klassio-network:

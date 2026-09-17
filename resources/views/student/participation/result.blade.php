@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultado — {{ $activity->title }}</title>
+    <script>
+        try {
+            if (localStorage.getItem('klassio-theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        } catch (e) {}
+    </script>
     <style>
         a { text-decoration: none; }
         body { font-family: sans-serif; padding: 24px; max-width: 680px; margin: 0 auto; }
@@ -51,9 +58,61 @@
         .nav a:hover { text-decoration: underline; }
 
         .empty { color: #888; font-size: 14px; margin-top: 12px; }
+
+        .klassio-theme-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: .6rem;
+            background: #fff;
+            color: #475569;
+            padding: .5rem .8rem;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            float: right;
+        }
+
+        /* Negro solo si se activa (respeta el modo elegido en el resto de Klassio) */
+        html[data-theme="dark"] { color-scheme: dark; }
+        html[data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
+        html[data-theme="dark"] h1, html[data-theme="dark"] h2 { color: #f1f5f9; }
+        html[data-theme="dark"] .meta { color: #94a3b8; }
+        html[data-theme="dark"] .summary-card { background: #1e293b; border-color: #334155; }
+        html[data-theme="dark"] .summary-card .label { color: #94a3b8; }
+        html[data-theme="dark"] .value.good, html[data-theme="dark"] .correct { color: #4ade80; }
+        html[data-theme="dark"] .value.bad, html[data-theme="dark"] .incorrect { color: #f87171; }
+        html[data-theme="dark"] .value.info { color: #7dd3fc; }
+        html[data-theme="dark"] th { background: #1e293b; border-color: #334155; color: #94a3b8; }
+        html[data-theme="dark"] td { border-color: #1e293b; }
+        html[data-theme="dark"] .status-completed { background: #052e16; color: #4ade80; }
+        html[data-theme="dark"] .status-abandoned { background: #451a03; color: #fbbf24; }
+        html[data-theme="dark"] .status-expired { background: #450a0a; color: #f87171; }
+        html[data-theme="dark"] .nav a { color: #7dd3fc; }
+        html[data-theme="dark"] .empty { color: #64748b; }
+        html[data-theme="dark"] .klassio-theme-btn { background: #1e293b; color: #f1f5f9; border-color: #475569; }
     </style>
 </head>
 <body>
+
+<button type="button" id="theme-btn" class="klassio-theme-btn">🌙 Negro</button>
+<script>
+    (function () {
+        var btn = document.getElementById('theme-btn');
+        function label() {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Claro' : '🌙 Negro';
+        }
+        btn.textContent = label();
+        btn.addEventListener('click', function () {
+            var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+            if (dark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            try { localStorage.setItem('klassio-theme', dark ? 'dark' : 'light'); } catch (e) {}
+            btn.textContent = label();
+        });
+    })();
+</script>
 
 <h1>{{ $activity->title }}</h1>
 

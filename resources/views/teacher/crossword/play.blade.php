@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        try {
+            if (localStorage.getItem('klassio-theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        } catch (e) {}
+    </script>
     <title>{{ $activity->title }}</title>
     <style>
         a { text-decoration: none; }
@@ -135,9 +142,63 @@
             font-size: 18px;
             font-weight: bold;
         }
+
+        .klassio-theme-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: .6rem;
+            background: #fff;
+            color: #475569;
+            padding: .5rem .8rem;
+            font-weight: 700;
+            cursor: pointer;
+            float: right;
+        }
+
+        /* Negro solo si se activa (respeta el modo elegido en el resto de Klassio) */
+        html[data-theme="dark"] { color-scheme: dark; }
+        html[data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
+        html[data-theme="dark"] h1 { color: #f1f5f9; }
+        html[data-theme="dark"] h2 { color: #94a3b8; }
+        html[data-theme="dark"] #clues h3 { color: #e2e8f0; }
+        html[data-theme="dark"] .cell input { background: #0f172a; border-color: #475569; color: #e2e8f0; }
+        html[data-theme="dark"] .cell input:focus { background: #1e293b; outline-color: #818cf8; }
+        html[data-theme="dark"] .cell input.correct { background: #052e16; border-color: #22c55e; color: #4ade80; }
+        html[data-theme="dark"] .cell input.incorrect { background: #450a0a; border-color: #ef4444; color: #f87171; }
+        html[data-theme="dark"] .cell input:disabled { background: #1e293b; color: #94a3b8; }
+        html[data-theme="dark"] .cell.blocked { background: #020617; border-color: #020617; }
+        html[data-theme="dark"] .cell-number { color: #94a3b8; }
+        html[data-theme="dark"] #clues li:hover { background: #1e293b; }
+        html[data-theme="dark"] #clues li.active { background: #1e3a8a; color: #dbeafe; }
+        html[data-theme="dark"] #clues li.done { color: #22c55e; }
+        html[data-theme="dark"] .result-correct { background: #052e16; color: #4ade80; }
+        html[data-theme="dark"] .result-incorrect { background: #450a0a; color: #f87171; }
+        html[data-theme="dark"] #score-display { color: #f1f5f9; }
+        html[data-theme="dark"] a { color: #7dd3fc; }
+        html[data-theme="dark"] .klassio-theme-btn { background: #1e293b; color: #f1f5f9; border-color: #475569; }
     </style>
 </head>
 <body>
+
+<button type="button" id="theme-btn" class="klassio-theme-btn">🌙 Negro</button>
+<script>
+    (function () {
+        var btn = document.getElementById('theme-btn');
+        function label() {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Claro' : '🌙 Negro';
+        }
+        btn.textContent = label();
+        btn.addEventListener('click', function () {
+            var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+            if (dark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            try { localStorage.setItem('klassio-theme', dark ? 'dark' : 'light'); } catch (e) {}
+            btn.textContent = label();
+        });
+    })();
+</script>
 
 <h1>{{ $activity->title }}</h1>
 <h2>Crucigrama</h2>
