@@ -206,10 +206,15 @@ class ParticipationTest extends TestCase
         $this->actingAs($student);
 
         $response = $this->post(
-            route('student.participation.start', $activity->id)
-        );
+            route('student.participation.start', $activity->id
+        ));
 
-        $response->assertForbidden();
+        $response->assertRedirect();
+
+        $response->assertSessionHas(
+            'error',
+            'No estás inscrito en la clase de esta actividad.'
+        );
 
         $this->assertDatabaseMissing('participations', [
             'activity_id' => $activity->id,
@@ -233,9 +238,16 @@ class ParticipationTest extends TestCase
             route('student.participation.start', $activity->id)
         )->assertRedirect();
 
-        $this->post(
+        $response = $this->post(
             route('student.participation.start', $activity->id)
-        )->assertStatus(500);
+        );
+
+        $response->assertRedirect();
+
+        $response->assertSessionHas(
+            'error',
+            'Ya tienes un intento activo en esta actividad.'
+        );
 
         $this->assertSame(
             1,
@@ -313,7 +325,12 @@ class ParticipationTest extends TestCase
             route('student.participation.finish', $activity->id)
         );
 
-        $response->assertForbidden();
+        $response->assertRedirect();
+
+        $response->assertSessionHas(
+            'error',
+            'No tienes una participación activa en esta actividad.'
+        );
 
         $this->assertDatabaseHas('participations', [
             'id' => $participation->id,
@@ -388,7 +405,12 @@ class ParticipationTest extends TestCase
             route('student.participation.abandon', $activity->id)
         );
 
-        $response->assertForbidden();
+        $response->assertRedirect();
+
+        $response->assertSessionHas(
+            'error',
+            'No tienes una participación activa en esta actividad.'
+        );
 
         $this->assertDatabaseHas('participations', [
             'id' => $participation->id,
@@ -459,11 +481,16 @@ class ParticipationTest extends TestCase
             route('student.participation.start', $activity->id)
         );
 
-        $response->assertStatus(500);
+        $response->assertRedirect();
+
+        $response->assertSessionHas(
+            'error',
+            'No perteneces a ningún equipo en esta actividad.'
+        );
 
         $this->assertDatabaseMissing('participations', [
             'activity_id' => $activity->id,
-            'student_id' => null,
+            'team_id' => null,
             'status' => 'started',
         ]);
     }
@@ -553,7 +580,12 @@ class ParticipationTest extends TestCase
             route('student.participation.finish', $activity->id)
         );
 
-        $response->assertForbidden();
+        $response->assertRedirect();
+
+        $response->assertSessionHas(
+            'error',
+            'No tienes participación activa en esta actividad.'
+        );
 
         $this->assertDatabaseHas('participations', [
             'id' => $participation->id,
@@ -594,11 +626,6 @@ class ParticipationTest extends TestCase
             route('student.participation.expire', $activity->id)
         );
 
-        /*
-         * El controlador actual no valida hasExpired() antes de
-         * llamar a expire(). Este test documenta el comportamiento
-         * esperado y debe fallar hasta corregir el controlador.
-         */
         $response->assertStatus(409);
 
         $this->assertDatabaseHas('participations', [
@@ -607,7 +634,7 @@ class ParticipationTest extends TestCase
         ]);
     }
 
-    public function test_expired_participation_can_be_expired(): void
+    public function test_expired_participation_is_expired_automatically(): void
     {
         $teacher = $this->teacher();
         $student = $this->student();
@@ -628,9 +655,8 @@ class ParticipationTest extends TestCase
             'score' => 0,
         ]);
 
-        $participation->update([
-            'started_at' => Carbon::now()->subSeconds(120),
-        ]);
+        $participation->started_at = Carbon::now()->subSeconds(120);
+        $participation->save();
 
         $this->actingAs($student);
 
@@ -638,6 +664,11 @@ class ParticipationTest extends TestCase
             route('student.participation.expire', $activity->id)
         );
 
+        /*
+         * getActive() detecta que la participación ya expiró,
+         * la marca como expired y lanza una excepción que el
+         * controlador convierte en una redirección al resultado.
+         */
         $response->assertRedirect();
 
         $this->assertDatabaseHas('participations', [
