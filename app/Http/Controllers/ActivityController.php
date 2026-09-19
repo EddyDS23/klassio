@@ -122,6 +122,8 @@ class ActivityController extends Controller
     public function studentIndex(int $id): View
     {
         $class = SchoolClass::findOrFail($id);
+        
+        Gate::authorize('view', $class);
 
         $query = $class->activities()
             ->where('status', 'published');
