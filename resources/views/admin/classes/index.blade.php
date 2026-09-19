@@ -122,7 +122,7 @@
 
                                 <td class="px-6 py-4">
                                     <span class="font-black tabular-nums text-slate-900">{{ $class->active_students_count }}</span>
-                                    <span class="text-xs text-slate-500">/ {{ $class->enrollments_count ?? 0 }}</span>
+                                    <span class="font-black text-xs text-slate-500">/ {{ $class->enrollments_count ?? 0 }}</span>
                                 </td>
 
                                 <td class="px-6 py-4 font-black tabular-nums text-slate-900">

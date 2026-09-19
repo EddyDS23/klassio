@@ -45,7 +45,7 @@ class SchoolClassPolicy
      */
     public function update(User $user, SchoolClass $schoolClass): bool
     {
-        return $user->role === 'teacher';
+        return $user->role === 'teacher' && $schoolClass->teacher_id === $user->id;
     }
 
     /**

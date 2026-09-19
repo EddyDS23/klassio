@@ -12,6 +12,7 @@ use App\Services\KahootService;
 use App\Services\ParticipationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class KahootController extends Controller
 {
@@ -29,7 +30,7 @@ class KahootController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        abort_if(Auth::id() !== $activity->teacher_id, 403);
+        Gate::authorize('update', $activity);
         abort_if($activity->type !== 'kahoot', 404);
 
         $kahoot = $activity->kahoot;
@@ -49,6 +50,8 @@ class KahootController extends Controller
     public function store(StoreKahootRequest $request, int $id)
     {
         $activity = Activity::findOrFail($id);
+
+        Gate::authorize('update', $activity);
 
         abort_if($activity->type !== 'kahoot', 404);
 
@@ -70,7 +73,8 @@ class KahootController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        abort_if(Auth::id() !== $activity->teacher_id, 403);
+        Gate::authorize('update', $activity);
+
         abort_if($activity->type !== 'kahoot', 404);
 
         $kahoot = $activity->kahoot;
@@ -91,6 +95,8 @@ class KahootController extends Controller
     public function update(UpdateKahootRequest $request, int $id)
     {
         $activity = Activity::findOrFail($id);
+
+        Gate::authorize('update', $activity);
 
         abort_if($activity->type !== 'kahoot', 404);
 

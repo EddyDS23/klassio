@@ -12,6 +12,7 @@ use App\Services\CrosswordService;
 use App\Services\ParticipationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class CrosswordController extends Controller
 {
@@ -25,7 +26,7 @@ class CrosswordController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        abort_if(Auth::id() !== $activity->teacher_id, 403);
+        Gate::authorize('update', $activity);
         abort_if($activity->type !== 'crossword', 404);
 
         $crossword = $activity->crossword;
@@ -49,6 +50,8 @@ class CrosswordController extends Controller
     public function store(StoreCrosswordRequest $request, int $id)
     {
         $activity = Activity::findOrFail($id);
+
+        Gate::authorize('update', $activity);
 
         abort_if($activity->type !== 'crossword', 404);
 
@@ -82,7 +85,8 @@ class CrosswordController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        abort_if(Auth::id() !== $activity->teacher_id, 403);
+        Gate::authorize('update', $activity);
+
         abort_if($activity->type !== 'crossword', 404);
 
         $crossword = $activity->crossword;
@@ -99,6 +103,8 @@ class CrosswordController extends Controller
     public function update(UpdateCrosswordRequest $request, int $id)
     {
         $activity = Activity::findOrFail($id);
+
+        Gate::authorize('update', $activity);
 
         abort_if($activity->type !== 'crossword', 404);
 

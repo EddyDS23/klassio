@@ -11,6 +11,7 @@ use App\Services\ParticipationService;
 use App\Services\WordsearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class WordsearchController extends Controller
@@ -28,6 +29,8 @@ class WordsearchController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
+        Gate::authorize('update', $activity);
+
         return view('teacher.wordsearch.configure', [
             'activity' => $activity,
             'wordsearch' => null,
@@ -40,6 +43,7 @@ class WordsearchController extends Controller
         int $id
     ): RedirectResponse {
         $activity = Activity::findOrFail($id);
+        Gate::authorize('update', $activity);
 
         $data = $request->validated();
 
@@ -58,6 +62,7 @@ class WordsearchController extends Controller
     public function edit(int $id): View
     {
         $activity = Activity::findOrFail($id);
+        Gate::authorize('update', $activity);
 
         $wordsearch = $activity->wordsearch;
 
@@ -81,6 +86,8 @@ class WordsearchController extends Controller
         int $id
     ): RedirectResponse {
         $activity = Activity::findOrFail($id);
+
+        Gate::authorize('update', $activity);
 
         $data = $request->validated();
 
