@@ -188,15 +188,7 @@ class KahootController extends Controller
             $validated['participation_id']
         );
 
-        abort_if(
-            $participation->student_id !== Auth::id(),
-            403
-        );
-
-        abort_if(
-            $participation->status !== 'started',
-            409
-        );
+       Gate::authorize('answer', $participation);
 
         $question = Question::findOrFail(
             $validated['question_id']
