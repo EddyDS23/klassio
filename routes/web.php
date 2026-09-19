@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Admin\AdminActivityController;
+use App\Http\Controllers\Admin\AdminClassController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminResultController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
@@ -25,7 +30,22 @@ Route::middleware(['throttle:auth'])->group(function () {
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'active', 'role:admin'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
+    Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+    Route::get('/users/{id}', [AdminUserController::class, 'show'])->name('users.show');
+    Route::patch('/users/{id}/status', [AdminUserController::class, 'updateStatus'])->name('users.update-status');
+
+    Route::get('/classes', [AdminClassController::class, 'index'])->name('classes.index');
+    Route::get('/classes/{id}', [AdminClassController::class, 'show'])->name('classes.show');
+
+    Route::get('/activities', [AdminActivityController::class, 'index'])->name('activities.index');
+    Route::get('/activities/{id}', [AdminActivityController::class, 'show'])->name('activities.show');
+
+    Route::get('/results', [AdminResultController::class, 'index'])->name('results.index');
+    Route::get('/results/{id}', [AdminResultController::class, 'show'])->name('results.show');
 });
 
 Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:teacher'])->group(function () {
