@@ -195,18 +195,8 @@ class CrosswordController extends Controller
             $validated['participation_id']
         );
 
-        // Verificar que la participación pertenece al estudiante
-        abort_if(
-            $participation->student_id !== Auth::id(),
-            403
-        );
-
-        // Solo se puede responder mientras está activa
-        abort_if(
-            $participation->status !== 'started',
-            409
-        );
-
+        Gate::authorize('answer', $participation);
+        
         $crosswordWord = CrosswordWord::findOrFail(
             $validated['crossword_word_id']
         );

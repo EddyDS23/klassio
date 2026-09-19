@@ -258,9 +258,7 @@
                 </td>
             </tr>
 
-                    <p class="mt-1 text-4xl font-black text-slate-900">
-                        {{ $summary['total_students'] }}
-                    </p>
+                 
                 </div>
 
                 <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
