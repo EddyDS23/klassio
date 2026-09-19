@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // El proyecto carga Tailwind y Bootstrap desde CDN. Esta directiva
         // mantiene compatibles las vistas existentes sin iniciar Vite.
-        Blade::directive('vite', fn () => "<?php echo view('partials.assets', ['theme' => request()->routeIs('teacher.*') ? 'teacher' : (request()->routeIs('student.*') ? 'student' : 'guest')])->render(); ?>");
+        Blade::directive('vite', fn () => "<?php echo view('partials.assets', ['theme' => request()->routeIs('admin.*') ? 'admin' : (request()->routeIs('teacher.*') ? 'teacher' : (request()->routeIs('student.*') ? 'student' : 'guest'))])->render(); ?>");
 
         RateLimiter::for('auth',function(Request $request){
                 return Limit::perMinute(10)->by($request->ip());
