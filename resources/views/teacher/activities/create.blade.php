@@ -15,7 +15,7 @@
     <div class="min-h-screen">
 
         <!-- ENCABEZADO DEL PROFESOR -->
-        <header class="border-b border-emerald-200 bg-white shadow-sm">
+        <header class="sticky top-0 z-30 border-b border-emerald-200 bg-white shadow-sm">
 
             <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
 
@@ -46,6 +46,15 @@
         </header>
 
         <main class="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+
+            <!-- Volver -->
+            <div class="mb-6">
+                <a href="{{ route('teacher.activities.index', $class->id) }}"
+                    class="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 transition hover:text-emerald-900">
+                    <span>←</span>
+                    Volver a actividades
+                </a>
+            </div>
 
             <!-- BANNER -->
             <section class="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-700 via-teal-600 to-cyan-600 p-6 text-white shadow-xl sm:p-8">

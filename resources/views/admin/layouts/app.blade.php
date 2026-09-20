@@ -100,16 +100,6 @@
                         </div>
                     </div>
 
-                    <form action="{{ url('/logout') }}" method="POST">
-                        @csrf
-
-                        <button type="submit"
-                                class="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-white px-4 py-2 text-sm font-black text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50">
-                            <span>↪</span>
-                            Cerrar sesión
-                        </button>
-                    </form>
-
                 </div>
             </header>
 
@@ -123,6 +113,14 @@
                         {{ $item['label'] }}
                     </a>
                 @endforeach
+
+                <form action="{{ url('/logout') }}" method="POST" class="shrink-0">
+                    @csrf
+                    <button type="submit"
+                            class="whitespace-nowrap rounded-full bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200">
+                        ↪ Salir
+                    </button>
+                </form>
 
             </nav>
 

@@ -15,7 +15,7 @@
     <div class="flex min-h-screen">
 
         <!-- SIDEBAR -->
-        <aside class="hidden w-72 flex-col bg-white shadow-xl lg:flex">
+        <aside class="hidden w-72 shrink-0 flex-col bg-white shadow-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
 
             <div class="flex items-center gap-3 border-b border-slate-200 px-6 py-6">
                 <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-2xl font-black text-white shadow-lg">
@@ -191,14 +191,30 @@
                                     </p>
                                 </div>
 
-                                <div class="rounded-2xl bg-slate-50 p-4">
-                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-400">
-                                        Estado
-                                    </p>
+                                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                    <div class="mb-3 flex items-center gap-3">
+                                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 text-2xl">
+                                            📌
+                                        </div>
+                                        <div>
+                                            <h4 class="font-black text-slate-900">
+                                                Estado
+                                            </h4>
+                                            <p class="text-xs font-medium text-slate-500">
+                                                Situación actual
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                    <span class="mt-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
-                                        {{ $class->status }}
-                                    </span>
+                                    @if ($class->status === 'active')
+                                        <span class="inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-700">
+                                            Clase activa
+                                        </span>
+                                    @else
+                                        <span class="inline-flex rounded-full bg-slate-200 px-4 py-2 text-sm font-black text-slate-700">
+                                            Clase archivada
+                                        </span>
+                                    @endif
                                 </div>
 
                             </div>

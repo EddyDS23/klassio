@@ -25,6 +25,11 @@
     @endif
 
     {{-- Información general --}}
+    <div class="mb-4">
+        <a href="{{ route('student.activities.index', $activity->class_id) }}">
+            ← Volver a actividades
+        </a>
+    </div>
     <section>
         <h2>Información</h2>
 
@@ -57,7 +62,7 @@
             @endif
 
             <dt>Estado:</dt>
-            <dd>{{ ucfirst($activity->status) }}</dd>
+            <dd>{{ $activity->status_label }}</dd>
         </dl>
     </section>
 
@@ -174,34 +179,32 @@
                     } }})
                     — {{ $lastParticipation->score }} pts
                 </p>
-
-                <a href="{{ route('student.participation.result', $activity->id) }}">
-                    Ver resultado
-                </a>
             @endif
 
-            @if ($playRouteExists)
-                <form method="POST" action="{{ route('student.participation.start', $activity->id) }}">
-                    @csrf
-                    <button type="submit">
-                        {{ $lastParticipation ? 'Intentar de nuevo' : 'Iniciar actividad' }}
-                    </button>
-                </form>
-            @else
-                <p>Este juego aún no está disponible.</p>
-            @endif
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                @if ($lastParticipation)
+                    <a href="{{ route('student.participation.result', $activity->id) }}">
+                        Ver resultado
+                    </a>
+                @endif
+
+                @if ($playRouteExists)
+                    <form method="POST" action="{{ route('student.participation.start', $activity->id) }}">
+                        @csrf
+                        <button type="submit">
+                            {{ $lastParticipation ? 'Intentar de nuevo' : 'Iniciar actividad' }}
+                        </button>
+                    </form>
+                @else
+                    <p>Este juego aún no está disponible.</p>
+                @endif
+            </div>
 
         @endif
 
     </section>
 
     <hr>
-
-    <nav>
-        <a href="{{ route('student.activities.index', $activity->class_id) }}">
-            Volver a actividades
-        </a>
-    </nav>
 
 </body>
 

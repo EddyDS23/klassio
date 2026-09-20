@@ -59,6 +59,17 @@
 
         .empty { color: #888; font-size: 14px; margin-top: 12px; }
 
+        .top-nav { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+        .top-nav a {
+            border: 1px solid #e2e8f0;
+            border-radius: .6rem;
+            padding: .55rem .9rem;
+            font-weight: 700;
+            font-size: 13px;
+            color: #475569;
+            background: #fff;
+        }
+
         .klassio-theme-btn {
             border: 1px solid #cbd5e1;
             border-radius: .6rem;
@@ -87,6 +98,7 @@
         html[data-theme="dark"] .status-abandoned { background: #451a03; color: #fbbf24; }
         html[data-theme="dark"] .status-expired { background: #450a0a; color: #f87171; }
         html[data-theme="dark"] .nav a { color: #7dd3fc; }
+        html[data-theme="dark"] .top-nav a { background: #1e293b; border-color: #334155; color: #7dd3fc; }
         html[data-theme="dark"] .empty { color: #64748b; }
         html[data-theme="dark"] .klassio-theme-btn { background: #1e293b; color: #f1f5f9; border-color: #475569; }
     </style>
@@ -113,6 +125,11 @@
         });
     })();
 </script>
+
+<div class="top-nav">
+    <a href="{{ route('student.activities.show', $activity->id) }}">← Volver a la actividad</a>
+    <a href="{{ route('student.class.show', $activity->class_id) }}">Volver a la clase</a>
+</div>
 
 <h1>{{ $activity->title }}</h1>
 
@@ -254,11 +271,6 @@
 @else
     <p class="empty">No hay respuestas registradas para este intento.</p>
 @endif
-
-<div class="nav">
-    <a href="{{ route('student.activities.show', $activity->id) }}">← Volver a la actividad</a>
-    <a href="{{ route('student.class.show', $activity->class_id) }}">Volver a la clase</a>
-</div>
 
 </body>
 </html>

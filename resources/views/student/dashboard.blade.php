@@ -20,7 +20,7 @@
              BARRA LATERAL
         ====================================== -->
 
-        <aside class="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+        <aside class="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
 
             <!-- LOGO -->
 
@@ -170,7 +170,7 @@
 
             <!-- BARRA SUPERIOR -->
 
-            <header class="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-5 sm:px-8">
+            <header class="sticky top-4 z-20 mx-4 mt-4 flex h-20 items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 shadow-sm sm:mx-6 sm:px-8">
 
                 <div>
 

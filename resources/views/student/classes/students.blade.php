@@ -15,7 +15,7 @@
     <div class="flex min-h-screen">
 
         <!-- SIDEBAR -->
-        <aside class="hidden w-72 flex-col bg-white shadow-xl lg:flex">
+        <aside class="hidden w-72 shrink-0 flex-col bg-white shadow-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
 
             <div class="flex items-center gap-3 border-b border-slate-200 px-6 py-6">
 

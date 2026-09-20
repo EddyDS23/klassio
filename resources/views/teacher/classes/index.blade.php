@@ -13,7 +13,7 @@
 <body class="min-h-screen bg-slate-100 text-slate-800">
 
     {{-- Barra superior --}}
-    <header class="border-b border-slate-200 bg-white shadow-sm">
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
 
             <a href="{{ route('teacher.dashboard') }}" class="flex items-center gap-3">
@@ -56,6 +56,15 @@
 
 
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+        {{-- Volver al dashboard --}}
+        <div class="mb-6">
+            <a href="{{ route('teacher.dashboard') }}"
+                class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-900">
+
+                ← Volver al dashboard
+            </a>
+        </div>
 
         {{-- Encabezado --}}
         <section
@@ -345,17 +354,6 @@
                 </div>
             @endif
 
-
-        {{-- Regreso al dashboard --}}
-        <div class="mt-8 border-t border-slate-200 pt-6">
-
-            <a href="{{ route('teacher.dashboard') }}"
-                class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-900">
-
-                ← Volver al dashboard
-            </a>
-
-        </div>
 
     </main>
 

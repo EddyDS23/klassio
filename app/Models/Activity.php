@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -62,5 +63,19 @@ class Activity extends Model
     public function participations(): HasMany
     {
         return $this->hasMany(Participation::class);
+    }
+
+    /**
+     * Estado en español para mostrar en vistas.
+     * En BD se guarda en inglés (draft/published/closed).
+     */
+    public function statusLabel(): Attribute
+    {
+        return Attribute::get(fn () => match ($this->status) {
+            'draft' => 'Borrador',
+            'published' => 'Publicada',
+            'closed' => 'Cerrada',
+            default => ucfirst((string) $this->status),
+        });
     }
 }

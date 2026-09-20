@@ -168,7 +168,7 @@
 <body class="min-h-screen text-slate-800">
 
     <!-- Barra superior -->
-    <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <a href="{{ route('teacher.dashboard') }}" class="flex items-center gap-3">
                 <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
@@ -204,6 +204,16 @@
     </header>
 
     <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+
+        <!-- Volver -->
+        <div class="mb-6">
+            <a
+                href="{{ route('teacher.activities.show', $activity->id) }}"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+            >
+                ← Volver a la actividad
+            </a>
+        </div>
 
         <!-- Encabezado -->
         <section class="mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-6 text-white shadow-xl shadow-emerald-200 sm:p-8">
@@ -602,14 +612,7 @@
         @endif
 
         <!-- Navegación inferior -->
-        <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <a
-                href="{{ route('teacher.activities.show', $activity->id) }}"
-                class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-            >
-                ← Volver a la actividad
-            </a>
-
+        <div class="mt-8 flex flex-col items-center gap-3">
             <span class="text-center text-xs font-semibold text-slate-400">
                 Klassio · Herramientas educativas
             </span>

@@ -13,7 +13,7 @@
 <body class="min-h-screen bg-slate-100 text-slate-800">
 
     {{-- Barra superior --}}
-    <header class="border-b border-slate-200 bg-white shadow-sm">
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
 
             <a href="{{ route('teacher.dashboard') }}"
@@ -209,7 +209,7 @@
                         </span>
                     @else
                         <span class="inline-flex rounded-full bg-slate-100 px-4 py-2 text-sm font-black text-slate-600">
-                            {{ $activity->status }}
+                            {{ $activity->status_label }}
                         </span>
                     @endif
 
@@ -738,17 +738,6 @@
 
         </section>
 
-
-        {{-- Regresar --}}
-        <div class="border-t border-slate-200 pt-6">
-
-            <a href="{{ route('teacher.activities.index', $activity->class_id) }}"
-                class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-900">
-
-                ← Volver a actividades
-            </a>
-
-        </div>
 
     </main>
 

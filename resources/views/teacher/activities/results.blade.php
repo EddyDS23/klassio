@@ -13,7 +13,7 @@
 <body class="min-h-screen bg-slate-100 text-slate-800">
 
     <!-- Barra superior -->
-    <header class="border-b border-emerald-100 bg-white shadow-sm">
+    <header class="sticky top-0 z-30 border-b border-emerald-100 bg-white shadow-sm">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
 
             <a href="{{ route('teacher.activities.show', $activity->id) }}"
@@ -45,6 +45,17 @@
 
     <!-- Contenido principal -->
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+        <!-- Volver -->
+        <div class="mb-6">
+            <a
+                href="{{ route('teacher.activities.show', $activity->id) }}"
+                class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 hover:shadow-xl"
+            >
+                <span>←</span>
+                Volver a la actividad
+            </a>
+        </div>
 
         <!-- Encabezado -->
         <section class="mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-6 text-white shadow-xl shadow-emerald-200 sm:p-8">
@@ -385,19 +396,6 @@
 
         </section>
 
-
-        <!-- Navegación -->
-        <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-
-            <a
-                href="{{ route('teacher.activities.show', $activity->id) }}"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 hover:shadow-xl"
-            >
-                <span>←</span>
-                Volver a la actividad
-            </a>
-
-        </div>
 
     </main>
 

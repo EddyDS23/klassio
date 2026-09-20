@@ -66,6 +66,9 @@
     html[data-theme="dark"] .bg-slate-100, html[data-theme="dark"] .bg-slate-200 { background-color: var(--kd-surface-2) !important; }
     html[data-theme="dark"] .bg-gray-50, html[data-theme="dark"] .bg-gray-100, html[data-theme="dark"] .bg-gray-200 { background-color: var(--kd-surface-2) !important; }
     html[data-theme="dark"] .bg-white\/90 { background-color: rgb(30 41 59 / .92) !important; }
+    html[data-theme="dark"] .bg-white\/80 { background-color: rgb(2 6 23 / .45) !important; }
+    html[data-theme="dark"] .bg-white\/75 { background-color: rgb(30 41 59 / .8) !important; }
+    html[data-theme="dark"] .bg-white\/70 { background-color: rgb(2 6 23 / .55) !important; }
     html[data-theme="dark"] .bg-white\/15, html[data-theme="dark"] .bg-white\/20 { background-color: rgb(255 255 255 / .12) !important; }
     html[data-theme="dark"] .bg-indigo-50, html[data-theme="dark"] .bg-indigo-100 { background-color: rgb(99 102 241 / .18) !important; }
     html[data-theme="dark"] .bg-violet-50, html[data-theme="dark"] .bg-violet-100 { background-color: rgb(139 92 246 / .18) !important; }
@@ -75,6 +78,8 @@
     html[data-theme="dark"] .bg-teal-50, html[data-theme="dark"] .bg-teal-100 { background-color: rgb(20 184 166 / .16) !important; }
     html[data-theme="dark"] .bg-cyan-50, html[data-theme="dark"] .bg-cyan-100 { background-color: rgb(6 182 212 / .16) !important; }
     html[data-theme="dark"] .bg-amber-50, html[data-theme="dark"] .bg-amber-100 { background-color: rgb(245 158 11 / .16) !important; }
+    html[data-theme="dark"] .bg-amber-200 { background-color: #92400e !important; }
+    html[data-theme="dark"] .bg-orange-200 { background-color: #9a3412 !important; }
     html[data-theme="dark"] .bg-orange-50, html[data-theme="dark"] .bg-orange-100 { background-color: rgb(249 115 22 / .16) !important; }
     html[data-theme="dark"] .bg-rose-50, html[data-theme="dark"] .bg-rose-100 { background-color: rgb(244 63 94 / .16) !important; }
     html[data-theme="dark"] .bg-red-50, html[data-theme="dark"] .bg-red-100 { background-color: rgb(239 68 68 / .16) !important; }
@@ -282,9 +287,25 @@
             paint();
         }
         window.__klassioTheme = { isDark: isDark, setDark: setDark, paint: paint };
+        function addFab() {
+            if (document.querySelector('.klassio-theme-fab')) return;
+            var fab = document.createElement('button');
+            fab.type = 'button';
+            fab.className = 'klassio-theme-fab';
+            fab.textContent = label();
+            fab.setAttribute('aria-label', 'Cambiar entre modo claro y oscuro');
+            fab.addEventListener('click', function () { setDark(!isDark()); });
+            document.body.appendChild(fab);
+        }
+        function anyVisibleToggle() {
+            return Array.from(
+                document.querySelectorAll('.klassio-theme-btn, #theme-btn')
+            ).some(function (b) { return b.getClientRects().length > 0; });
+        }
         function init() {
-            var injected = false;
-            document.querySelectorAll('form[action*="logout"]').forEach(function (form) {
+            // Los formularios con data-theme-toggle="off" no reciben botón
+            // (p. ej. la barra superior del admin, que ya lo tiene en el sidebar).
+            document.querySelectorAll('form[action*="logout"]:not([data-theme-toggle="off"])').forEach(function (form) {
                 if (form.parentElement && form.parentElement.querySelector('.klassio-theme-btn')) return;
                 var btn = document.createElement('button');
                 btn.type = 'button';
@@ -294,16 +315,11 @@
                 btn.style.marginRight = '0.5rem';
                 form.parentElement.insertBefore(btn, form);
                 form.style.display = 'inline-block';
-                injected = true;
             });
-            if (!injected && !document.querySelector('.klassio-theme-btn, .klassio-theme-fab, #theme-btn')) {
-                var fab = document.createElement('button');
-                fab.type = 'button';
-                fab.className = 'klassio-theme-fab';
-                fab.textContent = label();
-                fab.setAttribute('aria-label', 'Cambiar entre modo claro y oscuro');
-                fab.addEventListener('click', function () { setDark(!isDark()); });
-                document.body.appendChild(fab);
+            // Sin interruptor visible (login/registro o sidebar colapsado en móvil):
+            // botón flotante para no perder el acceso al modo negro.
+            if (!anyVisibleToggle()) {
+                addFab();
             }
             paint();
         }
