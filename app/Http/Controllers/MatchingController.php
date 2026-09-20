@@ -12,6 +12,7 @@ use App\Services\MatchingService;
 use App\Services\ParticipationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class MatchingController extends Controller
@@ -27,6 +28,8 @@ class MatchingController extends Controller
     public function configure(int $id): View
     {
         $activity = Activity::findOrFail($id);
+
+        Gate::authorize('update', $activity);
 
         $matching = $activity->matching;
 
@@ -45,6 +48,8 @@ class MatchingController extends Controller
         int $id
     ): RedirectResponse {
         $activity = Activity::findOrFail($id);
+
+        Gate::authorize('update', $activity);
 
         $data = $request->validated();
 
@@ -68,6 +73,8 @@ class MatchingController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
+        Gate::authorize('update', $activity);
+
         $matching = $activity->matching;
 
         return view('teacher.matching.configure', [
@@ -85,6 +92,8 @@ class MatchingController extends Controller
         int $id
     ): RedirectResponse {
         $activity = Activity::findOrFail($id);
+
+        Gate::authorize('update', $activity);
 
         $data = $request->validated();
 

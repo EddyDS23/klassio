@@ -16,10 +16,10 @@
     <header class="border-b border-slate-200 bg-white shadow-sm">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
 
-            <a href="{{ route('teacher.dashboard') }}"
-                class="flex items-center gap-3">
+            <a href="{{ route('teacher.dashboard') }}" class="flex items-center gap-3">
 
-                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
+                <div
+                    class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
                     K
                 </div>
 
@@ -58,13 +58,15 @@
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         {{-- Encabezado --}}
-        <section class="mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-700 via-teal-600 to-cyan-600 p-6 text-white shadow-xl shadow-emerald-200 sm:p-8">
+        <section
+            class="mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-700 via-teal-600 to-cyan-600 p-6 text-white shadow-xl shadow-emerald-200 sm:p-8">
 
             <div class="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
 
                 <div>
 
-                    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-wider backdrop-blur-sm">
+                    <div
+                        class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-wider backdrop-blur-sm">
                         <span>🏫</span>
                         Administración
                     </div>
@@ -74,7 +76,8 @@
                     </h2>
 
                     <p class="mt-3 max-w-2xl text-sm font-medium leading-6 text-emerald-50 sm:text-base">
-                        Administra las clases que has creado, consulta sus códigos y organiza tus espacios de aprendizaje.
+                        Administra las clases que has creado, consulta sus códigos y organiza tus espacios de
+                        aprendizaje.
                     </p>
 
                 </div>
@@ -93,8 +96,8 @@
 
         {{-- Mensajes --}}
         @if (session('success'))
-
-            <div class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 shadow-sm">
+            <div
+                class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 shadow-sm">
 
                 <span class="text-xl">✓</span>
 
@@ -109,13 +112,12 @@
                 </div>
 
             </div>
-
         @endif
 
 
         @if (session('error'))
-
-            <div class="mb-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-800 shadow-sm">
+            <div
+                class="mb-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-800 shadow-sm">
 
                 <span class="text-xl">!</span>
 
@@ -130,7 +132,6 @@
                 </div>
 
             </div>
-
         @endif
 
 
@@ -147,8 +148,9 @@
                 </p>
             </div>
 
-            <div class="inline-flex w-fit items-center rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-700">
-                {{ $classes->count() }} clases
+            <div
+                class="inline-flex w-fit items-center rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-700">
+                {{ $classes->total() }} clases
             </div>
 
         </div>
@@ -158,30 +160,29 @@
         <section class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
 
             @forelse ($classes as $class)
-
-                <article class="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl">
+                <article
+                    class="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl">
 
                     {{-- Cabecera de tarjeta --}}
                     <div class="bg-gradient-to-br from-emerald-600 to-teal-600 p-6 text-white">
 
                         <div class="flex items-start justify-between gap-4">
 
-                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-3xl shadow-inner backdrop-blur-sm">
+                            <div
+                                class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-3xl shadow-inner backdrop-blur-sm">
                                 📚
                             </div>
 
                             @if ($class->status === 'active')
-
-                                <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
+                                <span
+                                    class="rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
                                     Activa
                                 </span>
-
                             @else
-
-                                <span class="rounded-full bg-slate-900/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
+                                <span
+                                    class="rounded-full bg-slate-900/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
                                     Archivada
                                 </span>
-
                             @endif
 
                         </div>
@@ -265,7 +266,6 @@
 
 
                             @if ($class->status === 'active')
-
                                 <a href="{{ route('teacher.classes.edit', $class->id) }}"
                                     class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700">
 
@@ -274,8 +274,7 @@
                                 </a>
 
 
-                                <form action="{{ route('teacher.classes.archive', $class->id) }}"
-                                    method="POST">
+                                <form action="{{ route('teacher.classes.archive', $class->id) }}" method="POST">
 
                                     @csrf
                                     @method('PATCH')
@@ -288,11 +287,8 @@
                                     </button>
 
                                 </form>
-
                             @else
-
-                                <form action="{{ route('teacher.classes.unarchive', $class->id) }}"
-                                    method="POST">
+                                <form action="{{ route('teacher.classes.unarchive', $class->id) }}" method="POST">
 
                                     @csrf
                                     @method('PATCH')
@@ -305,7 +301,6 @@
                                     </button>
 
                                 </form>
-
                             @endif
 
                         </div>
@@ -317,7 +312,8 @@
             @empty
 
                 {{-- Estado vacío --}}
-                <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center shadow-sm md:col-span-2 xl:col-span-3">
+                <div
+                    class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center shadow-sm md:col-span-2 xl:col-span-3">
 
                     <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-4xl">
                         🏫
@@ -339,10 +335,15 @@
                     </a>
 
                 </div>
-
             @endforelse
 
         </section>
+
+         @if ($classes->hasPages())
+                <div class="mt-8">
+                    {{ $classes->links() }}
+                </div>
+            @endif
 
 
         {{-- Regreso al dashboard --}}

@@ -198,6 +198,10 @@ class ParticipationController extends Controller
 
         Gate::authorize('finish', $participation);
 
+        if (!$this->participationService->hasExpired($participation, $activity)) {
+            abort(409, 'La actividad aún no ha terminado.');
+        }
+
         $this->participationService->expire($participation);
 
         return redirect()

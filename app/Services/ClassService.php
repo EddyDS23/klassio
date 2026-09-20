@@ -5,9 +5,9 @@ namespace App\Services;
 use App\Models\Enrollment;
 use App\Models\SchoolClass;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ClassService
 {
@@ -24,12 +24,14 @@ class ClassService
         return $classe;
     }
 
-    public function getClassesTeacher(): Collection
+    public function getClassesTeacher(): LengthAwarePaginator
     {
         /** @var User $user */
         $user = Auth::user();
 
-        return SchoolClass::where('teacher_id', $user->id)->get();
+        return SchoolClass::where('teacher_id', $user->id)
+            ->latest()
+            ->paginate(15);
     }
 
     public function create(array $data): void
@@ -52,7 +54,6 @@ class ClassService
     {
         $class = SchoolClass::findOrFail($id);
         $class->update($data);
-        $class->save();
     }
 
     public function archive(SchoolClass $class): void
@@ -85,7 +86,7 @@ class ClassService
         return $class->enrollments()
             ->where('status', 'active')
             ->with('student')
-            ->get();
+            ->paginate(20);
     }
 
     public function removeStudent(SchoolClass $class, int $studentId): void
@@ -149,7 +150,7 @@ class ClassService
         return ['class' => $class, 'alreadyJoined' => false];
     }
 
-    public function getClassesStudent(): Collection
+    public function getClassesStudent(): LengthAwarePaginator
     {
         /** @var User $user */
         $user = Auth::user();
@@ -157,14 +158,14 @@ class ClassService
         return SchoolClass::whereHas('enrollments', function ($query) use ($user) {
             $query->where('student_id', $user->id)
                 ->where('status', 'active');
-        })->get();
+        })->paginate(15);
     }
 
-    public function getClassmates(SchoolClass $class)
+    public function getClassmates(SchoolClass $class): LengthAwarePaginator
     {
         return $class->enrollments()
             ->where('status', 'active')
             ->with('student')
-            ->get();
+            ->paginate(20);
     }
 }

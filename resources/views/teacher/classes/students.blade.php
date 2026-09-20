@@ -16,11 +16,9 @@
     <header class="border-b border-slate-200 bg-white shadow-sm">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
 
-            <a
-                href="{{ route('teacher.classes.index') }}"
-                class="flex items-center gap-3"
-            >
-                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
+            <a href="{{ route('teacher.classes.index') }}" class="flex items-center gap-3">
+                <div
+                    class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
                     K
                 </div>
 
@@ -37,17 +35,13 @@
 
             <div class="flex flex-wrap items-center gap-2">
 
-                <a
-                    href="{{ route('teacher.classes.show', $class->id) }}"
-                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
-                >
+                <a href="{{ route('teacher.classes.show', $class->id) }}"
+                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700">
                     ← Volver a la clase
                 </a>
 
-                <a
-                    href="{{ route('teacher.classes.index') }}"
-                    class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700"
-                >
+                <a href="{{ route('teacher.classes.index') }}"
+                    class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700">
                     Mis clases
                 </a>
 
@@ -58,14 +52,16 @@
     <main class="mx-auto max-w-7xl space-y-8 px-5 py-8 lg:px-8">
 
         <!-- Encabezado -->
-        <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-7 text-white shadow-xl shadow-emerald-200 md:p-10">
+        <section
+            class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-7 text-white shadow-xl shadow-emerald-200 md:p-10">
 
             <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10"></div>
             <div class="absolute -bottom-28 right-24 h-72 w-72 rounded-full bg-white/10"></div>
 
             <div class="relative z-10 max-w-3xl">
 
-                <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-emerald-50 backdrop-blur">
+                <div
+                    class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-emerald-50 backdrop-blur">
                     <span>👥</span>
                     Gestión de alumnos
                 </div>
@@ -99,9 +95,11 @@
         </section>
 
         <!-- Mensajes -->
-        @if(session('success'))
-            <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">
+        @if (session('success'))
+            <div
+                class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
+                <div
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">
                     ✓
                 </div>
 
@@ -117,9 +115,10 @@
             </div>
         @endif
 
-        @if(session('error'))
+        @if (session('error'))
             <div class="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-600 font-bold text-white">
+                <div
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-600 font-bold text-white">
                     !
                 </div>
 
@@ -166,7 +165,7 @@
 
             </div>
 
-            @if($students->isEmpty())
+            @if ($students->isEmpty())
 
                 <!-- Estado vacío -->
                 <div class="rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
@@ -184,28 +183,25 @@
                         puedan unirse desde su cuenta.
                     </p>
 
-                    <a
-                        href="{{ route('teacher.classes.show', $class->id) }}"
-                        class="mt-6 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700"
-                    >
+                    <a href="{{ route('teacher.classes.show', $class->id) }}"
+                        class="mt-6 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700">
                         Volver a la clase
                     </a>
 
                 </div>
-
             @else
-
                 <!-- Lista de alumnos -->
                 <div class="grid gap-4 md:grid-cols-2">
 
-                    @foreach($students as $enrollment)
-
-                        <article class="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-lg">
+                    @foreach ($students as $enrollment)
+                        <article
+                            class="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-lg">
 
                             <div class="flex items-start gap-4">
 
                                 <!-- Inicial -->
-                                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-md shadow-emerald-100">
+                                <div
+                                    class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-md shadow-emerald-100">
                                     {{ strtoupper(substr($enrollment->student->name, 0, 1)) }}
                                 </div>
 
@@ -219,7 +215,8 @@
                                         {{ $enrollment->student->email }}
                                     </p>
 
-                                    <div class="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                                    <div
+                                        class="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
                                         <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
                                         Alumno inscrito
                                     </div>
@@ -231,23 +228,17 @@
                             <div class="mt-5 border-t border-slate-200 pt-4">
 
                                 <form
-                                    action="{{ route(
-                                        'teacher.classes.students.remove',
-                                        [
-                                            'id' => $class->id,
-                                            'studentId' => $enrollment->student->id
-                                        ]
-                                    ) }}"
+                                    action="{{ route('teacher.classes.students.remove', [
+                                        'id' => $class->id,
+                                        'studentId' => $enrollment->student->id,
+                                    ]) }}"
                                     method="POST"
-                                    onsubmit="return confirm('¿Seguro que deseas retirar a este alumno de la clase?');"
-                                >
+                                    onsubmit="return confirm('¿Seguro que deseas retirar a este alumno de la clase?');">
                                     @csrf
                                     @method('DELETE')
 
-                                    <button
-                                        type="submit"
-                                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-600 transition hover:border-red-300 hover:bg-red-50"
-                                    >
+                                    <button type="submit"
+                                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-600 transition hover:border-red-300 hover:bg-red-50">
                                         <span>🗑️</span>
                                         Retirar alumno
                                     </button>
@@ -256,12 +247,18 @@
                             </div>
 
                         </article>
-
                     @endforeach
 
                 </div>
 
             @endif
+
+            @if ($students->hasPages())
+                <div class="mt-8">
+                    {{ $students->links() }}
+                </div>
+            @endif
+
 
         </section>
 
@@ -270,7 +267,8 @@
 
             <div class="flex items-start gap-3">
 
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-xl text-white">
+                <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-xl text-white">
                     💡
                 </div>
 

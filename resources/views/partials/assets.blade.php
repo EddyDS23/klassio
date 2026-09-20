@@ -32,6 +32,10 @@
         :root { --klassio-primary: #0891b2; --klassio-accent: #8b5cf6; }
         body { background-color: #f0fdfa; background-image: radial-gradient(circle at top right, rgb(6 182 212 / .18), transparent 32rem), radial-gradient(circle at bottom left, rgb(139 92 246 / .12), transparent 28rem); }
         .page-hero { background: linear-gradient(135deg, #0891b2, #2563eb 55%, #7c3aed); }
+    @elseif ($theme === 'admin')
+        :root { --klassio-primary: #0f172a; --klassio-accent: #f59e0b; }
+        body { background-color: #f6f7fb; background-image: radial-gradient(circle at top right, rgb(15 23 42 / .07), transparent 32rem); }
+        .page-hero { background: linear-gradient(135deg, #0f172a, #1e293b 55%, #334155); }
     @endif
     /* ============================================================
        MODO NEGRO — se activa con html[data-theme="dark"].

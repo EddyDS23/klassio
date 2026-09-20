@@ -179,6 +179,15 @@
                             <h4 class="font-black text-slate-900">
                                 Estado
                             </h4>
+    
+
+    @if ($activity->mode === 'team' && $activity->status === 'draft')
+        <a href="{{ route('teacher.teams.index', $activity->id) }}">
+            Administrar equipos
+        </a>
+
+        <hr>
+    @endif
 
                             <p class="text-xs font-medium text-slate-500">
                                 Situación actual
@@ -207,6 +216,11 @@
                 </div>
 
             </div>
+    <p>
+        <a href="{{ route('teacher.activities.report', $activity->id) }}">
+            Ver reporte
+        </a>
+    </p>
 
 
             {{-- Datos --}}

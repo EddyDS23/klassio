@@ -395,12 +395,13 @@ class ParticipationService
     }
 
     /**
-     * -------------------------------------------------------------------------
-     * 6.8 — Resultados del profesor
-     * -------------------------------------------------------------------------
+     * Obtiene los resultados de todos los estudiantes inscritos
+     * en la clase de la actividad.
      *
-     * Obtiene el resultado más reciente de cada alumno inscrito en la clase.
-     * También incluye alumnos que nunca han realizado la actividad.
+     * Optimizado para evitar N+1:
+     * - Las inscripciones se cargan en una sola consulta.
+     * - Las participaciones se cargan en una sola consulta.
+     * - En modo equipo, las membresías/equipos se cargan en una sola consulta.
      */
     public function getTeacherResults(Activity $activity)
     {
@@ -411,40 +412,105 @@ class ParticipationService
             ->with('student')
             ->get();
 
-        return $enrollments->map(function ($enrollment) use ($activity) {
+        $studentIds = $enrollments
+            ->pluck('student_id')
+            ->filter()
+            ->values();
+
+        /*
+     * -------------------------------------------------------------------------
+     * MODO INDIVIDUAL
+     * -------------------------------------------------------------------------
+     *
+     * Obtener todas las participaciones de los estudiantes de una sola vez
+     * y conservar únicamente el último intento de cada estudiante.
+     */
+        if ($activity->mode === 'individual') {
+
+            $participations = Participation::where('activity_id', $activity->id)
+                ->whereIn('student_id', $studentIds)
+                ->orderByDesc('attempt')
+                ->get()
+                ->groupBy('student_id')
+                ->map(fn($items) => $items->first());
+
+            return $enrollments->map(function ($enrollment) use ($participations) {
+
+                $student = $enrollment->student;
+
+                $participation = $participations->get($student->id);
+
+                return [
+                    'student' => $student,
+                    'participation' => $participation,
+                    'status' => $participation?->status ?? 'not_started',
+                    'attempt' => $participation?->attempt,
+                    'score' => $participation?->score,
+                    'elapsed_seconds' => $participation?->elapsed_seconds,
+                ];
+            });
+        }
+
+        /*
+     * -------------------------------------------------------------------------
+     * MODO EQUIPO
+     * -------------------------------------------------------------------------
+     *
+     * Primero obtenemos los equipos de la actividad junto con sus miembros.
+     * Después obtenemos todas las participaciones de esos equipos de una sola
+     * vez y conservamos el último intento de cada equipo.
+     */
+        $teams = Team::where('activity_id', $activity->id)
+            ->with([
+                'members' => function ($query) use ($studentIds) {
+                    $query->whereIn('student_id', $studentIds);
+                },
+            ])
+            ->get();
+
+        /*
+     * Crear un mapa:
+     *
+     * student_id => team
+     *
+     * Esto permite encontrar el equipo de un estudiante en memoria,
+     * sin ejecutar una consulta por cada estudiante.
+     */
+        $teamsByStudent = collect();
+
+        foreach ($teams as $team) {
+            foreach ($team->members as $member) {
+                $teamsByStudent->put($member->student_id, $team);
+            }
+        }
+
+        $teamIds = $teams
+            ->pluck('id')
+            ->values();
+
+        /*
+     * Obtener todas las participaciones de los equipos de esta actividad
+     * de una sola vez.
+     */
+        $participations = Participation::where('activity_id', $activity->id)
+            ->whereIn('team_id', $teamIds)
+            ->orderByDesc('attempt')
+            ->get()
+            ->groupBy('team_id')
+            ->map(fn($items) => $items->first());
+
+        return $enrollments->map(function ($enrollment) use (
+            $teamsByStudent,
+            $participations
+        ) {
 
             $student = $enrollment->student;
 
-            // -------------------------------------------------------------
-            // Modo individual
-            // -------------------------------------------------------------
-            if ($activity->mode === 'individual') {
+            $team = $teamsByStudent->get($student->id);
 
-                $participation = Participation::where('activity_id', $activity->id)
-                    ->where('student_id', $student->id)
-                    ->latest('attempt')
-                    ->first();
-            } else {
-
-                // ---------------------------------------------------------
-                // Modo equipo
-                // ---------------------------------------------------------
-                $team = Team::where('activity_id', $activity->id)
-                    ->whereHas(
-                        'members',
-                        fn($query) => $query->where('student_id', $student->id)
-                    )
-                    ->first();
-
-                $participation = null;
-
-                if ($team) {
-                    $participation = Participation::where('activity_id', $activity->id)
-                        ->where('team_id', $team->id)
-                        ->latest('attempt')
-                        ->first();
-                }
-            }
+            $participation = $team
+                ? $participations->get($team->id)
+                : null;
 
             return [
                 'student' => $student,

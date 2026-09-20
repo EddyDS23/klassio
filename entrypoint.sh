@@ -32,7 +32,12 @@ if [ "$1" = 'php-fpm' ] || [ -z "$1" ]; then
     echo "MariaDB lista."
 
     echo "Ejecutando migraciones..."
+<<<<<<< HEAD
     php artisan migrate --force --no-interaction
+=======
+    php artisan migrate --force
+    php artisan db:seed
+>>>>>>> a5a7cc7b69b8493e79ff44488726fc273d864315
 
     echo "Optimizando Laravel (cachés regenerables, sin cambiar código)..."
     php artisan view:cache --no-interaction || true

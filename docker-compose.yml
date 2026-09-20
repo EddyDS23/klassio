@@ -3,10 +3,14 @@ services:
   mariadb:
     image: mariadb:11.8
     container_name: klassio_db
+<<<<<<< HEAD
     command:
       - --innodb-buffer-pool-size=256M
       - --innodb-log-file-size=64M
       - --skip-name-resolve
+=======
+    restart: unless-stopped
+>>>>>>> a5a7cc7b69b8493e79ff44488726fc273d864315
     environment:
       - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - MARIADB_DATABASE=${DB_DATABASE}

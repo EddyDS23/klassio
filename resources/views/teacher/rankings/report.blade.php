@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -45,6 +46,13 @@
                 <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
                 Reporte de actividad
             </div>
+        @if ($activity->time_limit)
+            <p>
+                <strong>Tiempo límite:</strong>
+                {{ $activity->time_limit }} segundos
+            </p>
+        @endif
+    </section>
 
             <form method="POST" action="{{ url('/logout') }}">
                 @csrf
@@ -75,6 +83,31 @@
                     <h1 class="text-3xl font-black tracking-tight sm:text-4xl">
                         Reporte de actividad
                     </h1>
+            <tr>
+                <th>
+                    {{ $activity->mode === 'team' ? 'Equipos' : 'Estudiantes inscritos' }}
+                </th>
+
+                <td>
+                    {{ $activity->mode === 'team' ? $summary['total_teams'] : $summary['total_students'] }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>
+                    {{ $activity->mode === 'team' ? 'Equipos que participaron' : 'Estudiantes que participaron' }}
+                </th>
+
+                <td>{{ $summary['participated'] }}</td>
+            </tr>
+
+            <tr>
+                <th>
+                    {{ $activity->mode === 'team' ? 'Equipos que no participaron' : 'Estudiantes que no participaron' }}
+                </th>
+
+                <td>{{ $summary['not_participated'] }}</td>
+            </tr>
 
                     <p class="mt-3 text-sm leading-6 text-emerald-50 sm:text-base">
                         Revisa la participación, el estado de las entregas y el rendimiento
@@ -96,6 +129,10 @@
 
             </div>
         </section>
+        <h2>
+            Estado de las
+            {{ $activity->mode === 'team' ? 'participaciones por equipo' : 'participaciones' }}
+        </h2>
 
         <!-- Información de la actividad -->
         <section class="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -161,12 +198,30 @@
                         @endif
                     </p>
                 </div>
+                <td>
+                    @if ($summary['average_score'] !== null)
+                        {{ $summary['average_score'] }}
+                        / {{ $activity->max_score }}
+                    @else
+                        -
+                    @endif
+                </td>
+            </tr>
 
             </div>
         </section>
 
         <!-- Participación -->
         <section class="mb-8">
+                <td>
+                    @if ($summary['best_score'] !== null)
+                        {{ $summary['best_score'] }}
+                        / {{ $activity->max_score }}
+                    @else
+                        -
+                    @endif
+                </td>
+            </tr>
 
             <div class="mb-4">
                 <h2 class="text-2xl font-black text-slate-900">
@@ -194,10 +249,16 @@
                     <p class="mt-5 text-sm font-bold text-slate-500">
                         Estudiantes inscritos
                     </p>
+                <td>
+                    @if ($summary['average_time'] !== null)
+                        {{ floor($summary['average_time'] / 60) }}:{{ str_pad($summary['average_time'] % 60, 2, '0', STR_PAD_LEFT) }}
+                    @else
+                        -
+                    @endif
+                </td>
+            </tr>
 
-                    <p class="mt-1 text-4xl font-black text-slate-900">
-                        {{ $summary['total_students'] }}
-                    </p>
+                 
                 </div>
 
                 <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
@@ -497,4 +558,5 @@
     </main>
 
 </body>
+
 </html>

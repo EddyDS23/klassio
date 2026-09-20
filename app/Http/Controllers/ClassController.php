@@ -147,6 +147,8 @@ class ClassController extends Controller
     {
         $class = SchoolClass::findOrFail($id);
 
+        Gate::authorize('view', $class);
+
         $activity = $class->activities()
             ->where('status', 'published')
             ->latest()
