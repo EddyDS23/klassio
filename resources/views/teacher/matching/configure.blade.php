@@ -226,7 +226,6 @@
                                             name="items[{{ $i }}][left]"
                                             value="{{ $item->left_text }}"
                                             placeholder="Concepto"
-                                            required
                                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                                         >
                                     </td>
@@ -237,7 +236,6 @@
                                             name="items[{{ $i }}][right]"
                                             value="{{ $item->right_text }}"
                                             placeholder="Definición"
-                                            required
                                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                                         >
                                     </td>
@@ -248,7 +246,6 @@
                                             name="items[{{ $i }}][score]"
                                             value="{{ $item->score }}"
                                             min="1"
-                                            required
                                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                                         >
                                     </td>
@@ -270,7 +267,6 @@
                                             type="text"
                                             name="items[0][left]"
                                             placeholder="HTTP"
-                                            required
                                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                                         >
                                     </td>
@@ -280,7 +276,6 @@
                                             type="text"
                                             name="items[0][right]"
                                             placeholder="Protocolo de transferencia"
-                                            required
                                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                                         >
                                     </td>
@@ -291,7 +286,6 @@
                                             name="items[0][score]"
                                             value="10"
                                             min="1"
-                                            required
                                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                                         >
                                     </td>
@@ -336,7 +330,6 @@
                                 type="text"
                                 name="items[{{ $i }}][left]"
                                 value="{{ $item->left_text }}"
-                                required
                                 class="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                             >
 
@@ -348,7 +341,6 @@
                                 type="text"
                                 name="items[{{ $i }}][right]"
                                 value="{{ $item->right_text }}"
-                                required
                                 class="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                             >
 
@@ -361,7 +353,6 @@
                                 name="items[{{ $i }}][score]"
                                 value="{{ $item->score }}"
                                 min="1"
-                                required
                                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                             >
                         </div>
@@ -388,7 +379,6 @@
                                 type="text"
                                 name="items[0][left]"
                                 placeholder="HTTP"
-                                required
                                 class="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                             >
 
@@ -400,7 +390,6 @@
                                 type="text"
                                 name="items[0][right]"
                                 placeholder="Protocolo de transferencia"
-                                required
                                 class="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                             >
 
@@ -413,7 +402,6 @@
                                 name="items[0][score]"
                                 value="10"
                                 min="1"
-                                required
                                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                             >
                         </div>
@@ -594,7 +582,6 @@
                         type="text"
                         name="items[${currentIndex}][left]"
                         placeholder="Concepto"
-                        required
                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                     >
                 </td>
@@ -604,7 +591,6 @@
                         type="text"
                         name="items[${currentIndex}][right]"
                         placeholder="Definición"
-                        required
                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                     >
                 </td>
@@ -615,7 +601,6 @@
                         name="items[${currentIndex}][score]"
                         value="10"
                         min="1"
-                        required
                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                     >
                 </td>
@@ -661,7 +646,6 @@
                     type="text"
                     name="items[${currentIndex}][left]"
                     placeholder="Concepto"
-                    required
                     class="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                 >
 
@@ -673,7 +657,6 @@
                     type="text"
                     name="items[${currentIndex}][right]"
                     placeholder="Definición"
-                    required
                     class="mb-3 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                 >
 
@@ -686,7 +669,6 @@
                     name="items[${currentIndex}][score]"
                     value="10"
                     min="1"
-                    required
                     class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                 >
             `;
