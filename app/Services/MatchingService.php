@@ -11,12 +11,12 @@ use App\Models\Participation;
 class MatchingService
 {
 
-    public function __construct(private ParticipationService $participationService){}
+    public function __construct(private ParticipationService $participationService) {}
 
     public function buildMatching(Activity $activity, array $items): Matching
     {
         $normalized = array_map(
-            fn (array $item) => [
+            fn(array $item) => [
                 'left_text' => $this->normalize($item['left']),
                 'right_text' => $this->normalize($item['right']),
                 'score' => max(1, (int) ($item['score'] ?? 1)),
@@ -183,7 +183,7 @@ class MatchingService
          */
         $this->participationService->syncScore($participation);
 
-        
+
         /*
          * Comprobar si ya encontró todos los pares.
          */
@@ -204,10 +204,9 @@ class MatchingService
          * la participación.
          */
         if ($completed) {
-            $participation->update([
-                'status' => 'completed',
-                'completed_at' => now(),
-            ]);
+            $this->participationService->finish(
+                $participation->fresh()
+            );
         }
 
         return [
