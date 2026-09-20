@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -36,7 +35,8 @@
 
             <div class="flex h-24 items-center gap-3 px-7">
 
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl font-extrabold text-white">
+                <div
+                    class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl font-extrabold text-white">
 
                     K
 
@@ -79,19 +79,13 @@
 
                 <!-- INICIO -->
 
-                <a
-                    href="{{ route('student.dashboard') }}"
-                    class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600"
-                >
+                <a href="{{ route('student.dashboard') }}"
+                    class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600">
 
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            d="M3 12l9-9 9 9M5 10v10h14V10"
-                        />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                            d="M3 12l9-9 9 9M5 10v10h14V10" />
 
                     </svg>
 
@@ -104,19 +98,13 @@
 
                 <!-- MIS CLASES ACTIVO -->
 
-                <a
-                    href="{{ route('student.classes.index') }}"
-                    class="mb-2 flex items-center gap-3 rounded-xl bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-600"
-                >
+                <a href="{{ route('student.classes.index') }}"
+                    class="mb-2 flex items-center gap-3 rounded-xl bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-600">
 
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5zM8 7h8M8 11h8M8 15h5"
-                        />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                            d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5zM8 7h8M8 11h8M8 15h5" />
 
                     </svg>
 
@@ -129,19 +117,13 @@
 
                 <!-- JUEGOS -->
 
-                <a
-                    href="{{ route('student.dashboard') }}#juegos"
-                    class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600"
-                >
+                <a href="{{ route('student.dashboard') }}#juegos"
+                    class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600">
 
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            d="M6 8h12a4 4 0 014 4v3a4 4 0 01-4 4h-1l-3-3H10l-3 3H6a4 4 0 01-4-4v-3a4 4 0 014-4zM8 12v4M6 14h4M16 13h.01M19 11h.01"
-                        />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                            d="M6 8h12a4 4 0 014 4v3a4 4 0 01-4 4h-1l-3-3H10l-3 3H6a4 4 0 01-4-4v-3a4 4 0 014-4zM8 12v4M6 14h4M16 13h.01M19 11h.01" />
 
                     </svg>
 
@@ -154,19 +136,13 @@
 
                 <!-- ACTIVIDADES -->
 
-                <a
-                    href="{{ route('student.dashboard') }}#actividades"
-                    class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600"
-                >
+                <a href="{{ route('student.dashboard') }}#actividades"
+                    class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600">
 
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="1.8"
-                            d="M9 5h6M9 3h6v4H9V3zM6 7h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2zM8 12h8M8 16h5"
-                        />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                            d="M9 5h6M9 3h6v4H9V3zM6 7h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2zM8 12h8M8 16h5" />
 
                     </svg>
 
@@ -187,7 +163,8 @@
                 <div class="mb-4 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
 
 
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-600">
+                    <div
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-600">
 
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
 
@@ -223,19 +200,13 @@
                     @csrf
 
 
-                    <button
-                        type="submit"
-                        class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
-                    >
+                    <button type="submit"
+                        class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600">
 
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="1.8"
-                                d="M10 17l5-5-5-5M15 12H3M21 3v18"
-                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                d="M10 17l5-5-5-5M15 12H3M21 3v18" />
 
                         </svg>
 
@@ -306,7 +277,8 @@
 
 
 
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 font-bold text-white">
+                    <div
+                        class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 font-bold text-white">
 
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
 
@@ -326,13 +298,15 @@
 
                 <!-- ENCABEZADO -->
 
-                <section class="relative overflow-hidden rounded-3xl bg-indigo-600 px-6 py-8 text-white shadow-sm sm:px-10 sm:py-10">
+                <section
+                    class="relative overflow-hidden rounded-3xl bg-indigo-600 px-6 py-8 text-white shadow-sm sm:px-10 sm:py-10">
 
 
                     <div class="relative z-10 max-w-2xl">
 
 
-                        <span class="inline-flex rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-100">
+                        <span
+                            class="inline-flex rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-100">
 
                             Espacio académico
 
@@ -375,19 +349,14 @@
 
                 <!-- MENSAJES -->
 
-                @if(session('success'))
-
-                    <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+                @if (session('success'))
+                    <div
+                        class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
 
 
                         <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M5 13l4 4L19 7"
-                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 
                         </svg>
 
@@ -399,24 +368,19 @@
                         </p>
 
                     </div>
-
                 @endif
 
 
 
-                @if(session('error'))
-
-                    <div class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                @if (session('error'))
+                    <div
+                        class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
 
 
                         <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M6 6l12 12M6 18L18 6"
-                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 6l12 12M6 18L18 6" />
 
                         </svg>
 
@@ -428,7 +392,6 @@
                         </p>
 
                     </div>
-
                 @endif
 
 
@@ -467,16 +430,20 @@
                         </div>
 
 
-                        <a
-                            href="{{ route('student.dashboard') }}"
-                            class="inline-flex w-fit items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-indigo-50 hover:text-indigo-600"
-                        >
+                        <a href="{{ route('student.dashboard') }}"
+                            class="inline-flex w-fit items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-indigo-50 hover:text-indigo-600">
 
                             ← Volver al dashboard
 
                         </a>
 
                     </div>
+
+                    @if ($classes->hasPages())
+                        <div class="mt-8">
+                            {{ $classes->links() }}
+                        </div>
+                    @endif
 
 
 
@@ -486,9 +453,8 @@
 
 
                         @forelse ($classes as $class)
-
-
-                            <article class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                            <article
+                                class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
 
 
                                 <!-- CABECERA DE TARJETA -->
@@ -499,7 +465,8 @@
                                     <div class="relative z-10">
 
 
-                                        <span class="inline-flex rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-indigo-100">
+                                        <span
+                                            class="inline-flex rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-indigo-100">
 
                                             Clase inscrita
 
@@ -515,10 +482,14 @@
                                     </div>
 
 
-                                    <div class="absolute -right-6 -top-10 h-32 w-32 rounded-full border border-white/15"></div>
+                                    <div
+                                        class="absolute -right-6 -top-10 h-32 w-32 rounded-full border border-white/15">
+                                    </div>
 
 
-                                    <div class="absolute -bottom-12 -left-8 h-32 w-32 rounded-full border border-white/10"></div>
+                                    <div
+                                        class="absolute -bottom-12 -left-8 h-32 w-32 rounded-full border border-white/10">
+                                    </div>
 
                                 </div>
 
@@ -529,22 +500,18 @@
                                 <div class="flex flex-1 flex-col p-6">
 
 
-                                    @if($class->description)
-
+                                    @if ($class->description)
                                         <p class="text-sm leading-6 text-slate-500">
 
                                             {{ $class->description }}
 
                                         </p>
-
                                     @else
-
                                         <p class="text-sm italic leading-6 text-slate-400">
 
                                             Sin descripción disponible.
 
                                         </p>
-
                                     @endif
 
 
@@ -561,7 +528,8 @@
                                         </span>
 
 
-                                        <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">
+                                        <span
+                                            class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">
 
                                             {{ $class->status }}
 
@@ -573,10 +541,8 @@
 
                                     <!-- BOTÓN -->
 
-                                    <a
-                                        href="{{ route('student.class.show', $class->id) }}"
-                                        class="mt-6 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100"
-                                    >
+                                    <a href="{{ route('student.class.show', $class->id) }}"
+                                        class="mt-6 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100">
 
                                         Ver clase
 
@@ -598,10 +564,12 @@
 
                             <!-- ESTADO VACÍO -->
 
-                            <div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+                            <div
+                                class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
 
 
-                                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-3xl">
+                                <div
+                                    class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-3xl">
 
                                     📚
 
@@ -624,17 +592,14 @@
                                 </p>
 
 
-                                <a
-                                    href="{{ route('student.dashboard') }}"
-                                    class="mt-6 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-700"
-                                >
+                                <a href="{{ route('student.dashboard') }}"
+                                    class="mt-6 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-700">
 
                                     Ir al dashboard →
 
                                 </a>
 
                             </div>
-
                         @endforelse
 
                     </div>

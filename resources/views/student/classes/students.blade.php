@@ -19,7 +19,8 @@
 
             <div class="flex items-center gap-3 border-b border-slate-200 px-6 py-6">
 
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-2xl font-black text-white shadow-lg">
+                <div
+                    class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-2xl font-black text-white shadow-lg">
                     K
                 </div>
 
@@ -38,19 +39,19 @@
             <nav class="flex-1 space-y-2 px-4 py-6">
 
                 <a href="{{ route('student.dashboard') }}"
-                   class="flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700">
+                    class="flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700">
                     <span class="text-xl">🏠</span>
                     Inicio
                 </a>
 
                 <a href="{{ route('student.classes.index') }}"
-                   class="flex items-center gap-3 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md">
+                    class="flex items-center gap-3 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md">
                     <span class="text-xl">📚</span>
                     Mis clases
                 </a>
 
                 <a href="{{ route('student.classes.index') }}"
-                   class="flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700">
+                    class="flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700">
                     <span class="text-xl">🎮</span>
                     Juegos educativos
                 </a>
@@ -75,7 +76,7 @@
                     @csrf
 
                     <button type="submit"
-                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 font-semibold text-red-600 transition hover:bg-red-50">
+                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 font-semibold text-red-600 transition hover:bg-red-50">
                         <span>↪</span>
                         Cerrar sesión
                     </button>
@@ -104,9 +105,15 @@
                     </div>
 
                     <a href="{{ route('student.class.show', $class->id) }}"
-                       class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700">
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700">
                         ← Volver a la clase
                     </a>
+
+                    @if ($students->hasPages())
+                        <div class="mt-8">
+                            {{ $students->links() }}
+                        </div>
+                    @endif
 
                 </div>
 
@@ -115,11 +122,13 @@
             <div class="mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8">
 
                 <!-- BANNER -->
-                <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 p-6 text-white shadow-xl sm:p-8">
+                <section
+                    class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 p-6 text-white shadow-xl sm:p-8">
 
                     <div class="relative z-10 max-w-3xl">
 
-                        <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur">
+                        <div
+                            class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur">
                             👥 Comunidad estudiantil
                         </div>
 
@@ -164,10 +173,11 @@
 
                     </div>
 
-                    @if($students->isEmpty())
+                    @if ($students->isEmpty())
 
                         <!-- ESTADO VACÍO -->
-                        <div class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
+                        <div
+                            class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
 
                             <div class="text-5xl">
                                 👤
@@ -183,24 +193,24 @@
                             </p>
 
                         </div>
-
                     @else
-
                         <!-- CONTADOR -->
-                        <div class="mb-5 inline-flex rounded-full bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700">
+                        <div
+                            class="mb-5 inline-flex rounded-full bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700">
                             👥 {{ $students->count() }} compañero(s)
                         </div>
 
                         <!-- TARJETAS -->
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
-                            @foreach($students as $enrollment)
-
-                                <article class="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md">
+                            @foreach ($students as $enrollment)
+                                <article
+                                    class="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md">
 
                                     <div class="flex items-center gap-4">
 
-                                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-xl font-black text-white shadow-md">
+                                        <div
+                                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-xl font-black text-white shadow-md">
                                             {{ strtoupper(substr($enrollment->student->name, 0, 1)) }}
                                         </div>
 
@@ -227,7 +237,6 @@
                                     </div>
 
                                 </article>
-
                             @endforeach
 
                         </div>
@@ -240,7 +249,7 @@
                 <div class="flex justify-center">
 
                     <a href="{{ route('student.class.show', $class->id) }}"
-                       class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 font-bold text-white shadow-md transition hover:bg-indigo-700">
+                        class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 font-bold text-white shadow-md transition hover:bg-indigo-700">
                         ← Regresar a la clase
                     </a>
 
