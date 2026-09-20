@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Enrollment;
 use App\Models\SchoolClass;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -55,7 +54,6 @@ class ClassService
     {
         $class = SchoolClass::findOrFail($id);
         $class->update($data);
-        $class->save();
     }
 
     public function archive(SchoolClass $class): void
