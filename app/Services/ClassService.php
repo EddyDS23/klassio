@@ -158,7 +158,7 @@ class ClassService
         return SchoolClass::whereHas('enrollments', function ($query) use ($user) {
             $query->where('student_id', $user->id)
                 ->where('status', 'active');
-        })->paginate(15);
+        })->where('status','active')->paginate(15);
     }
 
     public function getClassmates(SchoolClass $class): LengthAwarePaginator
