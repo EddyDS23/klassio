@@ -22,7 +22,7 @@
         </h2>
 
         <p class="mt-2 text-gray-500">
-            {{ $exception->getMessage() ?: $message }}
+             {{ $message }}
         </p>
 
         <a
