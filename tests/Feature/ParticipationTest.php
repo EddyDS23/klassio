@@ -206,8 +206,11 @@ class ParticipationTest extends TestCase
         $this->actingAs($student);
 
         $response = $this->post(
-            route('student.participation.start', $activity->id
-        ));
+            route(
+                'student.participation.start',
+                $activity->id
+            )
+        );
 
         $response->assertRedirect();
 
@@ -325,12 +328,7 @@ class ParticipationTest extends TestCase
             route('student.participation.finish', $activity->id)
         );
 
-        $response->assertRedirect();
-
-        $response->assertSessionHas(
-            'error',
-            'No tienes una participación activa en esta actividad.'
-        );
+        $response->assertNotFound();
 
         $this->assertDatabaseHas('participations', [
             'id' => $participation->id,
@@ -405,12 +403,7 @@ class ParticipationTest extends TestCase
             route('student.participation.abandon', $activity->id)
         );
 
-        $response->assertRedirect();
-
-        $response->assertSessionHas(
-            'error',
-            'No tienes una participación activa en esta actividad.'
-        );
+        $response->assertNotFound();
 
         $this->assertDatabaseHas('participations', [
             'id' => $participation->id,
@@ -580,12 +573,7 @@ class ParticipationTest extends TestCase
             route('student.participation.finish', $activity->id)
         );
 
-        $response->assertRedirect();
-
-        $response->assertSessionHas(
-            'error',
-            'No tienes participación activa en esta actividad.'
-        );
+        $response->assertNotFound();
 
         $this->assertDatabaseHas('participations', [
             'id' => $participation->id,
@@ -665,11 +653,10 @@ class ParticipationTest extends TestCase
         );
 
         /*
-         * getActive() detecta que la participación ya expiró,
-         * la marca como expired y lanza una excepción que el
-         * controlador convierte en una redirección al resultado.
-         */
-        $response->assertRedirect();
+        * getActive() detecta que la participación ya expiró,
+        * la marca como expired y lanza un error HTTP 410.
+        */
+        $response->assertGone();
 
         $this->assertDatabaseHas('participations', [
             'id' => $participation->id,
