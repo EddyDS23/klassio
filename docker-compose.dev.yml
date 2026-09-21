@@ -70,8 +70,6 @@ services:
     
 networks:
   klassio-network:
-  proxy_network:
-    external: true
 
 volumes:
   klassio-data:

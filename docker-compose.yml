@@ -3,6 +3,10 @@ services:
   mariadb:
     image: mariadb:11.8
     container_name: klassio_db
+    command:
+      - --innodb-buffer-pool-size=256M
+      - --innodb-log-file-size=64M
+      - --skip-name-resolve
     restart: unless-stopped
     environment:
       - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
@@ -16,7 +20,7 @@ services:
     networks:
       - klassio-network
     healthcheck:
-      test: ["CMD", "mariadb-admin","ping","-h","localhost",-u,"root","-p${DB_PASSWORD}",]
+      test: ["CMD", "mariadb-admin","ping","-h","localhost",-u,"root","-p${DB_ROOT_PASSWORD}",]
       interval: 20s
       timeout: 5s
       retries: 5
@@ -64,8 +68,8 @@ services:
         - "traefik.http.routers.klassio.entrypoints=web"
         - "traefik.http.services.klassio.loadbalancer.server.port=80"
     healthcheck:
-      test: ["CMD", "curl","-fsS", "http://localhost/up"]
-      interval: 20s
+      test: ["CMD", "curl", "-fsS", "http://localhost/up"]
+      interval: 30s
       timeout: 5s
       retries: 5
       start_period: 30s
