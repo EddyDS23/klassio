@@ -58,13 +58,9 @@ class ParticipationController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        try {
-            $participation = $this->participationService->getActive($activity);
-        } catch (\Exception $e) {
-            return redirect()
-                ->route('student.activities.show', $activity->id)
-                ->with('error', $e->getMessage());
-        }
+       
+        $participation = $this->participationService->getActive($activity);
+       
 
         Gate::authorize('finish', $participation);
 
@@ -87,13 +83,9 @@ class ParticipationController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        try {
-            $participation = $this->participationService->getActive($activity);
-        } catch (\Exception $e) {
-            return redirect()
-                ->route('student.activities.show', $activity->id)
-                ->with('error', $e->getMessage());
-        }
+        
+        $participation = $this->participationService->getActive($activity);
+        
 
         Gate::authorize('abandon', $participation);
 
@@ -189,12 +181,9 @@ class ParticipationController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        try {
-            $participation = $this->participationService->getActive($activity);
-        } catch (\Exception $e) {
-            return redirect()
-                ->route('student.participation.result', $activity->id);
-        }
+        
+        $participation = $this->participationService->getActive($activity);
+        
 
         Gate::authorize('finish', $participation);
 
