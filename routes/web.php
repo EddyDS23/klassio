@@ -18,7 +18,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\WordsearchController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn() => redirect('login'));
+Route::get('/', fn() => redirect()->route('login'));
 
 Route::middleware(['throttle:auth'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
