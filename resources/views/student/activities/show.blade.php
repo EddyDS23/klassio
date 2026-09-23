@@ -206,33 +206,6 @@
 
     <hr>
 
-    <script src="/js/klassio-sounds.js?v=4"></script>
-    <script>
-        // Al dar Iniciar / Intentar de nuevo: suena el clic y la música
-        // arranca al abrir el juego. Además se precarga la música aquí
-        // para que empiece al instante.
-        (function () {
-            var MAP = { crossword: 'crossword', word_search: 'wordsearch', matching: 'matching', kahoot: 'kahoot' };
-            var MUSIC = { crossword: '/sounds/crucigrama.mp3', wordsearch: '/sounds/sopadeletra.mp3', matching: '/sounds/conectalospuntos.mp3', kahoot: '/sounds/kahoot.mp3' };
-            var game = MAP[@json($activity->type)] || null;
-            if (game && MUSIC[game]) {
-                try {
-                    var pre = new Audio(MUSIC[game]);
-                    pre.preload = 'auto';
-                    pre.load();
-                } catch (e) {}
-            }
-            function arm() {
-                if (window.KlassioSounds && game) {
-                    try { sessionStorage.setItem('klassio-autoplay', game); } catch (e) {}
-                    KlassioSounds.click();
-                }
-            }
-            var btns = document.querySelectorAll('form[action*="participation/start"] button[type="submit"]');
-            for (var i = 0; i < btns.length; i++) btns[i].addEventListener('click', arm);
-        })();
-    </script>
-
 </body>
 
 </html>

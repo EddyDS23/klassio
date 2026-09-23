@@ -39,7 +39,6 @@
             font-size: 16px;
             font-weight: bold;
             border: 1px solid #999;
-            border-radius: .35rem;
             box-sizing: border-box;
             cursor: pointer;
             background: #fff;
@@ -71,7 +70,6 @@
         .cell.blocked {
             background: #1f2937;
             border: 1px solid #1f2937;
-            border-radius: .35rem;
         }
 
         /* Número de pista en la esquina superior izquierda */

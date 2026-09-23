@@ -54,6 +54,7 @@ services:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     networks:
       - klassio-network
+      - proxy_network
     depends_on:
         app:
           condition: service_started

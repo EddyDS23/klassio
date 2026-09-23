@@ -153,13 +153,6 @@
         );
     @endphp
 
-    <script src="/js/klassio-sounds.js?v=4"></script>
-    <script>
-        // Sonido del juego (si el archivo no carga, KS queda mudo sin romper nada).
-        window.KS = window.KlassioSounds || { click: function () {}, correcto: function () {}, error: function () {}, terminado: function () {}, completado: function () {}, expirado: function () {}, startMusic: function () {}, stopMusic: function () {} };
-        if (window.KlassioSounds) KlassioSounds.setup('crossword');
-    </script>
-
     <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
         style="display: none;">
         @csrf
@@ -193,17 +186,7 @@
 
                 timerValue.textContent = '00:00';
 
-                var allDone = (typeof WORDS !== 'undefined') && WORDS.length > 0 &&
-                    WORDS.every(function (word) { return word.answered; });
-                if (allDone) {
-                    KS.terminado();
-                } else {
-                    KS.expirado();
-                }
-
-                setTimeout(function () {
-                    document.getElementById('expire-form').submit();
-                }, 900);
+                document.getElementById('expire-form').submit();
 
                 return;
             }
@@ -397,7 +380,6 @@
         // -------------------------------------------------------------------------
 
         function onFocus(event) {
-            KS.click();
             const row = parseInt(event.target.dataset.row);
             const column = parseInt(event.target.dataset.column);
             highlightWord(row, column);
@@ -594,17 +576,6 @@
             const resultsElement = document.getElementById('results');
             const resultItem = document.createElement('p');
 
-            if (result.is_correct) { KS.correcto(); } else { KS.error(); }
-
-            // Aviso en la esquina (además del historial de abajo).
-            if (window.KlassioToast) {
-                if (result.is_correct) {
-                    KlassioToast.success('¡Correcto!', `"${word.clue}" (+${result.score} pts)`);
-                } else {
-                    KlassioToast.error('Incorrecto', `"${word.clue}" (era: ${result.correct_word})`);
-                }
-            }
-
             resultItem.textContent = result.is_correct ?
                 `✓ "${word.clue}" — Correcto (+${result.score} pts)` :
                 `✗ "${word.clue}" — Incorrecto (la respuesta era: ${result.correct_word})`;
@@ -621,7 +592,6 @@
             // Comprobar si se completó todo el crucigrama
             // Comprobar si se completó todo el crucigrama
             if (result.completed) {
-                KS.completado();
 
                 const completed = document.createElement('p');
 
