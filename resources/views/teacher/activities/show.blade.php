@@ -216,12 +216,6 @@
                 </div>
 
             </div>
-    <p>
-        <a href="{{ route('teacher.activities.report', $activity->id) }}">
-            Ver reporte
-        </a>
-    </p>
-
 
             {{-- Datos --}}
             <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
