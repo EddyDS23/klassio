@@ -1761,3 +1761,4 @@ Proyecto académico desarrollado para la plataforma educativa **Klassio**.
 ## Klassio
 
 Plataforma educativa modular para la creación, administración y ejecución de actividades interactivas, con soporte para estudiantes, docentes, administradores, participación individual y por equipos.
+# CI/CD funcionando
