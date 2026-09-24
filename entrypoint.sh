@@ -33,7 +33,7 @@ if [ "$1" = 'php-fpm' ] || [ -z "$1" ]; then
 
     echo "Ejecutando migraciones..."
     php artisan migrate --force
-    php artisan db:seed
+    php artisan db:seed --force
 
     echo "Ajustando permisos..."
     chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
