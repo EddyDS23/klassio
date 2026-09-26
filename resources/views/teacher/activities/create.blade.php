@@ -225,6 +225,10 @@
                                     🏆 Kahoot
                                 </option>
 
+                                <option value="roulette" {{ old('type') === 'roulette' ? 'selected' : '' }}>
+                                    🎡 Ruleta
+                                </option>
+
                             </select>
                         </div>
 

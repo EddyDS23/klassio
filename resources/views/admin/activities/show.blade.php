@@ -15,7 +15,7 @@
 @endsection
 
 @php
-    $typeLabels = ['word_search' => 'Sopa de letras', 'crossword' => 'Crucigrama', 'matching' => 'Conecta', 'kahoot' => 'Quiz'];
+    $typeLabels = ['word_search' => 'Sopa de letras', 'crossword' => 'Crucigrama', 'matching' => 'Conecta', 'kahoot' => 'Quiz', 'roulette' => 'Ruleta'];
     $modeLabels = ['individual' => 'Individual', 'team' => 'Equipo'];
     $statusLabels = ['draft' => 'Borrador', 'published' => 'Publicada', 'closed' => 'Cerrada'];
     $statusColors = ['draft' => 'bg-slate-200 text-slate-600', 'published' => 'bg-emerald-100 text-emerald-800', 'closed' => 'bg-red-100 text-red-800'];

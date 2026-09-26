@@ -8,17 +8,18 @@ use App\Http\Controllers\Admin\AdminResultController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CrosswordController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KahootController;
 use App\Http\Controllers\MatchingController;
 use App\Http\Controllers\ParticipationController;
 use App\Http\Controllers\RankingController;
+use App\Http\Controllers\RouletteController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\WordsearchController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn() => redirect()->route('login'));
+Route::get('/', fn () => redirect()->route('login'));
 
 Route::middleware(['throttle:auth'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -56,7 +57,7 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
     Route::get('/classes/{id}/edit', [ClassController::class, 'edit'])->where(['id' => '[1-9][0-9]*'])->name('classes.edit');
     Route::put('/classes/{id}', [ClassController::class, 'update'])->where(['id' => '[1-9][0-9]*'])->name('classes.update');
     Route::get('/classes/{id}/students', [ClassController::class, 'students'])->where(['id' => '[1-9][0-9]*'])->name('classes.students');
-    Route::delete('/classes/{id}/students/{studentId}', [ClassController::class, 'removeStudent'])->where(['id' => '[1-9][0-9]*','studentId'=>'[1-9][0-9]*'])->name('classes.students.remove');
+    Route::delete('/classes/{id}/students/{studentId}', [ClassController::class, 'removeStudent'])->where(['id' => '[1-9][0-9]*', 'studentId' => '[1-9][0-9]*'])->name('classes.students.remove');
     Route::patch('/classes/{id}/regenerate-code', [ClassController::class, 'regenerateCode'])->where(['id' => '[1-9][0-9]*'])->name('classes.regenerate-code');
     Route::patch('/classes/{id}/archive', [ClassController::class, 'archive'])->where(['id' => '[1-9][0-9]*'])->name('classes.archive');
     Route::patch('/classes/{id}/unarchive', [ClassController::class, 'unarchive'])->where(['id' => '[1-9][0-9]*'])->name('classes.unarchive');
@@ -83,18 +84,22 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
     Route::post('/activities/{id}/matching', [MatchingController::class, 'store'])->where(['id' => '[1-9][0-9]*'])->name('matching.store');
     Route::get('/activities/{id}/matching/edit', [MatchingController::class, 'edit'])->where(['id' => '[1-9][0-9]*'])->name('matching.edit');
     Route::put('/activities/{id}/matching', [MatchingController::class, 'update'])->where(['id' => '[1-9][0-9]*'])->name('matching.update');
+    Route::get('/activities/{id}/roulette/configure', [RouletteController::class, 'configure'])->where(['id' => '[1-9][0-9]*'])->name('roulette.configure');
+    Route::post('/activities/{id}/roulette', [RouletteController::class, 'store'])->where(['id' => '[1-9][0-9]*'])->name('roulette.store');
+    Route::get('/activities/{id}/roulette/edit', [RouletteController::class, 'edit'])->where(['id' => '[1-9][0-9]*'])->name('roulette.edit');
+    Route::put('/activities/{id}/roulette', [RouletteController::class, 'update'])->where(['id' => '[1-9][0-9]*'])->name('roulette.update');
     Route::get('/activities/{id}/wordsearch/configure', [WordsearchController::class, 'configure'])->where(['id' => '[1-9][0-9]*'])->name('wordsearch.configure');
     Route::post('/activities/{id}/wordsearch', [WordsearchController::class, 'store'])->where(['id' => '[1-9][0-9]*'])->name('wordsearch.store');
     Route::get('/activities/{id}/wordsearch/edit', [WordsearchController::class, 'edit'])->where(['id' => '[1-9][0-9]*'])->name('wordsearch.edit');
     Route::put('/activities/{id}/wordsearch', [WordsearchController::class, 'update'])->where(['id' => '[1-9][0-9]*'])->name('wordsearch.update');
-    Route::get('/activities/{id}/teams',[TeamController::class, 'index'])->where(['id' => '[1-9][0-9]*'])->name('teams.index');
-    Route::post('/activities/{id}/teams',[TeamController::class, 'store'])->where(['id' => '[1-9][0-9]*'])->name('teams.store');
-    Route::post('/activities/{id}/teams/{teamId}/members',[TeamController::class, 'addMember'])->where(['id' => '[1-9][0-9]*','teamId'=>'[1-9][0-9]*'])->name('teams.members.add');
-    Route::delete('/activities/{id}/teams/{teamId}/members/{studentId}',[TeamController::class, 'removeMember'])->where(['id' => '[1-9][0-9]*','teamId'=>'[1-9][0-9]*','studentId'=>'[1-9][0-9]*'])->name('teams.members.remove');
-    Route::delete('/activities/{id}/teams/{teamId}',[TeamController::class, 'destroy'])->where(['id' => '[1-9][0-9]*','teamId'=>'[1-9][0-9]*'])->name('teams.destroy');
-    Route::post('/activities/{id}/teams/randomize',[TeamController::class, 'randomize'])->where(['id' => '[1-9][0-9]*'])->name('teams.randomize');
-    Route::post('/activities/{id}/random-student',[TeamController::class, 'randomStudent'])->where(['id' => '[1-9][0-9]*'])->name('teams.random-student');
-    Route::post('/activities/{id}/random-team',[TeamController::class, 'randomTeam'])->where(['id' => '[1-9][0-9]*'])->name('teams.random-team');
+    Route::get('/activities/{id}/teams', [TeamController::class, 'index'])->where(['id' => '[1-9][0-9]*'])->name('teams.index');
+    Route::post('/activities/{id}/teams', [TeamController::class, 'store'])->where(['id' => '[1-9][0-9]*'])->name('teams.store');
+    Route::post('/activities/{id}/teams/{teamId}/members', [TeamController::class, 'addMember'])->where(['id' => '[1-9][0-9]*', 'teamId' => '[1-9][0-9]*'])->name('teams.members.add');
+    Route::delete('/activities/{id}/teams/{teamId}/members/{studentId}', [TeamController::class, 'removeMember'])->where(['id' => '[1-9][0-9]*', 'teamId' => '[1-9][0-9]*', 'studentId' => '[1-9][0-9]*'])->name('teams.members.remove');
+    Route::delete('/activities/{id}/teams/{teamId}', [TeamController::class, 'destroy'])->where(['id' => '[1-9][0-9]*', 'teamId' => '[1-9][0-9]*'])->name('teams.destroy');
+    Route::post('/activities/{id}/teams/randomize', [TeamController::class, 'randomize'])->where(['id' => '[1-9][0-9]*'])->name('teams.randomize');
+    Route::post('/activities/{id}/random-student', [TeamController::class, 'randomStudent'])->where(['id' => '[1-9][0-9]*'])->name('teams.random-student');
+    Route::post('/activities/{id}/random-team', [TeamController::class, 'randomTeam'])->where(['id' => '[1-9][0-9]*'])->name('teams.random-team');
 });
 
 Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:student'])->group(function () {
@@ -113,6 +118,9 @@ Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:
     Route::post('/matching/answer', [MatchingController::class, 'answer'])->name('matching.answer');
     Route::get('/activities/{id}/wordsearch/play', [WordsearchController::class, 'play'])->where(['id' => '[1-9][0-9]*'])->name('wordsearch.play');
     Route::post('/wordsearch/answer', [WordsearchController::class, 'answer'])->name('wordsearch.answer');
+    Route::get('/activities/{id}/roulette/play', [RouletteController::class, 'play'])->where(['id' => '[1-9][0-9]*'])->name('roulette.play');
+    Route::post('/roulette/spin', [RouletteController::class, 'spin'])->name('roulette.spin');
+    Route::post('/roulette/answer', [RouletteController::class, 'answer'])->name('roulette.answer');
     Route::post('/activities/{id}/start', [ParticipationController::class, 'start'])->where(['id' => '[1-9][0-9]*'])->name('participation.start');
     Route::post('/activities/{id}/finish', [ParticipationController::class, 'finish'])->where(['id' => '[1-9][0-9]*'])->name('participation.finish');
     Route::post('/activities/{id}/abandon', [ParticipationController::class, 'abandon'])->where(['id' => '[1-9][0-9]*'])->name('participation.abandon');

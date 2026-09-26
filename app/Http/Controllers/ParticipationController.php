@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Activity;
 use App\Models\Participation;
 use App\Models\Team;
+use App\Models\User;
 use App\Services\ParticipationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -34,11 +35,12 @@ class ParticipationController extends Controller
         }
 
         $playRoute = match ($activity->type) {
-            'crossword'   => 'student.crossword.play',
-            'kahoot'      => 'student.kahoot.play',
+            'crossword' => 'student.crossword.play',
+            'kahoot' => 'student.kahoot.play',
             'word_search' => 'student.wordsearch.play',
-            'matching'    => 'student.matching.play',
-            default       => null,
+            'matching' => 'student.matching.play',
+            'roulette' => 'student.roulette.play',
+            default => null,
         };
 
         if ($playRoute === null || ! Route::has($playRoute)) {
@@ -58,9 +60,7 @@ class ParticipationController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-       
         $participation = $this->participationService->getActive($activity);
-       
 
         Gate::authorize('finish', $participation);
 
@@ -83,9 +83,7 @@ class ParticipationController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        
         $participation = $this->participationService->getActive($activity);
-        
 
         Gate::authorize('abandon', $participation);
 
@@ -108,7 +106,7 @@ class ParticipationController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
 
         // Resolver la participación según el rol y el modo de la actividad
@@ -126,7 +124,7 @@ class ParticipationController extends Controller
         } elseif ($activity->mode === 'team') {
             // Estudiante en modo equipo: buscar por team_id
             $team = Team::where('activity_id', $activity->id)
-                ->whereHas('members', fn($q) => $q->where('student_id', $user->id))
+                ->whereHas('members', fn ($q) => $q->where('student_id', $user->id))
                 ->first();
 
             abort_if($team === null, 404, 'No perteneces a ningún equipo en esta actividad.');
@@ -151,7 +149,6 @@ class ParticipationController extends Controller
 
         return view('student.participation.result', $result);
     }
-
 
     // -------------------------------------------------------------------------
     // 6.8 — Resultados del profesor
@@ -181,13 +178,11 @@ class ParticipationController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        
         $participation = $this->participationService->getActive($activity);
-        
 
         Gate::authorize('finish', $participation);
 
-        if (!$this->participationService->hasExpired($participation, $activity)) {
+        if (! $this->participationService->hasExpired($participation, $activity)) {
             abort(409, 'La actividad aún no ha terminado.');
         }
 

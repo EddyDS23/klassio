@@ -36,6 +36,7 @@
                     'word_search' => 'Sopa de letras',
                     'matching' => 'Unir conceptos',
                     'kahoot' => 'Kahoot',
+                    'roulette' => 'Ruleta',
                     default => $activity->type,
                 } }}
             </dd>
@@ -111,6 +112,7 @@
             'kahoot' => 'student.kahoot.play',
             'word_search' => 'student.wordsearch.play',
             'matching' => 'student.matching.play',
+            'roulette' => 'student.roulette.play',
             default => null,
         };
 

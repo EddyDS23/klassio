@@ -7,7 +7,7 @@
 @endsection
 
 @php
-    $typeLabels = ['word_search' => 'Sopa de letras', 'crossword' => 'Crucigrama', 'matching' => 'Conecta', 'kahoot' => 'Quiz'];
+    $typeLabels = ['word_search' => 'Sopa de letras', 'crossword' => 'Crucigrama', 'matching' => 'Conecta', 'kahoot' => 'Quiz', 'roulette' => 'Ruleta'];
     $statusLabels = ['started' => 'En curso', 'completed' => 'Completada', 'abandoned' => 'Abandonada', 'expired' => 'Expirada'];
     $statusColors = ['started' => 'bg-amber-100 text-amber-800', 'completed' => 'bg-emerald-100 text-emerald-800', 'abandoned' => 'bg-slate-200 text-slate-600', 'expired' => 'bg-red-100 text-red-800'];
 

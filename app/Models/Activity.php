@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Override;
 
-#[Fillable(['class_id','teacher_id','title','description','type','mode','max_score','time_limit','attempts','due_at','status'])]
-#[Hidden(['created_at','updated_at'])]
+#[Fillable(['class_id', 'teacher_id', 'title', 'description', 'type', 'mode', 'max_score', 'time_limit', 'attempts', 'due_at', 'status'])]
+#[Hidden(['created_at', 'updated_at'])]
 class Activity extends Model
 {
     public $timestamps = true;
@@ -20,7 +20,7 @@ class Activity extends Model
     protected function casts()
     {
         return [
-            'due_at'=>'datetime',
+            'due_at' => 'datetime',
         ];
     }
 
@@ -52,6 +52,11 @@ class Activity extends Model
     public function kahoot(): HasOne
     {
         return $this->hasOne(Kahoot::class);
+    }
+
+    public function roulette(): HasOne
+    {
+        return $this->hasOne(Roulette::class);
     }
 
     public function teams(): HasMany

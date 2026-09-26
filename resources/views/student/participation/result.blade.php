@@ -190,6 +190,31 @@
                 @endforeach
             </tbody>
         </table>
+
+    @elseif ($activity->type === 'roulette')
+        <h2>Respuestas de la Ruleta</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pregunta</th>
+                    <th>Tu respuesta</th>
+                    <th>Correcto</th>
+                    <th>Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($answers as $a)
+                    <tr>
+                        <td>{{ $a['question'] }}</td>
+                        <td>{{ $a['response'] }}</td>
+                        <td>{{ $a['correct'] }}</td>
+                        <td class="{{ $a['is_correct'] ? 'correct' : 'incorrect' }}">
+                            {{ $a['is_correct'] ? '+' . $a['score'] : '0' }}
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     @endif
 
 @else

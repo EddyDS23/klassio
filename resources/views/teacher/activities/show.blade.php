@@ -250,6 +250,10 @@
                                 Unir conceptos
                             @break
 
+                            @case('roulette')
+                                Ruleta
+                            @break
+
                             @default
                                 {{ $activity->type }}
                         @endswitch
@@ -627,6 +631,48 @@
                                     <a href="{{ route('teacher.matching.configure', $activity->id) }}"
                                         class="rounded-xl bg-pink-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-pink-700">
                                         Configurar unir conceptos
+                                    </a>
+
+                                @endif
+
+                            </div>
+
+                        @break
+
+
+                        {{-- Ruleta --}}
+                        @case('roulette')
+
+                            <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+
+                                <div class="flex items-center gap-4">
+                                    <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-fuchsia-100 text-3xl">
+                                        🎡
+                                    </div>
+
+                                    <div>
+                                        <h4 class="font-black text-slate-900">
+                                            Ruleta
+                                        </h4>
+
+                                        <p class="text-sm font-medium text-slate-500">
+                                            Administra los casilleros de la ruleta.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                @if ($activity->roulette && $activity->roulette->items()->exists())
+
+                                    <a href="{{ route('teacher.roulette.edit', $activity->id) }}"
+                                        class="rounded-xl bg-fuchsia-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-fuchsia-700">
+                                        Editar ruleta
+                                    </a>
+
+                                @else
+
+                                    <a href="{{ route('teacher.roulette.configure', $activity->id) }}"
+                                        class="rounded-xl bg-fuchsia-600 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-fuchsia-700">
+                                        Configurar ruleta
                                     </a>
 
                                 @endif

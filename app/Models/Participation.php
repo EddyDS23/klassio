@@ -58,4 +58,9 @@ class Participation extends Model
     {
         return $this->hasMany(KahootAnswer::class);
     }
+
+    public function rouletteAnswers(): HasMany
+    {
+        return $this->hasMany(RouletteAnswer::class);
+    }
 }
