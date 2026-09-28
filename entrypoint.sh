@@ -32,7 +32,7 @@ if [ "$1" = 'php-fpm' ] || [ -z "$1" ]; then
     echo "MariaDB lista."
 
     echo "Ejecutando migraciones..."
-    php artisan migrate --force
+    php artisan migrate --force --isolated
     php artisan db:seed --force
 
     echo "Ajustando permisos..."
