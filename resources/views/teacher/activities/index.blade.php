@@ -183,6 +183,11 @@
                             Unir conceptos
                         </option>
 
+                        <option value="roulette"
+                            {{ request('type') === 'roulette' ? 'selected' : '' }}>
+                            Ruleta
+                        </option>
+
                     </select>
 
                 </div>
@@ -486,6 +491,31 @@
                                                     class="inline-flex items-center justify-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-black text-orange-700 transition hover:bg-orange-100"
                                                 >
                                                     🔗 Configurar unir palabras
+                                                </a>
+
+                                            @endif
+
+                                        @endif
+
+                                        {{-- Configuración de la ruleta --}}
+                                        @if ($activity->type === 'roulette')
+
+                                            @if ($activity->roulette && $activity->roulette->items()->exists())
+
+                                                <a
+                                                    href="{{ route('teacher.roulette.edit', $activity->id) }}"
+                                                    class="inline-flex items-center justify-center gap-2 rounded-2xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 text-sm font-black text-fuchsia-700 transition hover:bg-fuchsia-100"
+                                                >
+                                                    🎡 Editar ruleta
+                                                </a>
+
+                                            @else
+
+                                                <a
+                                                    href="{{ route('teacher.roulette.configure', $activity->id) }}"
+                                                    class="inline-flex items-center justify-center gap-2 rounded-2xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 text-sm font-black text-fuchsia-700 transition hover:bg-fuchsia-100"
+                                                >
+                                                    🎡 Configurar ruleta
                                                 </a>
 
                                             @endif

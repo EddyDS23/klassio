@@ -73,7 +73,6 @@ class ParticipationService
             ->where('student_id', $student->id)
             ->max('attempt') ?? 0;
 
-
         $nextAttempt = $attempt + 1;
 
         if (
@@ -88,11 +87,11 @@ class ParticipationService
         // started_at lo asigna la BD por DEFAULT current_timestamp()
         return Participation::create([
             'activity_id' => $activity->id,
-            'student_id'  => $student->id,
-            'team_id'     => null,
-            'attempt'     => $attempt + 1,
-            'status'      => 'started',
-            'score'       => 0,
+            'student_id' => $student->id,
+            'team_id' => null,
+            'attempt' => $attempt + 1,
+            'status' => 'started',
+            'score' => 0,
         ]);
     }
 
@@ -105,7 +104,7 @@ class ParticipationService
     {
         // Buscar el equipo del estudiante para esta actividad
         $team = Team::where('activity_id', $activity->id)
-            ->whereHas('members', fn($q) => $q->where('student_id', $student->id))
+            ->whereHas('members', fn ($q) => $q->where('student_id', $student->id))
             ->first();
 
         if ($team === null) {
@@ -126,7 +125,6 @@ class ParticipationService
             ->where('team_id', $team->id)
             ->max('attempt') ?? 0;
 
-
         $nextAttempt = $attempt + 1;
 
         if (
@@ -140,11 +138,11 @@ class ParticipationService
 
         return Participation::create([
             'activity_id' => $activity->id,
-            'student_id'  => null,
-            'team_id'     => $team->id,
-            'attempt'     => $attempt + 1,
-            'status'      => 'started',
-            'score'       => 0,
+            'student_id' => null,
+            'team_id' => $team->id,
+            'attempt' => $attempt + 1,
+            'status' => 'started',
+            'score' => 0,
         ]);
     }
 
@@ -168,7 +166,7 @@ class ParticipationService
 
         if ($activity->mode === 'team') {
             $team = Team::where('activity_id', $activity->id)
-                ->whereHas('members', fn($q) => $q->where('student_id', $student->id))
+                ->whereHas('members', fn ($q) => $q->where('student_id', $student->id))
                 ->first();
 
             if ($team === null) {
@@ -228,8 +226,8 @@ class ParticipationService
         }
 
         $participation->update([
-            'status'          => 'completed',
-            'completed_at'    => now(),
+            'status' => 'completed',
+            'completed_at' => now(),
             'elapsed_seconds' => $elapsed,
         ]);
 
@@ -251,8 +249,8 @@ class ParticipationService
         $elapsed = (int) $participation->started_at->diffInSeconds(now());
 
         $participation->update([
-            'status'          => 'abandoned',
-            'completed_at'    => now(),
+            'status' => 'abandoned',
+            'completed_at' => now(),
             'elapsed_seconds' => $elapsed,
         ]);
     }
@@ -266,8 +264,8 @@ class ParticipationService
         $elapsed = (int) $participation->started_at->diffInSeconds(now());
 
         $participation->update([
-            'status'          => 'expired',
-            'completed_at'    => now(),
+            'status' => 'expired',
+            'completed_at' => now(),
             'elapsed_seconds' => $elapsed,
         ]);
     }
@@ -296,7 +294,6 @@ class ParticipationService
         return $elapsed >= $activity->time_limit;
     }
 
-
     public function getLatest(Activity $activity): ?Participation
     {
         /** @var User $student */
@@ -309,7 +306,7 @@ class ParticipationService
             $team = Team::where('activity_id', $activity->id)
                 ->whereHas(
                     'members',
-                    fn($q) => $q->where('student_id', $student->id)
+                    fn ($q) => $q->where('student_id', $student->id)
                 )
                 ->first();
 
@@ -346,7 +343,6 @@ class ParticipationService
         return $participation;
     }
 
-
     /**
      * Expira participaciones colgadas en 'started' que ya superaron el time_limit.
      * Solo aplica para modo individual (team se resuelve por equipo).
@@ -378,18 +374,19 @@ class ParticipationService
             : null;
 
         $answers = match ($activity->type) {
-            'crossword'   => $this->crosswordAnswers($participation),
-            'kahoot'      => $this->kahootAnswers($participation),
+            'crossword' => $this->crosswordAnswers($participation),
+            'kahoot' => $this->kahootAnswers($participation),
             'word_search' => $this->wordsearchAnswers($participation),
-            'matching'    => $this->matchingAnswers($participation),
-            default       => [],
+            'matching' => $this->matchingAnswers($participation),
+            'roulette' => $this->rouletteAnswers($participation),
+            default => [],
         };
 
         return [
-            'activity'      => $activity,
+            'activity' => $activity,
             'participation' => $participation,
-            'elapsed'       => $elapsed,
-            'answers'       => $answers,
+            'elapsed' => $elapsed,
+            'answers' => $answers,
             'total' => $this->getTotalItems($activity),
         ];
     }
@@ -432,7 +429,7 @@ class ParticipationService
                 ->orderByDesc('attempt')
                 ->get()
                 ->groupBy('student_id')
-                ->map(fn($items) => $items->first());
+                ->map(fn ($items) => $items->first());
 
             return $enrollments->map(function ($enrollment) use ($participations) {
 
@@ -497,7 +494,7 @@ class ParticipationService
             ->orderByDesc('attempt')
             ->get()
             ->groupBy('team_id')
-            ->map(fn($items) => $items->first());
+            ->map(fn ($items) => $items->first());
 
         return $enrollments->map(function ($enrollment) use (
             $teamsByStudent,
@@ -527,6 +524,7 @@ class ParticipationService
     {
         $m = intdiv($seconds, 60);
         $s = $seconds % 60;
+
         return sprintf('%02d:%02d', $m, $s);
     }
 
@@ -535,12 +533,12 @@ class ParticipationService
         return $participation->crosswordAnswers()
             ->with('crosswordWord')
             ->get()
-            ->map(fn($a) => [
-                'clue'       => $a->crosswordWord->clue,
-                'response'   => $a->response,
-                'correct'    => $a->crosswordWord->word,
+            ->map(fn ($a) => [
+                'clue' => $a->crosswordWord->clue,
+                'response' => $a->response,
+                'correct' => $a->crosswordWord->word,
                 'is_correct' => $a->is_correct,
-                'score'      => $a->score,
+                'score' => $a->score,
             ])
             ->toArray();
     }
@@ -550,11 +548,11 @@ class ParticipationService
         return $participation->kahootAnswers()
             ->with(['question', 'option'])
             ->get()
-            ->map(fn($a) => [
-                'question'   => $a->question->question,
-                'response'   => $a->option->text,
+            ->map(fn ($a) => [
+                'question' => $a->question->question,
+                'response' => $a->option->text,
                 'is_correct' => $a->is_correct,
-                'score'      => $a->score,
+                'score' => $a->score,
             ])
             ->toArray();
     }
@@ -564,7 +562,7 @@ class ParticipationService
         return $participation->wordsearchAnswers()
             ->with('word')
             ->get()
-            ->map(fn($answer) => [
+            ->map(fn ($answer) => [
                 'word' => $answer->word->word,
                 'score' => $answer->score,
                 'is_correct' => true,
@@ -577,16 +575,42 @@ class ParticipationService
         return $participation->matchingAnswers()
             ->with('matchingItem')
             ->get()
-            ->map(fn($a) => [
-                'left'       => $a->matchingItem->left_text,
-                'right'      => $a->matchingItem->right_text,
-                'response'   => $a->response,
+            ->map(fn ($a) => [
+                'left' => $a->matchingItem->left_text,
+                'right' => $a->matchingItem->right_text,
+                'response' => $a->response,
                 'is_correct' => $a->is_correct,
-                'score'      => $a->score,
+                'score' => $a->score,
             ])
             ->toArray();
     }
 
+    private function rouletteAnswers(Participation $participation): array
+    {
+        return $participation->rouletteAnswers()
+            ->with('rouletteItem')
+            ->get()
+            ->map(fn ($a) => [
+                'question' => $a->rouletteItem->question,
+                'response' => $a->response,
+                'correct' => (string) $a->rouletteItem->{'option_'.$a->rouletteItem->correct_option},
+                'is_correct' => $a->is_correct,
+                'score' => $a->score,
+            ])
+            ->toArray();
+    }
+
+    private function rouletteScore(Participation $participation): array
+    {
+        $roulette = $participation->activity->roulette;
+
+        $possible = (int) $roulette->items()->sum('points');
+
+        $obtained = (int) $participation->rouletteAnswers()
+            ->sum('score');
+
+        return [$obtained, $possible];
+    }
 
     public function addScore(
         Participation $participation,
@@ -613,6 +637,7 @@ class ParticipationService
             'kahoot' => $activity->kahoot?->questions()->count() ?? 0,
             'word_search' => $activity->wordsearch?->words()->count() ?? 0,
             'matching' => $activity->matching?->items()->count() ?? 0,
+            'roulette' => $activity->roulette?->items()->count() ?? 0,
             default => 0,
         };
     }
@@ -623,10 +648,11 @@ class ParticipationService
 
         [$obtained, $possible] = match ($activity->type) {
             'word_search' => $this->wordsearchScore($participation),
-            'crossword'   => $this->crosswordScore($participation),
-            'matching'    => $this->matchingScore($participation),
-            'kahoot'      => $this->kahootScore($participation),
-            default       => [0, 0],
+            'crossword' => $this->crosswordScore($participation),
+            'matching' => $this->matchingScore($participation),
+            'kahoot' => $this->kahootScore($participation),
+            'roulette' => $this->rouletteScore($participation),
+            default => [0, 0],
         };
 
         $maxScore = (int) $activity->max_score;

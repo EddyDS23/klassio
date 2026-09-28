@@ -42,6 +42,7 @@ class StoreActivityRequest extends FormRequest
                     'crossword',
                     'matching',
                     'kahoot',
+                    'roulette',
                 ]),
             ],
 
@@ -64,7 +65,7 @@ class StoreActivityRequest extends FormRequest
                 'nullable',
                 'integer',
                 'min:1',
-                
+
             ],
 
             'attempts' => [

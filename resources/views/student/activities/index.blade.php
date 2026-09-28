@@ -18,7 +18,7 @@
         <section class="card surface-card mb-4"><div class="card-body p-4">
             <form method="GET" action="{{ route('student.activities.index', $class->id) }}" class="row g-3 align-items-end">
                 <div class="col-md-5"><label class="form-label fw-semibold" for="search">Buscar actividad</label><input class="form-control form-control-lg" type="search" name="search" id="search" value="{{ request('search') }}" placeholder="Ej. animales, fracciones…"></div>
-                <div class="col-md-4"><label class="form-label fw-semibold" for="type">Tipo de reto</label><select class="form-select form-select-lg" name="type" id="type"><option value="">Todos los retos</option><option value="kahoot" @selected(request('type') === 'kahoot')>Kahoot</option><option value="crossword" @selected(request('type') === 'crossword')>Crucigrama</option><option value="word_search" @selected(request('type') === 'word_search')>Sopa de letras</option><option value="matching" @selected(request('type') === 'matching')>Unir conceptos</option></select></div>
+                <div class="col-md-4"><label class="form-label fw-semibold" for="type">Tipo de reto</label><select class="form-select form-select-lg" name="type" id="type"><option value="">Todos los retos</option><option value="kahoot" @selected(request('type') === 'kahoot')>Kahoot</option><option value="crossword" @selected(request('type') === 'crossword')>Crucigrama</option><option value="word_search" @selected(request('type') === 'word_search')>Sopa de letras</option><option value="matching" @selected(request('type') === 'matching')>Unir conceptos</option><option value="roulette" @selected(request('type') === 'roulette')>Ruleta</option></select></div>
                 <div class="col-md-auto d-flex gap-2"><button class="btn btn-klassio btn-lg px-4" type="submit">Buscar</button>@if (request()->filled('search') || request()->filled('type'))<a class="btn btn-outline-secondary btn-lg" href="{{ route('student.activities.index', $class->id) }}">Limpiar</a>@endif</div>
             </form>
         </div></section>
@@ -28,7 +28,7 @@
         @else
             <div class="row g-4">
                 @foreach ($activities as $activity)
-                    @php($icon = match($activity->type) { 'kahoot' => '⚡', 'crossword' => '🧩', 'word_search' => '🔎', 'matching' => '🔗', default => '🎯' })
+                    @php($icon = match($activity->type) { 'kahoot' => '⚡', 'crossword' => '🧩', 'word_search' => '🔎', 'matching' => '🔗', 'roulette' => '🎡', default => '🎯' })
                     <div class="col-md-6 col-xl-4"><article class="card surface-card h-100"><div class="card-body p-4 d-flex flex-column"><div class="d-flex align-items-start justify-content-between gap-3 mb-3"><div class="activity-icon">{{ $icon }}</div><span class="badge rounded-pill text-bg-info">{{ $activity->mode === 'team' ? 'En equipo' : 'Individual' }}</span></div><h2 class="h4 fw-bold">{{ $activity->title }}</h2><p class="text-secondary flex-grow-1">{{ $activity->description ?: 'Un nuevo reto para poner a prueba lo que aprendiste.' }}</p><div class="d-flex flex-wrap gap-2 small text-secondary mb-4"><span class="badge text-bg-light">🏆 {{ $activity->max_score }} pts</span>@if ($activity->time_limit)<span class="badge text-bg-light">⏱ {{ $activity->time_limit }} s</span>@endif</div><a class="btn btn-klassio w-100" href="{{ route('student.activities.show', $activity->id) }}">Ver reto <span aria-hidden="true">→</span></a></div></article></div>
                 @endforeach
             </div>

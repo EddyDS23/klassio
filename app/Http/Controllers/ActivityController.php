@@ -14,6 +14,7 @@ use Illuminate\View\View;
 class ActivityController extends Controller
 {
     public function __construct(private ActivityService $activityService) {}
+
     public function teacherIndex(int $id): View
     {
         $class = SchoolClass::findOrFail($id);
@@ -27,7 +28,7 @@ class ActivityController extends Controller
         }
 
         if (request()->filled('search')) {
-            $query->where('title', 'like', '%' . request('search') . '%');
+            $query->where('title', 'like', '%'.request('search').'%');
         }
 
         $activities = $query->latest()->paginate(12)->withQueryString();
@@ -39,6 +40,7 @@ class ActivityController extends Controller
     {
         $class = SchoolClass::findOrFail($id);
         Gate::authorize('create', [Activity::class, $class]);
+
         return view('teacher.activities.create', compact('class'));
     }
 
@@ -55,9 +57,10 @@ class ActivityController extends Controller
 
         $configureRoutes = [
             'crossword' => 'teacher.crossword.configure',
-            'kahoot'    => 'teacher.kahoot.configure',
+            'kahoot' => 'teacher.kahoot.configure',
             'word_search' => 'teacher.wordsearch.configure',
-            'matching'  => 'teacher.matching.configure',
+            'matching' => 'teacher.matching.configure',
+            'roulette' => 'teacher.roulette.configure',
         ];
 
         $route = $configureRoutes[$activity->type] ?? 'teacher.activities.edit';
@@ -67,7 +70,7 @@ class ActivityController extends Controller
             ->with(
                 'success',
                 'Actividad creada correctamente.'
-                    . (isset($configureRoutes[$activity->type])
+                    .(isset($configureRoutes[$activity->type])
                         ? ' Ahora configura el juego.'
                         : '')
             );
@@ -77,6 +80,7 @@ class ActivityController extends Controller
     {
         $activity = Activity::findOrFail($id);
         Gate::authorize('view', $activity);
+
         return view('teacher.activities.show', compact('activity'));
     }
 
@@ -84,6 +88,7 @@ class ActivityController extends Controller
     {
         $activity = Activity::findOrFail($id);
         Gate::authorize('update', $activity);
+
         return view('teacher.activities.edit', compact('activity'));
     }
 
@@ -92,6 +97,7 @@ class ActivityController extends Controller
         $activity = Activity::findOrFail($id);
         Gate::authorize('update', $activity);
         $activity->update($request->validated());
+
         return redirect()->route('teacher.activities.edit', $activity->id)->with('success', 'Actividad actualizada correctamente.');
     }
 
@@ -104,6 +110,7 @@ class ActivityController extends Controller
         } catch (\RuntimeException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
+
         return redirect()->back()->with('success', 'Actividad publicada correctamente.');
     }
 
@@ -116,13 +123,14 @@ class ActivityController extends Controller
         } catch (\RuntimeException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
+
         return redirect()->back()->with('success', 'Actividad cerrada correctamente.');
     }
 
     public function studentIndex(int $id): View
     {
         $class = SchoolClass::findOrFail($id);
-        
+
         Gate::authorize('view', $class);
 
         $query = $class->activities()
@@ -133,7 +141,7 @@ class ActivityController extends Controller
         }
 
         if (request()->filled('search')) {
-            $query->where('title', 'like', '%' . request('search') . '%');
+            $query->where('title', 'like', '%'.request('search').'%');
         }
 
         $activities = $query->latest()->paginate(12)->withQueryString();
@@ -145,6 +153,7 @@ class ActivityController extends Controller
     {
         $activity = Activity::findOrFail($id);
         Gate::authorize('view', $activity);
+
         return view('student.activities.show', compact('activity'));
     }
 }

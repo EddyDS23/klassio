@@ -32,6 +32,10 @@ class ActivitySeeder extends Seeder
                 'title' => 'Kahoot - Programación Web',
                 'type' => 'kahoot',
             ],
+            [
+                'title' => 'Ruleta - Programación Web',
+                'type' => 'roulette',
+            ],
         ];
 
         foreach ($activities as $activity) {

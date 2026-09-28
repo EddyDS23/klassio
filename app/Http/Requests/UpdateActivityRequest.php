@@ -42,6 +42,7 @@ class UpdateActivityRequest extends FormRequest
                     'crossword',
                     'matching',
                     'kahoot',
+                    'roulette',
                 ]),
             ],
 
@@ -58,7 +59,7 @@ class UpdateActivityRequest extends FormRequest
                 'integer',
                 'min:1',
                 'max:60000',
-                
+
             ],
 
             'time_limit' => [
