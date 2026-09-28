@@ -543,7 +543,7 @@ class RouletteTest extends TestCase
 
         $response->assertViewHas('earnedPoints', 0);
 
-        $response->assertViewHas('maxScore', 30);
+        $response->assertViewHas('maxScore', 100);
     }
 
     public function test_student_cannot_open_roulette_without_participation(): void

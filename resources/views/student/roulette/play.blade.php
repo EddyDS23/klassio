@@ -5,336 +5,1007 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Ruleta — Jugar</title>
+
+    <title>Ruleta — {{ $activity->title }}</title>
+
     <style>
-        a { text-decoration: none; }
-        body {
-            font-family: system-ui, sans-serif;
-            background: #faf5ff;
-            margin: 0;
-            padding: 2rem;
-            color: #1e293b;
+        :root {
+            --bg: #f5f1f8;
+            --surface: #ffffff;
+            --surface-soft: #faf7fc;
+            --primary: #8e24aa;
+            --primary-dark: #5d176f;
+            --primary-light: #f3e5f5;
+            --accent: #c026d3;
+            --text: #29222d;
+            --muted: #766d7b;
+            --border: #e6dce9;
+
+            --success: #15803d;
+            --success-bg: #dcfce7;
+            --success-border: #4ade80;
+
+            --danger: #b91c1c;
+            --danger-bg: #fee2e2;
+            --danger-border: #f87171;
+
+            --shadow: 0 24px 70px rgb(54 20 64 / 0.12);
         }
 
-        .wrap {
-            max-width: 760px;
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 22px 14px;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 8% 0%, rgb(216 180 254 / .28), transparent 28%),
+                radial-gradient(circle at 92% 8%, rgb(244 114 182 / .16), transparent 25%),
+                var(--bg);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                "Segoe UI", sans-serif;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .page {
+            width: min(1000px, 100%);
             margin: 0 auto;
         }
 
-        .card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: .75rem;
-            padding: 2rem;
-            box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08);
-        }
-
-        h1 {
-            margin: 0 0 .25rem;
-            color: #a21caf;
-            text-align: center;
-        }
-
-        #timer {
-            color: #475569;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .scoreline {
-            color: #475569;
-            margin-bottom: 1.25rem;
-            text-align: center;
-        }
-
-        .progress-bar {
-            height: .55rem;
-            border-radius: 999px;
-            background: #f3e8ff;
-            margin: 0 auto 1.5rem;
-            max-width: 420px;
+        .game {
             overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .header {
+            padding: 28px 30px 24px;
+            color: #fff;
+            background:
+                radial-gradient(circle at 80% 10%, rgb(255 255 255 / .18), transparent 22%),
+                linear-gradient(135deg, #68127d, #8e24aa 55%, #b423c5);
+        }
+
+        .header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .eyebrow {
+            margin: 0 0 6px;
+            color: rgb(255 255 255 / .72);
+            font-size: .72rem;
+            font-weight: 850;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+        }
+
+        .title {
+            margin: 0;
+            font-size: clamp(1.7rem, 4vw, 2.35rem);
+            line-height: 1.05;
+            letter-spacing: -.025em;
+        }
+
+        .activity {
+            margin: 8px 0 0;
+            color: rgb(255 255 255 / .82);
+            font-size: .94rem;
+        }
+
+        .timer {
+            flex: 0 0 auto;
+            min-width: 145px;
+            padding: 11px 16px;
+            border: 1px solid rgb(255 255 255 / .22);
+            border-radius: 15px;
+            background: rgb(255 255 255 / .12);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .timer-label {
+            display: block;
+            margin-bottom: 2px;
+            color: rgb(255 255 255 / .7);
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+        }
+
+        #timer-value {
+            font-size: 1.35rem;
+            font-weight: 900;
+            letter-spacing: .05em;
+        }
+
+        #timer-value.warning {
+            color: #fde68a;
+        }
+
+        #timer-value.danger {
+            color: #fecaca;
+        }
+
+        /* =========================================================
+           STATS
+        ========================================================= */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 18px 30px;
+            border-bottom: 1px solid var(--border);
+            background: #fff;
+        }
+
+        .stat {
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: var(--surface-soft);
+            text-align: center;
+        }
+
+        .stat-label {
+            display: block;
+            margin-bottom: 3px;
+            color: var(--muted);
+            font-size: .69rem;
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: var(--primary-dark);
+            font-size: 1.15rem;
+            font-weight: 900;
+        }
+
+        /* =========================================================
+           PROGRESS
+        ========================================================= */
+
+        .progress-area {
+            padding: 18px 30px 0;
+        }
+
+        .progress-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 7px;
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 750;
+        }
+
+        .progress-track {
+            height: 9px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #eee7f1;
         }
 
         .progress-fill {
-            height: 100%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #d946ef, #6366f1);
-            transition: width .35s ease;
             width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #7e22ce, #c026d3);
+            transition: width .35s ease;
         }
 
-        /* Rueda */
-        .wheel-section {
+        /* =========================================================
+           GAME AREA
+        ========================================================= */
+
+        .main {
+            padding: 28px 30px 30px;
+        }
+
+        .instructions {
+            width: min(680px, 100%);
+            margin: 0 auto 24px;
+            padding: 13px 17px;
+            border: 1px solid #ead7ef;
+            border-radius: 14px;
+            color: #6b2177;
+            background: #fcf7fd;
+            text-align: center;
+            font-size: .9rem;
+            font-weight: 650;
+        }
+
+        .wheel-area {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1.25rem;
-            margin-bottom: 1.5rem;
         }
 
-        .wheel-wrap {
+        .remaining-label {
+            margin-bottom: 15px;
+            color: var(--muted);
+            font-size: .85rem;
+            font-weight: 750;
+        }
+
+        .remaining-label strong {
+            color: var(--primary);
+        }
+
+        /* =========================================================
+           WHEEL
+        ========================================================= */
+
+        .wheel-stage {
             position: relative;
-            width: 260px;
-            height: 260px;
+            width: min(410px, 82vw);
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+        }
+
+        .wheel-shadow {
+            position: absolute;
+            inset: 7%;
+            border-radius: 50%;
+            background: rgb(91 23 111 / .22);
+            filter: blur(24px);
+            transform: translateY(15px);
         }
 
         .pointer {
             position: absolute;
-            top: -8px;
+            top: -2px;
             left: 50%;
-            transform: translateX(-50%);
-            z-index: 3;
+            z-index: 20;
             width: 0;
             height: 0;
-            border-left: 16px solid transparent;
-            border-right: 16px solid transparent;
-            border-top: 26px solid #b91c1c;
-            filter: drop-shadow(0 2px 3px rgb(0 0 0 / .35));
+            transform: translateX(-50%);
+            border-left: 19px solid transparent;
+            border-right: 19px solid transparent;
+            border-top: 33px solid #481052;
+            filter: drop-shadow(0 5px 4px rgb(0 0 0 / .22));
+        }
+
+        .pointer::after {
+            content: "";
+            position: absolute;
+            left: -9px;
+            top: -32px;
+            width: 18px;
+            height: 9px;
+            border-radius: 999px;
+            background: #fce7f3;
+        }
+
+        .wheel-border {
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            height: 100%;
+            padding: 11px;
+            border-radius: 50%;
+            background:
+                linear-gradient(145deg, #4a0d59, #a21caf 48%, #5b126d);
+            box-shadow:
+                0 22px 42px rgb(76 29 94 / .25),
+                inset 0 0 0 2px rgb(255 255 255 / .25);
         }
 
         .wheel {
             position: relative;
             width: 100%;
             height: 100%;
+            overflow: hidden;
+            border: 5px solid #fff;
             border-radius: 50%;
-            border: 10px solid #7e22ce;
-            box-shadow: 0 .6rem 1.4rem rgb(112 26 117 / .25);
-            transition: transform 4.2s cubic-bezier(.12, .8, .25, 1);
+            background: #d8b4fe;
             transform: rotate(0deg);
+            transition: transform 4.6s cubic-bezier(.11, .82, .19, 1);
+            will-change: transform;
+        }
+
+        /*
+         * Líneas visuales entre segmentos. Los segmentos reales son
+         * generados dinámicamente por JavaScript según las preguntas
+         * pendientes.
+         */
+        .wheel::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            border-radius: 50%;
+            box-shadow:
+                inset 0 0 0 3px rgb(255 255 255 / .5),
+                inset 0 0 35px rgb(76 29 94 / .18);
+            pointer-events: none;
         }
 
         .wheel-center {
             position: absolute;
             top: 50%;
             left: 50%;
+            z-index: 30;
+            width: 104px;
+            height: 104px;
             transform: translate(-50%, -50%);
-            z-index: 2;
-            width: 74px;
-            height: 74px;
+            border: 8px solid #fff;
             border-radius: 50%;
-            background: #7e22ce;
             color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: .8rem;
-            letter-spacing: .04em;
-            box-shadow: 0 0 0 6px rgba(126, 34, 206, .15);
+            background: linear-gradient(145deg, #7e22ce, #a21caf);
+            box-shadow:
+                0 9px 22px rgb(76 29 94 / .3),
+                0 0 0 6px rgb(126 34 206 / .17);
+            font-size: .9rem;
+            font-weight: 950;
+            letter-spacing: .08em;
             cursor: pointer;
-            border: 0;
-            font-family: inherit;
+            transition: transform .15s ease, filter .15s ease;
+        }
+
+        .wheel-center:hover:not(:disabled) {
+            transform: translate(-50%, -50%) scale(1.05);
+            filter: brightness(1.08);
+        }
+
+        .wheel-center:active:not(:disabled) {
+            transform: translate(-50%, -50%) scale(.98);
         }
 
         .wheel-center:disabled {
-            opacity: .6;
             cursor: default;
+            opacity: .65;
         }
 
-        .how-to {
-            padding: .65rem .8rem;
-            border-radius: .6rem;
-            background: #f3e8ff;
-            color: #7e22ce;
-            margin: 0 0 1rem;
+        .spin-hint {
+            min-height: 22px;
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: .88rem;
+            font-weight: 650;
             text-align: center;
-            font-weight: 600;
         }
 
-        /* Pregunta */
-        #question-card {
+        .spin-hint.spinning {
+            color: var(--primary);
+        }
+
+        /* =========================================================
+           MODAL
+        ========================================================= */
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
             display: none;
-            border: 2px solid #e9d5ff;
-            border-radius: .75rem;
-            padding: 1.25rem;
-            background: #fdf4ff;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgb(27 13 31 / .68);
+            backdrop-filter: blur(7px);
         }
 
-        #question-card.visible {
-            display: block;
+        .modal-backdrop.visible {
+            display: flex;
+            animation: backdrop-in .2s ease;
+        }
+
+        .question-modal {
+            width: min(700px, 100%);
+            max-height: min(760px, calc(100vh - 36px));
+            overflow: auto;
+            border: 1px solid rgb(255 255 255 / .45);
+            border-radius: 25px;
+            background: #fff;
+            box-shadow: 0 30px 90px rgb(0 0 0 / .28);
+            animation: modal-in .28s cubic-bezier(.2, .8, .2, 1);
+        }
+
+        .modal-top {
+            padding: 20px 22px 18px;
+            color: #fff;
+            background: linear-gradient(135deg, #6b177f, #9c27b0);
+        }
+
+        .modal-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .modal-label {
+            margin: 0;
+            font-size: .72rem;
+            font-weight: 850;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            opacity: .78;
+        }
+
+        .modal-points {
+            padding: 5px 9px;
+            border: 1px solid rgb(255 255 255 / .22);
+            border-radius: 999px;
+            background: rgb(255 255 255 / .12);
+            font-size: .76rem;
+            font-weight: 800;
+        }
+
+        .modal-body {
+            padding: 24px;
         }
 
         #question-text {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: #4a044e;
-            margin: 0 0 .25rem;
-        }
-
-        #question-points {
-            color: #a21caf;
-            font-size: .85rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
+            margin: 0 0 22px;
+            color: #35133e;
+            font-size: clamp(1.2rem, 3vw, 1.55rem);
+            font-weight: 850;
+            line-height: 1.35;
         }
 
         .options {
             display: grid;
-            gap: .65rem;
+            gap: 11px;
         }
 
         .option-btn {
+            width: 100%;
             display: flex;
             align-items: center;
-            gap: .75rem;
+            gap: 13px;
+            padding: 13px 14px;
+            border: 2px solid #e6dce9;
+            border-radius: 15px;
+            color: #342b38;
+            background: #fff;
             text-align: left;
-            padding: .85rem 1rem;
-            border-radius: .6rem;
-            border: 2px solid #e2e8f0;
-            background: #ffffff;
-            color: #1e293b;
-            font-weight: 600;
-            font-family: inherit;
-            font-size: 1rem;
+            font-size: .98rem;
+            font-weight: 650;
             cursor: pointer;
-            transition: border-color .15s, background .15s, transform .1s;
+            transition:
+                border-color .15s ease,
+                background .15s ease,
+                transform .12s ease,
+                box-shadow .15s ease;
         }
 
         .option-btn:hover:not(:disabled) {
-            border-color: #a21caf;
+            border-color: #c084fc;
+            background: #fdfaff;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgb(76 29 94 / .08);
         }
 
         .option-key {
-            flex: 0 0 auto;
-            width: 2rem;
-            height: 2rem;
-            border-radius: .45rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
+            flex: 0 0 40px;
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
             color: #fff;
-            background: #a21caf;
+            background: linear-gradient(145deg, #a21caf, #7e22ce);
+            font-weight: 950;
+        }
+
+        .option-text {
+            flex: 1;
+            line-height: 1.35;
         }
 
         .option-btn.correct {
-            background: #dcfce7;
-            border-color: #22c55e;
-            color: #15803d;
+            border-color: var(--success-border);
+            background: var(--success-bg);
+            color: #166534;
+        }
+
+        .option-btn.correct .option-key {
+            background: var(--success);
         }
 
         .option-btn.wrong {
-            background: #fee2e2;
-            border-color: #ef4444;
-            color: #b91c1c;
+            border-color: var(--danger-border);
+            background: var(--danger-bg);
+            color: #991b1b;
+        }
+
+        .option-btn.wrong .option-key {
+            background: var(--danger);
         }
 
         .option-btn:disabled {
             cursor: default;
         }
 
-        .result {
-            padding: .8rem;
-            border-radius: .45rem;
-            margin-top: 1rem;
+        .answer-feedback {
             display: none;
-            font-weight: 600;
+            margin-top: 17px;
+            padding: 13px 15px;
+            border-radius: 13px;
+            font-size: .9rem;
+            font-weight: 800;
             text-align: center;
         }
 
-        .result.ok {
+        .answer-feedback.visible {
             display: block;
-            background: #dcfce7;
-            color: #15803d;
+            animation: feedback-in .2s ease;
         }
 
-        .result.bad {
-            display: block;
-            background: #fee2e2;
-            color: #b91c1c;
+        .answer-feedback.ok {
+            color: #166534;
+            border: 1px solid #86efac;
+            background: var(--success-bg);
         }
+
+        .answer-feedback.bad {
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+            background: var(--danger-bg);
+        }
+
+        .modal-note {
+            margin: 16px 0 0;
+            color: var(--muted);
+            font-size: .76rem;
+            text-align: center;
+        }
+
+        /* =========================================================
+           COMPLETION
+        ========================================================= */
 
         .finish {
             display: none;
-            padding: .8rem;
-            border-radius: .45rem;
-            background: #e9d5ff;
-            color: #7e22ce;
-            font-weight: 700;
+            width: min(650px, 100%);
+            margin: 25px auto 0;
+            padding: 20px;
+            border: 1px solid #d8b4fe;
+            border-radius: 17px;
+            color: #6b21a8;
+            background: #f3e8ff;
+            font-weight: 800;
             text-align: center;
-            margin-top: 1rem;
         }
 
-        form button[type="submit"] {
+        .finish.visible {
+            display: block;
+            animation: feedback-in .25s ease;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .abandon-btn {
             border: 0;
-            border-radius: .6rem;
-            padding: .6rem 1rem;
-            font-weight: 700;
-            background: #f1f5f9;
-            color: #475569;
+            border-radius: 11px;
+            padding: 9px 15px;
+            color: #6f6672;
+            background: #f0ebf2;
+            font-size: .83rem;
+            font-weight: 750;
             cursor: pointer;
+            transition: background .15s ease;
         }
 
-        @media (max-width: 640px) {
-            .wheel-wrap {
-                width: 210px;
-                height: 210px;
+        .abandon-btn:hover {
+            background: #e5dce8;
+        }
+
+        /* =========================================================
+           ANIMATIONS
+        ========================================================= */
+
+        @keyframes backdrop-in {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes modal-in {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes feedback-in {
+            from {
+                opacity: 0;
+                transform: scale(.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @media (max-width: 680px) {
+            body {
+                padding: 9px;
+            }
+
+            .header {
+                padding: 22px 18px;
+            }
+
+            .main {
+                padding: 23px 18px 24px;
+            }
+
+            .stats {
+                padding: 14px 18px;
+                gap: 8px;
+            }
+
+            .progress-area {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .header-row {
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .timer {
+                width: 100%;
+            }
+
+            .wheel-stage {
+                width: min(350px, 84vw);
+            }
+
+            .wheel-center {
+                width: 92px;
+                height: 92px;
+            }
+
+            .modal-body {
+                padding: 19px;
+            }
+        }
+
+        @media (max-width: 460px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .wheel-stage {
+                width: min(300px, 84vw);
+            }
+
+            .wheel-center {
+                width: 80px;
+                height: 80px;
+                font-size: .75rem;
+            }
+
+            .pointer {
+                border-left-width: 16px;
+                border-right-width: 16px;
+                border-top-width: 28px;
+            }
+
+            .option-btn {
+                padding: 11px;
+            }
+
+            .option-key {
+                flex-basis: 36px;
+                width: 36px;
+                height: 36px;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="wrap">
-        <div class="card">
-            <h1>🎡 Ruleta</h1>
-            <div id="timer">
-                Tiempo restante:
-                <span id="timer-value">--:--</span>
-            </div>
-            <p class="scoreline">
-                Actividad {{ $activity->title }} ·
-                Puntos: <strong id="points">{{ $earnedPoints }}</strong>
-                / {{ $maxScore }} · Casilleros: <strong
-                    id="answered-count">{{ $answeredCount }}</strong>/{{ $totalItems }}
-            </p>
 
-            <div class="progress-bar">
-                <div id="progress-fill" class="progress-fill"></div>
-            </div>
+    <main class="page">
+        <section class="game">
 
-            <p class="how-to">🎡 <strong>Cómo jugar:</strong> gira la ruleta y responde la pregunta que aparezca. ¡Cada casillero cuenta una sola vez!</p>
+            <!-- =====================================================
+                 HEADER
+            ====================================================== -->
+            <header class="header">
+                <div class="header-row">
+                    <div>
+                        <p class="eyebrow">Actividad interactiva</p>
+                        <h1 class="title">Ruleta</h1>
+                        <p class="activity">{{ $activity->title }}</p>
+                    </div>
 
-            <div class="wheel-section">
-                <div class="wheel-wrap">
-                    <div class="pointer"></div>
-                    <div id="wheel" class="wheel"></div>
-                    <button id="spin-btn" class="wheel-center" type="button">GIRAR</button>
+                    <div class="timer">
+                        <span class="timer-label">Tiempo restante</span>
+                        <span id="timer-value">--:--</span>
+                    </div>
                 </div>
-                <div id="spin-hint" style="font-size:.9rem; color:#475569;">Pulsa GIRAR para obtener tu pregunta</div>
-            </div>
+            </header>
 
-            <div id="question-card">
+            <!-- =====================================================
+                 STATS
+            ====================================================== -->
+            <section class="stats">
+                <div class="stat">
+                    <span class="stat-label">Puntaje</span>
+                    <span class="stat-value">
+                        <span id="points">{{ $earnedPoints }}</span> / {{ $maxScore }}
+                    </span>
+                </div>
+
+                <div class="stat">
+                    <span class="stat-label">Respondidas</span>
+                    <span class="stat-value">
+                        <span id="answered-count">{{ $answeredCount }}</span> / {{ $totalItems }}
+                    </span>
+                </div>
+
+                <div class="stat">
+                    <span class="stat-label">Estado</span>
+                    <span id="game-status" class="stat-value">Listo</span>
+                </div>
+            </section>
+
+            <!-- =====================================================
+                 PROGRESS
+            ====================================================== -->
+            <section class="progress-area">
+                <div class="progress-head">
+                    <span>Progreso de la actividad</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+
+                <div class="progress-track">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+            </section>
+
+            <!-- =====================================================
+                 GAME
+            ====================================================== -->
+            <section class="main">
+
+                <div class="instructions">
+                    Gira la ruleta para descubrir una pregunta.
+                    Responde para retirar ese segmento y continuar con las preguntas restantes.
+                </div>
+
+                <div class="wheel-area">
+
+                    <div class="remaining-label">
+                        <strong id="remaining-count">{{ $totalItems - $answeredCount }}</strong>
+                        <span id="remaining-text">preguntas restantes</span>
+                    </div>
+
+                    <div class="wheel-stage">
+                        <div class="wheel-shadow"></div>
+
+                        <div class="pointer"></div>
+
+                        <div class="wheel-border">
+                            <div id="wheel" class="wheel"></div>
+                        </div>
+
+                        <button
+                            id="spin-btn"
+                            class="wheel-center"
+                            type="button"
+                        >
+                            GIRAR
+                        </button>
+                    </div>
+
+                    <div id="spin-hint" class="spin-hint">
+                        Pulsa GIRAR para comenzar
+                    </div>
+                </div>
+
+                <div id="finish" class="finish"></div>
+
+                <div class="actions">
+                    <form
+                        method="POST"
+                        action="{{ route('student.participation.abandon', $activity->id) }}"
+                        onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+                    >
+                        @csrf
+
+                        <button type="submit" class="abandon-btn">
+                            Abandonar actividad
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- =========================================================
+         QUESTION MODAL
+         No tiene botón de cerrar intencionalmente.
+         El estudiante debe responder para poder continuar.
+    ========================================================== -->
+
+    <div
+        id="question-modal"
+        class="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="question-text"
+    >
+        <article class="question-modal">
+
+            <header class="modal-top">
+                <div class="modal-top-row">
+                    <p class="modal-label">Pregunta de la ruleta</p>
+
+                    <span id="modal-points" class="modal-points">
+                        0 pts internos
+                    </span>
+                </div>
+            </header>
+
+            <div class="modal-body">
+
                 <p id="question-text"></p>
-                <p id="question-points"></p>
+
                 <div id="options" class="options"></div>
+
+                <div id="answer-feedback" class="answer-feedback"></div>
+
+                <p class="modal-note">
+                    Debes responder esta pregunta para continuar con la ruleta.
+                </p>
             </div>
-
-            <div id="result" class="result"></div>
-            <div id="finish" class="finish"></div>
-
-            <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-                onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
-                style="margin-top: 1rem; text-align: center;">
-                @csrf
-
-                <button type="submit">
-                    Abandonar actividad
-                </button>
-            </form>
-        </div>
+        </article>
     </div>
 
-    <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
-        style="display: none;">
+    <!-- =========================================================
+         EXPIRE
+    ========================================================== -->
+
+    <form
+        id="expire-form"
+        method="POST"
+        action="{{ route('student.participation.expire', $activity->id) }}"
+        style="display:none;"
+    >
         @csrf
     </form>
 
     <script>
+        const csrfToken = document.querySelector(
+            'meta[name="csrf-token"]'
+        ).content;
+
+        const activityId = {{ $activity->id }};
+        const rouletteId = {{ $roulette->id }};
+        const totalItems = {{ $totalItems }};
+
         let remainingSeconds = @json($remainingSeconds);
 
+        /*
+         * Score mostrado al estudiante:
+         * es Participation.score normalizado con Activity.max_score.
+         */
+        let points = {{ $earnedPoints }};
+
+        let answered = {{ $answeredCount }};
+
+        let spinning = false;
+        let awaitingAnswer = false;
+        let wheelRotation = 0;
+        let currentItemId = null;
+        let timerInterval = null;
+
+        const wheel = document.getElementById('wheel');
+        const spinBtn = document.getElementById('spin-btn');
+        const spinHint = document.getElementById('spin-hint');
+
         const timerValue = document.getElementById('timer-value');
+
+        const pointsEl = document.getElementById('points');
+        const answeredCountEl = document.getElementById('answered-count');
+        const gameStatusEl = document.getElementById('game-status');
+
+        const progressFill = document.getElementById('progress-fill');
+        const progressPercent = document.getElementById('progress-percent');
+
+        const remainingCountEl = document.getElementById('remaining-count');
+        const remainingTextEl = document.getElementById('remaining-text');
+
+        const finishEl = document.getElementById('finish');
+
+        const modal = document.getElementById('question-modal');
+        const questionText = document.getElementById('question-text');
+        const modalPoints = document.getElementById('modal-points');
+        const optionsBox = document.getElementById('options');
+        const answerFeedback = document.getElementById('answer-feedback');
+
+        /*
+         * Colores suaves para los segmentos.
+         * No representan preguntas específicas.
+         * Representan únicamente preguntas pendientes.
+         */
+        const wheelColors = [
+            '#f0abfc',
+            '#c4b5fd',
+            '#93c5fd',
+            '#67e8f9',
+            '#86efac',
+            '#fde68a',
+            '#fdba74',
+            '#f9a8d4',
+            '#a5b4fc',
+            '#99f6e4'
+        ];
+
+        /* =========================================================
+           TIMER
+        ========================================================== */
+
+        function formatTime(seconds) {
+            if (seconds === null) {
+                return '--:--';
+            }
+
+            const safe = Math.max(0, seconds);
+            const minutes = Math.floor(safe / 60);
+            const secs = safe % 60;
+
+            return (
+                String(minutes).padStart(2, '0') +
+                ':' +
+                String(secs).padStart(2, '0')
+            );
+        }
 
         function updateTimer() {
             if (remainingSeconds === null) {
@@ -342,17 +1013,25 @@
                 return;
             }
 
-            const minutes = Math.floor(remainingSeconds / 60);
-            const seconds = remainingSeconds % 60;
+            timerValue.textContent = formatTime(remainingSeconds);
 
-            timerValue.textContent =
-                String(minutes).padStart(2, '0') + ':' +
-                String(seconds).padStart(2, '0');
+            timerValue.classList.toggle(
+                'warning',
+                remainingSeconds <= 60 && remainingSeconds > 20
+            );
+
+            timerValue.classList.toggle(
+                'danger',
+                remainingSeconds <= 20
+            );
 
             if (remainingSeconds <= 0) {
-                clearInterval(timer);
+                clearInterval(timerInterval);
 
                 timerValue.textContent = '00:00';
+
+                gameStatusEl.textContent = 'Tiempo agotado';
+                spinBtn.disabled = true;
 
                 document.getElementById('expire-form').submit();
 
@@ -362,260 +1041,729 @@
             remainingSeconds--;
         }
 
-        let timer = setInterval(updateTimer, 1000);
+        if (remainingSeconds !== null) {
+            timerInterval = setInterval(updateTimer, 1000);
+        }
 
         updateTimer();
 
-        const totalItems = {{ $totalItems }};
-        const answeredCount = {{ $answeredCount }};
-        const earnStart = {{ $earnedPoints }};
-
-        if (totalItems > 0 && answeredCount >= totalItems) {
-            window.location.href = @json(route('student.participation.result', $activity->id));
-        }
-
-        const wheel = document.getElementById('wheel');
-        const spinBtn = document.getElementById('spin-btn');
-        const spinHint = document.getElementById('spin-hint');
-        const questionCard = document.getElementById('question-card');
-        const questionText = document.getElementById('question-text');
-        const questionPoints = document.getElementById('question-points');
-        const optionsBox = document.getElementById('options');
-        const resultEl = document.getElementById('result');
-        const finishEl = document.getElementById('finish');
-
-        let points = earnStart;
-        let answered = answeredCount;
-        let spinning = false;
-        let awaitingAnswer = false;
-        let wheelRotation = 0;
-
-        const SEGMENT_COLORS = [
-            '#fda4af', '#a5f3fc', '#fde68a', '#c4b5fd',
-            '#86efac', '#fcd9a8', '#93c5fd', '#f9a8d4'
-        ];
+        /* =========================================================
+           WHEEL
+        ========================================================== */
 
         function drawWheel() {
-            const count = totalItems > 0 ? totalItems : 1;
-            const step = 360 / count;
-            const stops = [];
+            /*
+             * La ruleta representa SOLO preguntas pendientes.
+             *
+             * Si hay:
+             * 8 pendientes → 8 segmentos
+             * 7 pendientes → 7 segmentos
+             * ...
+             * 1 pendiente → un único segmento/círculo
+             */
+            const remaining = Math.max(totalItems - answered, 0);
 
-            for (let i = 0; i < count; i++) {
-                const color = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
-                stops.push(color + ' ' + (i * step) + 'deg ' + ((i + 1) * step) + 'deg');
+            if (remaining === 0) {
+                wheel.style.background = 'conic-gradient(#d8b4fe 0deg 360deg)';
+                return;
             }
 
-            wheel.style.background = 'conic-gradient(' + stops.join(', ') + ')';
+            /*
+             * Con una sola pregunta restante no mostramos una
+             * división artificial: la ruleta se convierte en
+             * un único sector completo.
+             */
+            if (remaining === 1) {
+                wheel.style.background =
+                    'conic-gradient(#c084fc 0deg 360deg)';
+                return;
+            }
+
+            const segmentSize = 360 / remaining;
+            const stops = [];
+
+            for (let index = 0; index < remaining; index++) {
+                const start = index * segmentSize;
+                const end = (index + 1) * segmentSize;
+
+                const color =
+                    wheelColors[index % wheelColors.length];
+
+                stops.push(
+                    `${color} ${start}deg ${end}deg`
+                );
+            }
+
+            wheel.style.background =
+                `conic-gradient(${stops.join(', ')})`;
         }
 
-        function spinWheel() {
-            spinning = true;
-            awaitingAnswer = false;
-            spinBtn.disabled = true;
-            resultEl.className = 'result';
-            optionsBox.replaceChildren();
-
-            const turns = 5 + Math.floor(Math.random() * 3);
-            const extra = Math.random() * 360;
-
-            wheelRotation += turns * 360 + extra;
-
-            wheel.style.transform = 'rotate(' + wheelRotation + 'deg)';
-        }
-
-        function showResult(message, ok) {
-            resultEl.textContent = message;
-            resultEl.className = 'result ' + (ok ? 'ok' : 'bad');
-        }
+        /* =========================================================
+           PROGRESS
+        ========================================================== */
 
         function updateProgress() {
-            const pct = totalItems > 0 ? Math.round((answered / totalItems) * 100) : 0;
-            document.getElementById('progress-fill').style.width = pct + '%';
-            document.getElementById('answered-count').textContent = answered;
-            document.getElementById('points').textContent = points;
+            const percentage = totalItems > 0
+                ? Math.min(
+                    100,
+                    Math.round((answered / totalItems) * 100)
+                )
+                : 0;
+
+            const remaining = Math.max(
+                totalItems - answered,
+                0
+            );
+
+            pointsEl.textContent = points;
+            answeredCountEl.textContent = answered;
+
+            progressFill.style.width =
+                `${percentage}%`;
+
+            progressPercent.textContent =
+                `${percentage}%`;
+
+            remainingCountEl.textContent =
+                remaining;
+
+            if (remaining === 1) {
+                remainingTextEl.textContent =
+                    'pregunta restante';
+            } else {
+                remainingTextEl.textContent =
+                    'preguntas restantes';
+            }
+
+            if (answered >= totalItems && totalItems > 0) {
+                gameStatusEl.textContent = 'Completado';
+            } else if (answered > 0) {
+                gameStatusEl.textContent = 'En progreso';
+            } else {
+                gameStatusEl.textContent = 'Listo';
+            }
+
+            drawWheel();
         }
 
-        function showQuestion(it) {
-            questionText.textContent = it.question;
-            questionPoints.textContent = 'Pregunta · ' + it.points + ' pts';
+        /* =========================================================
+           MODAL
+        ========================================================== */
+
+        function openQuestionModal(item) {
+            currentItemId = item.id;
+            awaitingAnswer = true;
+
+            questionText.textContent =
+                item.question;
+
+            modalPoints.textContent =
+                `${item.points} pts internos`;
+
             optionsBox.replaceChildren();
 
-            it.options.forEach((opt) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'option-btn';
-                btn.dataset.opt = opt.key;
+            answerFeedback.className =
+                'answer-feedback';
 
-                const key = document.createElement('span');
-                key.className = 'option-key';
-                key.textContent = opt.key.toUpperCase();
+            answerFeedback.textContent = '';
 
-                btn.appendChild(key);
-                btn.appendChild(document.createTextNode(' ' + opt.text));
+            item.options.forEach((option) => {
+                const button =
+                    document.createElement('button');
 
-                btn.addEventListener('click', () => answerOption(btn, opt.key, it.id));
+                button.type = 'button';
+                button.className = 'option-btn';
 
-                optionsBox.appendChild(btn);
+                button.dataset.opt =
+                    option.key;
+
+                const key =
+                    document.createElement('span');
+
+                key.className =
+                    'option-key';
+
+                key.textContent =
+                    option.key.toUpperCase();
+
+                const text =
+                    document.createElement('span');
+
+                text.className =
+                    'option-text';
+
+                text.textContent =
+                    option.text;
+
+                button.appendChild(key);
+                button.appendChild(text);
+
+                button.addEventListener(
+                    'click',
+                    () => answerQuestion(
+                        button,
+                        option.key,
+                        item.id
+                    )
+                );
+
+                optionsBox.appendChild(button);
             });
 
-            questionCard.classList.add('visible');
-            questionCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            modal.classList.add('visible');
+
+            /*
+             * Evita que el estudiante interactúe con el juego
+             * mientras el modal está abierto.
+             */
+            document.body.style.overflow = 'hidden';
+
+            /*
+             * Enfocar la primera opción mejora accesibilidad
+             * y navegación por teclado.
+             */
+            const firstButton =
+                optionsBox.querySelector('.option-btn');
+
+            if (firstButton) {
+                setTimeout(
+                    () => firstButton.focus(),
+                    150
+                );
+            }
         }
 
-        spinBtn.addEventListener('click', () => {
-            if (spinning || awaitingAnswer) return;
+        function closeQuestionModal() {
+            modal.classList.remove('visible');
 
-            spinWheel();
-            spinHint.textContent = 'Girando…';
+            document.body.style.overflow = '';
 
-            fetch(@json(route('student.roulette.spin')), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                    body: JSON.stringify({
-                        activity_id: {{ $activity->id }},
-                    }),
-                })
-                .then((response) => response.json())
-                .then((data) => {
-                    spinning = false;
-                    answered = data.answered;
-                    spinBtn.disabled = false;
-                    updateProgress();
+            optionsBox.replaceChildren();
 
-                    if (data.completed || (data.item === null && answered >= totalItems)) {
-                        questionCard.classList.remove('visible');
-                        spinHint.textContent = 'Ya respondiste todos los casilleros.';
-                        finishEl.textContent = '¡Completaste la actividad! Redirigiendo al resultado...';
-                        finishEl.style.display = 'block';
-                        setTimeout(() => {
-                            window.location.href = @json(route('student.participation.result', $activity->id));
-                        }, 1400);
-                        return;
-                    }
+            answerFeedback.className =
+                'answer-feedback';
 
-                    if (data.item === null) {
-                        spinHint.textContent = 'Pulsa GIRAR para obtener tu pregunta';
-                        showResult('No hay casilleros pendientes.', false);
-                        return;
-                    }
+            answerFeedback.textContent = '';
 
-                    spinning = false;
-                    awaitWindow(data.item.id, data.item);
-                })
-                .catch(() => {
-                    spinning = false;
-                    spinBtn.disabled = false;
-                    spinHint.textContent = 'Pulsa GIRAR para obtener tu pregunta';
-                    showResult('Error de conexión, intenta de nuevo.', false);
+            currentItemId = null;
+        }
+
+        function setOptionsDisabled(disabled) {
+            optionsBox
+                .querySelectorAll('.option-btn')
+                .forEach((button) => {
+                    button.disabled = disabled;
                 });
-        });
-
-        let currentItemId = null;
-        let optionBtns = [];
-
-        function awaitWindow(itemId, item) {
-            awaitingAnswer = true;
-            spinBtn.disabled = false;
-            currentItemId = itemId;
-            optionBtns = [];
-
-            setTimeout(() => {
-                showQuestion(item);
-                spinHint.textContent = 'Elige tu respuesta';
-            }, 1300);
-
-            setTimeout(() => {
-                spinBtn.disabled = true;
-            }, 700);
         }
 
-        function answerOption(btn, optionKey, itemId) {
-            if (btn.dataset.locked !== undefined) return;
-            btn.dataset.locked = '1';
+        /* =========================================================
+           ANSWER
+        ========================================================== */
 
-            optionBtns = Array.from(optionsBox.querySelectorAll('.option-btn'));
+        async function answerQuestion(
+            selectedButton,
+            optionKey,
+            itemId
+        ) {
+            if (
+                !awaitingAnswer ||
+                selectedButton.dataset.locked === '1'
+            ) {
+                return;
+            }
 
-            optionBtns.forEach((b) => {
-                b.disabled = true;
-            });
+            selectedButton.dataset.locked = '1';
 
-            fetch(@json(route('student.roulette.answer')), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                    body: JSON.stringify({
-                        roulette_id: {{ $roulette->id }},
-                        roulette_item_id: itemId,
-                        response: optionKey,
-                    }),
-                })
-                .then((response) => response.json())
-                .then((data) => {
-                    answered = data.answered;
-                    points += data.score;
-                    updateProgress();
+            setOptionsDisabled(true);
 
-                    if (data.already_answered) {
-                        awaitingAnswer = false;
-                        spinBtn.disabled = false;
-                        showResult('Ese casillero ya estaba resuelto.', false);
-                        spinHint.textContent = 'Pulsa GIRAR para continuar';
-                        return;
-                    }
+            try {
+                const response =
+                    await fetch(
+                        @json(route('student.roulette.answer')),
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
 
-                    if (data.is_correct) {
-                        optionBtns.forEach((b) => {
-                            b.classList.add('correct');
-                        });
-                        showResult('¡Correcto! (+' + data.score + ' pts)', true);
-                    } else {
-                        optionBtns.forEach((b) => {
-                            if (b.dataset.opt === data.correct_option) {
-                                b.classList.add('correct');
-                            } else if (b.dataset.opt === optionKey) {
-                                b.classList.add('wrong');
-                            }
-                        });
-                        showResult(
-                            data.error ||
-                            'Respuesta incorrecta. La correcta es ' +
-                            data.correct_option.toUpperCase() + '.',
-                            false
-                        );
-                    }
+                                'Accept':
+                                    'application/json',
 
+                                'X-CSRF-TOKEN':
+                                    csrfToken,
+                            },
+
+                            body: JSON.stringify({
+                                roulette_id:
+                                    rouletteId,
+
+                                roulette_item_id:
+                                    itemId,
+
+                                response:
+                                    optionKey,
+                            }),
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error ||
+                        'No se pudo registrar la respuesta.'
+                    );
+                }
+
+                /*
+                 * Protección contra respuestas duplicadas.
+                 */
+                if (data.already_answered) {
                     awaitingAnswer = false;
-                    spinBtn.disabled = false;
-                    spinHint.textContent = 'Pulsa GIRAR para continuar';
 
-                    if (data.completed) {
-                        questionCard.classList.remove('visible');
-                        finishEl.textContent = '¡Completaste la actividad! Redirigiendo al resultado...';
-                        finishEl.style.display = 'block';
-                        setTimeout(() => {
-                            window.location.href = @json(route('student.participation.result', $activity->id));
-                        }, 1400);
-                    }
-                })
-                .catch(() => {
-                    optionBtns.forEach((b) => {
-                        delete b.dataset.locked;
-                        b.disabled = false;
-                    });
-                    showResult('Error de conexión, intenta de nuevo.', false);
-                });
+                    setOptionsDisabled(true);
+
+                    answerFeedback.textContent =
+                        'Esta pregunta ya había sido respondida.';
+
+                    answerFeedback.className =
+                        'answer-feedback visible bad';
+
+                    setTimeout(() => {
+                        closeQuestionModal();
+
+                        spinBtn.disabled =
+                            false;
+
+                        gameStatusEl.textContent =
+                            'En progreso';
+
+                        spinHint.textContent =
+                            'Pulsa GIRAR para continuar';
+                    }, 900);
+
+                    return;
+                }
+
+                /*
+                 * Actualizar progreso.
+                 */
+                answered =
+                    data.answered ??
+                    (answered + 1);
+
+                /*
+                 * IMPORTANTE:
+                 *
+                 * data.score =
+                 * puntos internos de la pregunta.
+                 *
+                 * data.participation_score =
+                 * score normalizado de Participation.
+                 */
+                if (
+                    data.participation_score !==
+                    undefined
+                ) {
+                    points =
+                        data.participation_score;
+                }
+
+                /*
+                 * Si por alguna razón el backend no
+                 * devuelve participation_score, no
+                 * modificamos el score con los puntos
+                 * internos.
+                 */
+                updateProgress();
+
+                const buttons =
+                    Array.from(
+                        optionsBox
+                            .querySelectorAll(
+                                '.option-btn'
+                            )
+                    );
+
+                if (data.is_correct) {
+                    /*
+                     * SOLO la opción seleccionada
+                     * se marca como correcta.
+                     */
+                    selectedButton.classList.add(
+                        'correct'
+                    );
+
+                    answerFeedback.textContent =
+                        `¡Correcto! +${data.score} pts internos`;
+
+                    answerFeedback.className =
+                        'answer-feedback visible ok';
+
+                } else {
+                    /*
+                     * La seleccionada es roja.
+                     */
+                    selectedButton.classList.add(
+                        'wrong'
+                    );
+
+                    /*
+                     * La correcta es verde.
+                     */
+                    buttons.forEach(
+                        (button) => {
+                            if (
+                                button.dataset.opt ===
+                                data.correct_option
+                            ) {
+                                button.classList.add(
+                                    'correct'
+                                );
+                            }
+                        }
+                    );
+
+                    answerFeedback.textContent =
+                        data.error ||
+                        `Respuesta incorrecta. La correcta es ${String(data.correct_option).toUpperCase()}.`;
+
+                    answerFeedback.className =
+                        'answer-feedback visible bad';
+                }
+
+                awaitingAnswer = false;
+
+                /*
+                 * Dejamos el resultado visible un
+                 * instante dentro del modal.
+                 *
+                 * El modal NO se puede cerrar antes.
+                 */
+                await new Promise(
+                    (resolve) =>
+                        setTimeout(resolve, 1000)
+                );
+
+                if (data.completed) {
+                    closeQuestionModal();
+
+                    finishGame();
+
+                    return;
+                }
+
+                /*
+                 * Ahora sí desaparece la pregunta.
+                 *
+                 * drawWheel() ya eliminó un segmento
+                 * porque answered aumentó.
+                 */
+                closeQuestionModal();
+
+                spinBtn.disabled = false;
+
+                gameStatusEl.textContent =
+                    'En progreso';
+
+                spinHint.textContent =
+                    'Pulsa GIRAR para continuar';
+
+            } catch (error) {
+                delete selectedButton.dataset.locked;
+
+                setOptionsDisabled(false);
+
+                answerFeedback.textContent =
+                    error.message ||
+                    'Error de conexión. Intenta nuevamente.';
+
+                answerFeedback.className =
+                    'answer-feedback visible bad';
+            }
         }
 
-        drawWheel();
+        /* =========================================================
+           SPIN
+        ========================================================== */
+
+        async function spin() {
+            if (
+                spinning ||
+                awaitingAnswer ||
+                answered >= totalItems
+            ) {
+                return;
+            }
+
+            spinning = true;
+
+            spinBtn.disabled = true;
+
+            gameStatusEl.textContent =
+                'Girando';
+
+            spinHint.classList.add(
+                'spinning'
+            );
+
+            spinHint.textContent =
+                'La ruleta está girando...';
+
+            try {
+                /*
+                 * El backend decide qué pregunta pendiente
+                 * corresponde al giro.
+                 */
+                const response =
+                    await fetch(
+                        @json(route('student.roulette.spin')),
+                        {
+                            method: 'POST',
+
+                            headers: {
+                                'Content-Type':
+                                    'application/json',
+
+                                'Accept':
+                                    'application/json',
+
+                                'X-CSRF-TOKEN':
+                                    csrfToken,
+                            },
+
+                            body: JSON.stringify({
+                                activity_id:
+                                    activityId,
+                            }),
+                        }
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        'No se pudo obtener una pregunta.'
+                    );
+                }
+
+                const data =
+                    await response.json();
+
+                if (
+                    data.answered !==
+                    undefined
+                ) {
+                    answered =
+                        data.answered;
+                }
+
+                updateProgress();
+
+                /*
+                 * Ya no quedan preguntas.
+                 */
+                if (
+                    data.completed ||
+                    (
+                        data.item === null &&
+                        answered >= totalItems
+                    )
+                ) {
+                    finishGame();
+
+                    return;
+                }
+
+                if (!data.item) {
+                    throw new Error(
+                        'No hay preguntas pendientes.'
+                    );
+                }
+
+                /*
+                 * Animación puramente visual.
+                 *
+                 * La pregunta real la determina el
+                 * backend. La ruleta representa el azar,
+                 * pero no expone el ID de la pregunta.
+                 */
+                const turns =
+                    5 +
+                    Math.floor(
+                        Math.random() * 3
+                    );
+
+                const landing =
+                    Math.floor(
+                        Math.random() * 360
+                    );
+
+                wheelRotation +=
+                    turns * 360 +
+                    landing;
+
+                wheel.style.transform =
+                    `rotate(${wheelRotation}deg)`;
+
+                /*
+                 * Esperar a que termine exactamente la
+                 * animación antes de abrir el modal.
+                 */
+                await new Promise(
+                    (resolve) =>
+                        setTimeout(
+                            resolve,
+                            4600
+                        )
+                );
+
+                spinning = false;
+
+                /*
+                 * El modal permanece abierto hasta
+                 * que se responda.
+                 */
+                openQuestionModal(
+                    data.item
+                );
+
+                spinHint.classList.remove(
+                    'spinning'
+                );
+
+                spinHint.textContent =
+                    'Responde la pregunta para continuar';
+
+                gameStatusEl.textContent =
+                    'Responde';
+
+            } catch (error) {
+                spinning = false;
+
+                spinBtn.disabled = false;
+
+                spinHint.classList.remove(
+                    'spinning'
+                );
+
+                spinHint.textContent =
+                    'Pulsa GIRAR para intentarlo nuevamente';
+
+                gameStatusEl.textContent =
+                    answered > 0
+                        ? 'En progreso'
+                        : 'Listo';
+
+                /*
+                 * Usamos el mismo feedback del modal
+                 * solamente si el modal está abierto.
+                 * Normalmente este error ocurre antes
+                 * de abrirlo, por lo que usamos un hint.
+                 */
+                alert(
+                    error.message ||
+                    'Error de conexión. Intenta nuevamente.'
+                );
+            }
+        }
+
+        /* =========================================================
+           FINISH
+        ========================================================== */
+
+        function finishGame() {
+            spinning = false;
+            awaitingAnswer = false;
+
+            spinBtn.disabled = true;
+
+            gameStatusEl.textContent =
+                'Completado';
+
+            spinHint.textContent =
+                'Actividad terminada';
+
+            finishEl.textContent =
+                '¡Completaste la actividad! Mostrando tu resultado...';
+
+            finishEl.classList.add(
+                'visible'
+            );
+
+            updateProgress();
+
+            setTimeout(() => {
+                window.location.href =
+                    @json(route(
+                        'student.participation.result',
+                        $activity->id
+                    ));
+            }, 1400);
+        }
+
+        /* =========================================================
+           EVENTS
+        ========================================================== */
+
+        spinBtn.addEventListener(
+            'click',
+            spin
+        );
+
+        /*
+         * No cerramos el modal al hacer click fuera.
+         *
+         * Tampoco existe botón "X".
+         *
+         * El estudiante debe responder.
+         */
+
+        modal.addEventListener(
+            'click',
+            (event) => {
+                if (
+                    event.target === modal &&
+                    awaitingAnswer
+                ) {
+                    event.preventDefault();
+                }
+            }
+        );
+
+        /*
+         * Bloquear ESC mientras la pregunta está pendiente.
+         * Así tampoco puede saltarse la pregunta con teclado.
+         */
+        document.addEventListener(
+            'keydown',
+            (event) => {
+                if (
+                    event.key === 'Escape' &&
+                    modal.classList.contains('visible')
+                ) {
+                    event.preventDefault();
+                }
+            }
+        );
+
+        /* =========================================================
+           INITIAL STATE
+        ========================================================== */
+
         updateProgress();
+
+        /*
+         * Si al cargar ya no quedan preguntas,
+         * se muestra el resultado automáticamente.
+         */
+        if (
+            totalItems > 0 &&
+            answered >= totalItems
+        ) {
+            finishGame();
+        }
     </script>
+
 </body>
 
 </html>

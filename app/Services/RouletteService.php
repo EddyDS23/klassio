@@ -8,32 +8,50 @@ use App\Models\Roulette;
 use App\Models\RouletteAnswer;
 use App\Models\RouletteItem;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class RouletteService
 {
-    public function __construct(private ParticipationService $participationService) {}
+    public function __construct(
+        private ParticipationService $participationService
+    ) {}
 
     private const OPTION_KEYS = ['a', 'b', 'c', 'd'];
 
     /**
-     * Crea o reemplaza la configuración de la ruleta.
-     * Los ítems anteriores se eliminan por completo.
+     * Crea o reemplaza la configuración de la Ruleta.
+     *
+     * Los puntos de los ítems representan el peso interno
+     * de cada pregunta. El puntaje final de la actividad
+     * se determina mediante Activity.max_score.
      */
-    public function buildRoulette(Activity $activity, array $items): Roulette
-    {
-        $roulette = $activity->roulette()->updateOrCreate([], []);
+    public function buildRoulette(
+        Activity $activity,
+        array $items
+    ): Roulette {
+        return DB::transaction(function () use ($activity, $items) {
+            $roulette = $activity->roulette()->updateOrCreate([], []);
 
-        $roulette->items()->delete();
+            $roulette->items()->delete();
 
-        foreach ($items as $item) {
-            $roulette->items()->create($this->normalizeItem($item));
-        }
+            foreach ($items as $item) {
+                $roulette->items()->create(
+                    $this->normalizeItem($item)
+                );
+            }
 
-        return $roulette;
+            return $roulette->fresh();
+        });
     }
 
     /**
-     * Puntaje máximo posible de la ruleta.
+     * Puntaje interno máximo posible de la Ruleta.
+     *
+     * IMPORTANTE:
+     * Este NO es el max_score de la Activity.
+     * Sirve únicamente como base para que
+     * ParticipationService::syncScore() calcule
+     * el porcentaje obtenido.
      */
     public function maxScore(Roulette $roulette): int
     {
@@ -41,7 +59,7 @@ class RouletteService
     }
 
     /**
-     * Puntaje acumulado por una participación.
+     * Puntaje interno acumulado por una participación.
      */
     public function earnedScore(
         Roulette $roulette,
@@ -79,36 +97,47 @@ class RouletteService
     }
 
     /**
-     * Ítems pendientes: los que aún no ha respondido la participación.
+     * Ítems pendientes.
      */
     public function pendingItems(
         Roulette $roulette,
         Participation $participation
     ): Collection {
-        $answered = $this->answeredItemIds($roulette, $participation);
+        $answered = $this->answeredItemIds(
+            $roulette,
+            $participation
+        );
 
         return $roulette->items()
-            ->when($answered, fn ($q) => $q->whereNotIn('id', $answered))
+            ->when(
+                $answered,
+                fn ($q) => $q->whereNotIn('id', $answered)
+            )
             ->orderBy('id')
             ->get();
     }
 
     /**
-     * Selecciona un ítem al azar entre los pendientes.
-     * Retorna null si ya se respondieron todos.
+     * Selecciona un ítem aleatorio entre los pendientes.
      */
     public function getRandomItem(
         Roulette $roulette,
         Participation $participation
     ): ?RouletteItem {
-        $pending = $this->pendingItems($roulette, $participation);
+        $pending = $this->pendingItems(
+            $roulette,
+            $participation
+        );
 
-        return $pending->isEmpty() ? null : $pending->random();
+        return $pending->isEmpty()
+            ? null
+            : $pending->random();
     }
 
     /**
      * Serializa un ítem para el frontend.
-     * No expone la opción correcta.
+     *
+     * Nunca expone la opción correcta.
      */
     public function serializeItem(RouletteItem $item): array
     {
@@ -130,11 +159,18 @@ class RouletteService
     }
 
     /**
-     * Comprueba la respuesta del estudiante y guarda la RouletteAnswer.
+     * Comprueba y registra una respuesta.
+     *
+     * Los puntos guardados en RouletteAnswer son los puntos
+     * internos del ítem.
+     *
+     * ParticipationService::syncScore() transforma esos puntos
+     * al Activity.max_score.
      *
      * @return array{
      *     is_correct: bool,
      *     score: int,
+     *     participation_score: int,
      *     already_answered: bool,
      *     completed: bool,
      *     correct_option: ?string,
@@ -151,7 +187,9 @@ class RouletteService
         string $response
     ): array {
         if ($participation->status !== 'started') {
-            return $this->error('La participación ya ha finalizado.');
+            return $this->error(
+                'La participación ya ha finalizado.'
+            );
         }
 
         $item = RouletteItem::query()
@@ -159,44 +197,104 @@ class RouletteService
             ->find($rouletteItemId);
 
         if (! $item) {
-            return $this->error('Ese ítem no pertenece a esta actividad.');
+            return $this->error(
+                'Ese ítem no pertenece a esta actividad.'
+            );
         }
 
-        if (in_array($item->id, $this->answeredItemIds($roulette, $participation), true)) {
-            return $this->alreadyAnswered($roulette, $participation);
+        $answeredItemIds = $this->answeredItemIds(
+            $roulette,
+            $participation
+        );
+
+        if (in_array($item->id, $answeredItemIds, true)) {
+            return $this->alreadyAnswered(
+                $roulette,
+                $participation
+            );
         }
 
         $responseKey = strtolower(trim($response));
 
-        $isCorrect = $responseKey === $item->correct_option;
+        $isCorrect =
+            $responseKey === $item->correct_option;
 
-        $responseText = in_array($responseKey, self::OPTION_KEYS, true)
+        $responseText = in_array(
+            $responseKey,
+            self::OPTION_KEYS,
+            true
+        )
             ? (string) $item->{'option_'.$responseKey}
             : $responseKey;
 
-        RouletteAnswer::create([
-            'participation_id' => $participation->id,
-            'roulette_item_id' => $item->id,
-            'response' => $responseText,
-            'is_correct' => $isCorrect,
-            'score' => $isCorrect ? $item->points : 0,
-            'answered_at' => now(),
-        ]);
+        $score = $isCorrect
+            ? $item->points
+            : 0;
 
-        $this->participationService->syncScore($participation);
+        /*
+         * Registrar la respuesta y sincronizar el score
+         * como una sola operación.
+         */
+        DB::transaction(function () use (
+            $participation,
+            $item,
+            $responseText,
+            $isCorrect,
+            $score
+        ) {
+            RouletteAnswer::create([
+                'participation_id' => $participation->id,
+                'roulette_item_id' => $item->id,
+                'response' => $responseText,
+                'is_correct' => $isCorrect,
+                'score' => $score,
+                'answered_at' => now(),
+            ]);
 
-        $answered = count($this->answeredItemIds($roulette, $participation));
+            $this->participationService->syncScore(
+                $participation
+            );
+        });
+
+        /*
+         * Obtener el score real de la actividad después
+         * de syncScore().
+         *
+         * Este valor ya está normalizado contra Activity.max_score.
+         */
+        $participation = $participation->fresh();
+
+        $answeredItemIds[] = $item->id;
+
+        $answered = count($answeredItemIds);
+
         $total = $roulette->items()->count();
 
-        $completed = $total > 0 && $answered >= $total;
+        $completed =
+            $total > 0 &&
+            $answered >= $total;
 
         if ($completed) {
-            $this->participationService->finish($participation->fresh());
+            $participation = $this->participationService->finish(
+                $participation
+            );
         }
 
         return [
             'is_correct' => $isCorrect,
-            'score' => $isCorrect ? $item->points : 0,
+
+            /*
+             * Mantiene el puntaje interno del ítem para no romper
+             * la lógica existente de Roulette.
+             */
+            'score' => $score,
+
+            /*
+             * Este es el score real de la Activity,
+             * limitado por Activity.max_score.
+             */
+            'participation_score' => $participation->score,
+
             'already_answered' => false,
             'completed' => $completed,
             'correct_option' => $item->correct_option,
@@ -207,6 +305,9 @@ class RouletteService
         ];
     }
 
+    /**
+     * Respuesta para un ítem que ya había sido contestado.
+     */
     private function alreadyAnswered(
         Roulette $roulette,
         Participation $participation
@@ -214,34 +315,55 @@ class RouletteService
         return [
             'is_correct' => true,
             'score' => 0,
+            'participation_score' => $participation->score,
             'already_answered' => true,
             'completed' => false,
             'correct_option' => null,
             'correct_text' => null,
-            'answered' => count($this->answeredItemIds($roulette, $participation)),
+            'answered' => count(
+                $this->answeredItemIds(
+                    $roulette,
+                    $participation
+                )
+            ),
             'total' => $roulette->items()->count(),
             'error' => null,
         ];
     }
 
+    /**
+     * Normaliza la configuración de un ítem.
+     */
     private function normalizeItem(array $item): array
     {
-        $correct = strtolower((string) ($item['correct_option'] ?? 'a'));
+        $correct = strtolower(
+            (string) ($item['correct_option'] ?? 'a')
+        );
 
-        if (! in_array($correct, self::OPTION_KEYS, true)) {
+        if (! in_array(
+            $correct,
+            self::OPTION_KEYS,
+            true
+        )) {
             $correct = 'a';
         }
 
         $normalized = [
-            'question' => $this->normalizeText($item['question'] ?? ''),
+            'question' => $this->normalizeText(
+                $item['question'] ?? ''
+            ),
             'correct_option' => $correct,
-            'points' => max(1, (int) ($item['points'] ?? 10)),
+            'points' => max(
+                1,
+                (int) ($item['points'] ?? 10)
+            ),
         ];
 
         foreach (self::OPTION_KEYS as $key) {
-            $normalized['option_'.$key] = $this->normalizeText(
-                $item['option_'.$key] ?? ''
-            );
+            $normalized['option_'.$key] =
+                $this->normalizeText(
+                    $item['option_'.$key] ?? ''
+                );
         }
 
         return $normalized;
@@ -252,11 +374,15 @@ class RouletteService
         return trim($text);
     }
 
+    /**
+     * Respuesta de error.
+     */
     private function error(string $message): array
     {
         return [
             'is_correct' => false,
             'score' => 0,
+            'participation_score' => 0,
             'already_answered' => false,
             'completed' => false,
             'correct_option' => null,

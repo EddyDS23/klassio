@@ -59,7 +59,10 @@ class RouletteController extends Controller
 
         return redirect()
             ->route('teacher.roulette.edit', $id)
-            ->with('success', 'Actividad de ruleta guardada correctamente.');
+            ->with(
+                'success',
+                'Actividad de ruleta guardada correctamente.'
+            );
     }
 
     /**
@@ -98,16 +101,20 @@ class RouletteController extends Controller
 
         return redirect()
             ->route('teacher.roulette.edit', $id)
-            ->with('success', 'Actividad de ruleta actualizada correctamente.');
+            ->with(
+                'success',
+                'Actividad de ruleta actualizada correctamente.'
+            );
     }
 
     /**
      * Mostrar el juego de la Ruleta.
      *
-     * La participación NO se crea aquí; debe haber sido creada
-     * previamente por ParticipationController::start().
+     * La participación NO se crea aquí.
+     * ParticipationController::start() es responsable
+     * de iniciar la participación.
      */
-    public function play(int $id)
+    public function play(int $id): View|RedirectResponse
     {
         $activity = Activity::findOrFail($id);
 
@@ -119,7 +126,8 @@ class RouletteController extends Controller
             'Esta actividad aún no tiene una ruleta configurada.'
         );
 
-        $participation = $this->participationService->getForPlay($activity);
+        $participation =
+            $this->participationService->getForPlay($activity);
 
         if ($participation->status === 'expired') {
             return redirect()->route(
@@ -128,53 +136,78 @@ class RouletteController extends Controller
             );
         }
 
-        $remainingSeconds = $this->participationService->remainingSeconds(
-            $participation,
-            $activity
-        );
+        $remainingSeconds =
+            $this->participationService->remainingSeconds(
+                $participation,
+                $activity
+            );
 
         $totalItems = $roulette->items()->count();
 
         $answeredIds = RouletteAnswer::where(
             'participation_id',
             $participation->id
-        )->pluck('roulette_item_id')->toArray();
+        )
+            ->pluck('roulette_item_id')
+            ->toArray();
 
         return view('student.roulette.play', [
             'activity' => $activity,
             'roulette' => $roulette,
             'participation' => $participation,
+
             'answeredIds' => $answeredIds,
             'answeredCount' => count($answeredIds),
             'totalItems' => $totalItems,
-            'earnedPoints' => $this->rouletteService->earnedScore(
-                $roulette,
-                $participation
-            ),
-            'maxScore' => $this->rouletteService->maxScore($roulette),
+
+            /*
+             * Score real de la actividad.
+             *
+             * ParticipationService::syncScore()
+             * ya lo normalizó contra Activity.max_score.
+             */
+            'earnedPoints' => $participation->score,
+
+            /*
+             * El máximo de la actividad es Activity.max_score.
+             */
+            'maxScore' => $activity->max_score,
+
             'remainingSeconds' => $remainingSeconds,
         ]);
     }
 
     /**
-     * Endpoint de giro: devuelve un casillero aleatorio pendiente.
+     * Endpoint de giro.
+     *
+     * Devuelve un ítem aleatorio pendiente.
      */
     public function spin(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'activity_id' => ['required', 'integer', 'exists:activities,id'],
+            'activity_id' => [
+                'required',
+                'integer',
+                'exists:activities,id',
+            ],
         ]);
 
-        $activity = Activity::findOrFail((int) $validated['activity_id']);
+        $activity = Activity::findOrFail(
+            (int) $validated['activity_id']
+        );
 
         $roulette = $activity->roulette;
 
         abort_if($roulette === null, 404);
 
-        $participation = $this->participationService->getActive($activity);
+        $participation =
+            $this->participationService->getActive($activity);
 
         $answered = count(
-            $this->rouletteService->answeredItemIds($roulette, $participation)
+            $this->rouletteService->answeredItemIds(
+                $roulette,
+                $participation
+            )
         );
 
         $total = $roulette->items()->count();
@@ -190,6 +223,16 @@ class RouletteController extends Controller
                 'item' => null,
                 'answered' => $answered,
                 'total' => $total,
+
+                /*
+                 * Score real de la actividad.
+                 */
+                'participation_score' => $participation->score,
+
+                /*
+                 * Máximo real de la actividad.
+                 */
+                'max_score' => $activity->max_score,
             ]);
         }
 
@@ -198,29 +241,36 @@ class RouletteController extends Controller
             'item' => $this->rouletteService->serializeItem($item),
             'answered' => $answered,
             'total' => $total,
+
+            'participation_score' => $participation->score,
+            'max_score' => $activity->max_score,
         ]);
     }
 
     /**
      * Procesar una respuesta de la Ruleta.
      */
-    public function answer(AnswerRouletteRequest $request): JsonResponse
-    {
+    public function answer(
+        AnswerRouletteRequest $request
+    ): JsonResponse {
         $data = $request->validated();
 
-        $roulette = Roulette::findOrFail((int) $data['roulette_id']);
-
-        $participation = $this->participationService->getActive(
-            $roulette->activity
+        $roulette = Roulette::findOrFail(
+            (int) $data['roulette_id']
         );
 
-        return response()->json(
-            $this->rouletteService->checkAnswer(
-                $roulette,
-                $participation,
-                (int) $data['roulette_item_id'],
-                (string) $data['response']
-            )
+        $participation =
+            $this->participationService->getActive(
+                $roulette->activity
+            );
+
+        $result = $this->rouletteService->checkAnswer(
+            $roulette,
+            $participation,
+            (int) $data['roulette_item_id'],
+            (string) $data['response']
         );
+
+        return response()->json($result);
     }
 }
