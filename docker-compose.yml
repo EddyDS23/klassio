@@ -44,7 +44,7 @@ services:
     mem_limit: 512m
     cpus: "0.5"
 
-  nginx:
+nginx:
     image: nginx:alpine
     container_name: klassio_nginx
     volumes:
@@ -54,8 +54,8 @@ services:
       - klassio-network
       - proxy_network
     depends_on:
-        app:
-          condition: service_started
+      app:
+        condition: service_started
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -69,6 +69,26 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    mem_limit: 256m
+    cpus: "0.25"
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: klassio_reverb
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=2001"]
+    profiles: ["realtime"]
+    env_file:
+      - .env
+    expose:
+      - "2001"
+    networks:
+      - klassio-network
+    depends_on:
+      app:
+        condition: service_started
+    restart: unless-stopped
     mem_limit: 256m
     cpus: "0.25"
     

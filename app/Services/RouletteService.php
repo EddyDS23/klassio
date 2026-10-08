@@ -184,7 +184,8 @@ class RouletteService
         Roulette $roulette,
         Participation $participation,
         int $rouletteItemId,
-        string $response
+        string $response,
+        bool $autoFinish = true
     ): array {
         if ($participation->status !== 'started') {
             return $this->error(
@@ -274,7 +275,11 @@ class RouletteService
             $total > 0 &&
             $answered >= $total;
 
-        if ($completed) {
+        /*
+         * En multijugador la finalización la decide la GameSession,
+         * así que checkAnswer() se invoca con autoFinish = false.
+         */
+        if ($autoFinish && $completed) {
             $participation = $this->participationService->finish(
                 $participation
             );

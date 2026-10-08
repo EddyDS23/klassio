@@ -122,6 +122,12 @@
     <section>
         <h2>Acciones</h2>
 
+        <p>
+            <a href="{{ route('student.game-sessions.create', ['activity_id' => $activity->id]) }}">
+                Jugar en sala multijugador
+            </a>
+        </p>
+
         @if ($activeParticipation)
 
             {{-- Intento activo: continuar, finalizar o abandonar --}}

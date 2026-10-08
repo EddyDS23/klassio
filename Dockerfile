@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install pdo_mysql mbstring zip opcache
+RUN docker-php-ext-install pdo_mysql mbstring zip opcache sockets
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
