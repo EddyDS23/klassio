@@ -85,6 +85,17 @@ class GameSessionTest extends TestCase
         ], $attributes));
     }
 
+    private function createRoom(User $teacher, Activity $activity, int $maxPlayers = 2): GameSession
+    {
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.store'), [
+                'activity_id' => $activity->id,
+                'max_players' => $maxPlayers,
+            ]);
+
+        return GameSession::where('activity_id', $activity->id)->first();
+    }
+
     private function setupRoom()
     {
         $teacher = $this->teacher();
@@ -96,14 +107,7 @@ class GameSessionTest extends TestCase
         $this->enroll($class, $s2);
 
         $activity = $this->createActivity($class, $teacher);
-
-        $this->actingAs($s1)
-            ->post(route('student.game-sessions.store'), [
-                'activity_id' => $activity->id,
-                'max_players' => 2,
-            ]);
-
-        $session = GameSession::where('activity_id', $activity->id)->first();
+        $session = $this->createRoom($teacher, $activity);
 
         return compact('teacher', 's1', 's2', 'class', 'activity', 'session');
     }
@@ -112,69 +116,88 @@ class GameSessionTest extends TestCase
     // Creación
     // -------------------------------------------------------------------------
 
-    public function test_student_can_create_a_room_and_becomes_host(): void
+    public function test_teacher_can_create_room_without_joining(): void
     {
         $teacher = $this->teacher();
-        $student = $this->student();
         $class = $this->createClass($teacher);
-        $this->enroll($class, $student);
         $activity = $this->createActivity($class, $teacher);
 
-        $response = $this->actingAs($student)
-            ->post(route('student.game-sessions.store'), [
+        $response = $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.store'), [
                 'activity_id' => $activity->id,
                 'max_players' => 4,
             ]);
 
         $session = GameSession::where('activity_id', $activity->id)->first();
 
-        $response->assertRedirect(route('student.game-sessions.show', $session->id));
+        $response->assertRedirect(route('teacher.game-sessions.show', $session->id));
 
         $this->assertDatabaseHas('game_sessions', [
             'id' => $session->id,
             'activity_id' => $activity->id,
             'status' => 'waiting',
             'max_players' => 4,
-            'created_by' => $student->id,
+            'created_by' => $teacher->id,
         ]);
 
         $this->assertMatchesRegularExpression('/^KLS\d{3}$/', $session->code);
 
-        $this->assertDatabaseHas('participations', [
+        $this->assertDatabaseMissing('participations', [
             'game_session_id' => $session->id,
-            'student_id' => $student->id,
-            'status' => 'waiting',
+            'student_id' => $teacher->id,
+        ]);
+    }
+
+    public function test_teacher_cannot_create_room_for_activity_of_another_teacher(): void
+    {
+        $owner = $this->teacher('owner@example.com');
+        $other = $this->teacher('other@example.com');
+        $class = $this->createClass($owner);
+        $activity = $this->createActivity($class, $owner);
+
+        $this->actingAs($other)
+            ->post(route('teacher.game-sessions.store'), [
+                'activity_id' => $activity->id,
+                'max_players' => 4,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('game_sessions', [
+            'activity_id' => $activity->id,
+        ]);
+    }
+
+    public function test_student_cannot_create_room(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $class = $this->createClass($teacher);
+        $activity = $this->createActivity($class, $teacher);
+
+        $this->actingAs($student)
+            ->post(route('teacher.game-sessions.store'), [
+                'activity_id' => $activity->id,
+                'max_players' => 4,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('game_sessions', [
+            'activity_id' => $activity->id,
         ]);
     }
 
     public function test_generated_codes_are_unique(): void
     {
         $teacher = $this->teacher();
-        $student = $this->student();
         $class = $this->createClass($teacher);
-        $this->enroll($class, $student);
         $activity = $this->createActivity($class, $teacher);
 
         $service = app(GameSessionService::class);
 
-        $a = $service->create($activity, 4, $student->id);
-        $b = $service->create($activity, 4, $student->id);
+        $a = $service->create($activity, 4, $teacher->id);
+        $b = $service->create($activity, 4, $teacher->id);
 
         $this->assertNotSame($a->code, $b->code);
-    }
-
-    public function test_non_student_cannot_create_room(): void
-    {
-        $teacher = $this->teacher();
-        $class = $this->createClass($teacher);
-        $activity = $this->createActivity($class, $teacher);
-
-        $this->actingAs($teacher)
-            ->post(route('student.game-sessions.store'), [
-                'activity_id' => $activity->id,
-                'max_players' => 4,
-            ])
-            ->assertRedirect();
     }
 
     // -------------------------------------------------------------------------
@@ -211,12 +234,17 @@ class GameSessionTest extends TestCase
             ->post(route('student.game-sessions.join'), [
                 'code' => $session->code,
             ])
-            ->assertSessionHas('error');
+            ->assertSessionHas('error', 'Ya estás en esta sala.');
     }
 
     public function test_full_room_rejects_new_player(): void
     {
         ['s1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), [
+                'code' => $session->code,
+            ]);
 
         $this->actingAs($s2)
             ->post(route('student.game-sessions.join'), [
@@ -242,6 +270,14 @@ class GameSessionTest extends TestCase
             ->assertSessionHas('error', 'No existe una sala con ese código.');
     }
 
+    public function test_join_page_is_available_for_students(): void
+    {
+        $this->actingAs($this->student())
+            ->get(route('student.game-sessions.join-page'))
+            ->assertOk()
+            ->assertViewIs('student.game_sessions.join');
+    }
+
     // -------------------------------------------------------------------------
     // Inicio
     // -------------------------------------------------------------------------
@@ -249,21 +285,12 @@ class GameSessionTest extends TestCase
     public function test_cannot_start_with_less_than_two_players(): void
     {
         $teacher = $this->teacher();
-        $student = $this->student();
         $class = $this->createClass($teacher);
-        $this->enroll($class, $student);
         $activity = $this->createActivity($class, $teacher);
+        $session = $this->createRoom($teacher, $activity);
 
-        $this->actingAs($student)
-            ->post(route('student.game-sessions.store'), [
-                'activity_id' => $activity->id,
-                'max_players' => 4,
-            ]);
-
-        $session = GameSession::where('activity_id', $activity->id)->first();
-
-        $this->actingAs($student)
-            ->post(route('student.game-sessions.start', $session->id))
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id))
             ->assertSessionHas('error', 'Se necesitan al menos 2 jugadores para iniciar.');
 
         $this->assertDatabaseHas('game_sessions', [
@@ -272,18 +299,23 @@ class GameSessionTest extends TestCase
         ]);
     }
 
-    public function test_host_starts_game_with_two_players(): void
+    public function test_teacher_starts_game_with_two_players(): void
     {
-        ['s1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+        ['teacher' => $teacher, 's1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), [
+                'code' => $session->code,
+            ]);
 
         $this->actingAs($s2)
             ->post(route('student.game-sessions.join'), [
                 'code' => $session->code,
             ]);
 
-        $this->actingAs($s1)
-            ->post(route('student.game-sessions.start', $session->id))
-            ->assertRedirect(route('student.game-sessions.play', $session->id));
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id))
+            ->assertRedirect(route('teacher.game-sessions.show', $session->id));
 
         $session->refresh();
 
@@ -299,39 +331,55 @@ class GameSessionTest extends TestCase
         );
     }
 
-    public function test_non_host_cannot_start(): void
+    public function test_non_owner_teacher_cannot_start(): void
     {
         ['s1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), [
+                'code' => $session->code,
+            ]);
 
         $this->actingAs($s2)
             ->post(route('student.game-sessions.join'), [
                 'code' => $session->code,
             ]);
 
-        $this->actingAs($s2)
-            ->post(route('student.game-sessions.start', $session->id))
+        $other = $this->teacher('other@example.com');
+
+        $this->actingAs($other)
+            ->post(route('teacher.game-sessions.start', $session->id))
             ->assertForbidden();
+
+        $this->assertDatabaseHas('game_sessions', [
+            'id' => $session->id,
+            'status' => 'waiting',
+        ]);
     }
 
-    public function test_join_is_required_to_start(): void
+    public function test_student_cannot_start(): void
     {
-        $teacher = $this->teacher();
-        $s1 = $this->student('student1@example.com');
-        $s2 = $this->student('student2@example.com');
-        $class = $this->createClass($teacher);
-        $this->enroll($class, $s1);
-        $this->enroll($class, $s2);
-        $activity = $this->createActivity($class, $teacher);
+        ['s1' => $s1, 'session' => $session] = $this->setupRoom();
 
         $this->actingAs($s1)
-            ->post(route('student.game-sessions.store'), [
-                'activity_id' => $activity->id,
-                'max_players' => 4,
+            ->post(route('teacher.game-sessions.start', $session->id))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('game_sessions', [
+            'id' => $session->id,
+            'status' => 'waiting',
+        ]);
+    }
+
+    public function test_room_is_cancelled_when_last_player_leaves_in_waiting(): void
+    {
+        ['s1' => $s1, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), [
+                'code' => $session->code,
             ]);
 
-        $session = GameSession::where('activity_id', $activity->id)->first();
-
-        // host abandona antes de que entre el segundo jugador
         $this->actingAs($s1)
             ->post(route('student.game-sessions.leave', $session->id));
 
@@ -355,9 +403,24 @@ class GameSessionTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_owner_teacher_can_view_room(): void
+    {
+        ['teacher' => $teacher, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.show', $session->id))
+            ->assertOk()
+            ->assertViewIs('teacher.game_sessions.show');
+    }
+
     public function test_state_endpoint_returns_shared_state(): void
     {
         ['s1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), [
+                'code' => $session->code,
+            ]);
 
         $this->actingAs($s2)
             ->post(route('student.game-sessions.join'), [
@@ -374,9 +437,19 @@ class GameSessionTest extends TestCase
         $response->assertJsonCount(2, 'players');
     }
 
+    public function test_teacher_can_read_state_of_own_room(): void
+    {
+        ['teacher' => $teacher, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.state', $session->id))
+            ->assertOk()
+            ->assertJsonPath('session_id', $session->id);
+    }
+
     public function test_leave_marks_participation_abandoned(): void
     {
-        ['s1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+        ['s2' => $s2, 'session' => $session] = $this->setupRoom();
 
         $this->actingAs($s2)
             ->post(route('student.game-sessions.join'), [
@@ -396,15 +469,20 @@ class GameSessionTest extends TestCase
 
     public function test_cannot_join_playing_session(): void
     {
-        ['s1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+        ['teacher' => $teacher, 's1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), [
+                'code' => $session->code,
+            ]);
 
         $this->actingAs($s2)
             ->post(route('student.game-sessions.join'), [
                 'code' => $session->code,
             ]);
 
-        $this->actingAs($s1)
-            ->post(route('student.game-sessions.start', $session->id));
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id));
 
         $s3 = $this->student('student3@example.com');
         $this->enroll($session->activity->schoolClass, $s3);

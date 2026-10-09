@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sala {{ $session->code }}</title>
-    @include('partials.assets', ['theme' => 'student'])
+    <title>Sala {{ $session->code }} — Profesor</title>
+    @include('partials.assets', ['theme' => 'teacher'])
     @if ((bool) config('broadcasting.connections.reverb.enabled', false))
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
         <script>
@@ -37,7 +37,7 @@
         <div class="card surface-card mb-4">
             <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div>
-                    <div class="text-muted small">Código de la sala</div>
+                    <div class="text-muted small">Código de la sala — compártelo con tus alumnos</div>
                     <div class="fw-bold" style="font-size: 2rem; letter-spacing: .35em;" id="room-code">
                         {{ $session->code }}
                     </div>
@@ -62,12 +62,7 @@
                             class="list-group-item d-flex align-items-center justify-content-between"
                             data-participation-id="{{ $p->id }}"
                         >
-                            <span>
-                                @if ($myParticipation?->id === $p->id)
-                                    <span class="text-muted">(tú)</span>
-                                @endif
-                                {{ $p->student?->name }}
-                            </span>
+                            <span>{{ $p->student?->name }}</span>
                             <span class="text-success small">Conectado</span>
                         </li>
                     @endforeach
@@ -80,45 +75,48 @@
 
         <div class="d-flex flex-wrap gap-2">
             @if ($session->status === 'waiting')
-                <div class="alert alert-info w-100 mb-2">
-                    Espera a que el profesor inicie la partida…
-                </div>
+                <form method="POST" action="{{ route('teacher.game-sessions.start', $session->id) }}" class="w-100 mb-2">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="btn btn-klassio w-100"
+                        id="start-btn"
+                        @disabled(! $canStart)
+                    >
+                        Iniciar partida
+                    </button>
+                </form>
+
+                @if (! $canStart)
+                    <p class="text-muted small w-100 mb-0">
+                        Se necesitan al menos 2 jugadores para iniciar la partida.
+                    </p>
+                @endif
             @endif
 
             @if ($session->status === 'playing')
-                <a href="{{ route('student.game-sessions.play', $session->id) }}" class="btn btn-klassio w-100">
-                    Entrar a la partida
-                </a>
+                <div class="alert alert-info w-100 mb-2">
+                    Partida en curso. Tus estudiantes están jugando…
+                </div>
             @endif
 
             @if ($session->status === 'finished')
-                <a href="{{ route('student.game-sessions.result', $session->id) }}" class="btn btn-klassio w-100">
+                <a href="{{ route('teacher.game-sessions.result', $session->id) }}" class="btn btn-klassio w-100">
                     Ver resultados
                 </a>
-            @endif
-
-            @if (! in_array($session->status, ['finished', 'cancelled'], true))
-                <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}" class="w-100">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-secondary w-100">Salir de la sala</button>
-                </form>
             @endif
         </div>
 
         <div class="mt-4">
-            <a href="{{ route('student.activities.show', $session->activity_id) }}" class="btn btn-outline-secondary">
-                Volver a la actividad
-            </a>
+            <a href="{{ route('teacher.dashboard') }}" class="btn btn-outline-secondary">Volver al panel</a>
         </div>
 
     </div>
 
     <script>
         const sessionId = @json($session->id);
-        const stateUrl = @json(route('student.game-sessions.state', $session->id));
-        const playUrl = @json(route('student.game-sessions.play', $session->id));
-        const resultUrl = @json(route('student.game-sessions.result', $session->id));
-        const myParticipationId = @json($myParticipation?->id);
+        const stateUrl = @json(route('teacher.game-sessions.state', $session->id));
+        const resultUrl = @json(route('teacher.game-sessions.result', $session->id));
 
         const statusLabel = {
             waiting: 'Esperando jugadores',
@@ -144,7 +142,7 @@
                 li.className = 'list-group-item d-flex align-items-center justify-content-between';
 
                 const name = document.createElement('span');
-                name.textContent = (p.participation_id === myParticipationId ? '(tú) ' : '') + p.name;
+                name.textContent = p.name + (p.score ? ' — ' + p.score + ' pts' : '');
                 li.appendChild(name);
 
                 const badge = document.createElement('span');
@@ -169,9 +167,7 @@
 
                 renderState(state);
 
-                if (state.status === 'playing') {
-                    window.location.href = playUrl;
-                } else if (state.status === 'finished') {
+                if (state.status === 'finished') {
                     window.location.href = resultUrl;
                 }
             } catch (e) {
@@ -185,10 +181,10 @@
             const reverbEnabled = @json((bool) config('broadcasting.connections.reverb.enabled', false));
             if (window.Echo && reverbEnabled) {
                 window.Echo.private('game-session.' + sessionId)
-                    .listen('.GameStarted', (e) => { window.location.href = playUrl; })
                     .listen('.GameFinished', (e) => { window.location.href = resultUrl; })
                     .listen('.PlayerJoined', (e) => refresh())
-                    .listen('.PlayerLeft', (e) => refresh());
+                    .listen('.PlayerLeft', (e) => refresh())
+                    .listen('.TurnChanged', (e) => refresh());
             }
         });
     </script>

@@ -3,15 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\JoinGameSessionRequest;
-use App\Http\Requests\StoreGameSessionRequest;
-use App\Models\Activity;
-use App\Models\Enrollment;
 use App\Models\GameSession;
 use App\Services\GameSessionService;
 use App\Services\ParticipationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -25,60 +21,11 @@ class GameSessionController extends Controller
     ) {}
 
     /**
-     * Formulario para crear o unirse a una sala.
+     * Página para entrar a una sala con un código.
      */
-    public function create(Request $request): View
+    public function joinPage(): View
     {
-        abort_unless(Auth::user()->role === 'student', 403);
-
-        $classIds = Enrollment::where('student_id', Auth::id())
-            ->where('status', 'active')
-            ->pluck('class_id');
-
-        $activities = Activity::with('schoolClass')
-            ->where('status', 'published')
-            ->whereIn('class_id', $classIds)
-            ->orderBy('title')
-            ->get();
-
-        $selectedActivityId = (int) $request->query('activity_id', 0) ?: null;
-
-        if ($selectedActivityId !== null && $activities->doesntContain('id', $selectedActivityId)) {
-            $selectedActivityId = null;
-        }
-
-        return view('student.game_sessions.create', [
-            'activities' => $activities,
-            'selectedActivityId' => $selectedActivityId,
-        ]);
-    }
-
-    /**
-     * Crea la sala y une al creador como host.
-     */
-    public function store(StoreGameSessionRequest $request): RedirectResponse
-    {
-        Gate::authorize('create', GameSession::class);
-
-        $activity = Activity::findOrFail(
-            (int) $request->validated()['activity_id']
-        );
-
-        try {
-            $session = $this->gameSessionService->create(
-                $activity,
-                (int) $request->validated()['max_players'],
-                Auth::id()
-            );
-
-            $this->gameSessionService->join($session, Auth::user());
-        } catch (RuntimeException $e) {
-            return redirect()
-                ->back()
-                ->with('error', $e->getMessage());
-        }
-
-        return redirect()->route('student.game-sessions.show', $session->id);
+        return view('student.game_sessions.join');
     }
 
     /**
@@ -100,8 +47,6 @@ class GameSessionController extends Controller
             'players' => $this->gameSessionService->players($session),
             'state' => $this->gameSessionService->getState($session),
             'myParticipation' => $myParticipation,
-            'isHost' => $session->created_by === Auth::id(),
-            'canStart' => $this->gameSessionService->canStart($session),
         ]);
     }
 
@@ -131,26 +76,6 @@ class GameSessionController extends Controller
         }
 
         return redirect()->route('student.game-sessions.show', $session->id);
-    }
-
-    /**
-     * El host inicia la partida.
-     */
-    public function start(int $id): RedirectResponse
-    {
-        $session = GameSession::findOrFail($id);
-
-        Gate::authorize('start', $session);
-
-        try {
-            $session = $this->gameSessionService->start($session);
-        } catch (RuntimeException $e) {
-            return redirect()
-                ->back()
-                ->with('error', $e->getMessage());
-        }
-
-        return redirect()->route('student.game-sessions.play', $session->id);
     }
 
     /**

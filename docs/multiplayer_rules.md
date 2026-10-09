@@ -15,13 +15,15 @@ Roadmap_Multiplayer_Klassio). Se definen por juego antes de implementar.
 | --- | --- |
 | Mínimo para iniciar | 2 jugadores |
 | Máximo | configurable en la sala (2–16), por defecto 4 |
-| Quién inicia | solo el host (creador de la sala) |
-| Entrada | código único `KLS###` |
+| Quién crea la sala | el profesor dueño de la actividad (`teacher.game-sessions`) |
+| Quién inicia | solo el profesor dueño de la actividad |
+| Entrada de alumnos | solo con el código único `KLS###` en `student/game-sessions/join` |
 | Estados de sala | `waiting`, `starting`, `playing`, `finished`, `cancelled` |
 | Jugador duplicado | rechazado |
 | Sala llena | rechaza nuevos jugadores |
 | Sala en `playing`/`finished` | no acepta nuevos jugadores |
 | Salir | marca `Participation` como `abandoned`; si quedan <2 activos la partida termina |
+| Sala vacía en `waiting` | se cancela |
 
 Autoridad: el servidor valida turnos, puntaje y finalización. El frontend solo muestra.
 

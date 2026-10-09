@@ -111,7 +111,8 @@ class MultiplayerRouletteTest extends TestCase
 
     /**
      * Crea la escena completa: actividad ruleta publicada,
-     * dos estudiantes inscritos, sala con ambos y partida iniciada.
+     * dos estudiantes inscritos, sala creada por el profesor,
+     * ambos unidos por código y partida iniciada por el profesor.
      */
     private function setupPlayingGame()
     {
@@ -126,21 +127,26 @@ class MultiplayerRouletteTest extends TestCase
         $activity = $this->createActivity($class, $teacher);
         $roulette = $this->createRoulette($activity);
 
-        $this->actingAs($s1)
-            ->post(route('student.game-sessions.store'), [
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.store'), [
                 'activity_id' => $activity->id,
                 'max_players' => 2,
             ]);
 
         $session = GameSession::where('activity_id', $activity->id)->first();
 
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), [
+                'code' => $session->code,
+            ]);
+
         $this->actingAs($s2)
             ->post(route('student.game-sessions.join'), [
                 'code' => $session->code,
             ]);
 
-        $this->actingAs($s1)
-            ->post(route('student.game-sessions.start', $session->id));
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id));
 
         return compact('teacher', 's1', 's2', 'activity', 'roulette', 'session');
     }

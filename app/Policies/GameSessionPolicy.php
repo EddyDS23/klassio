@@ -20,7 +20,7 @@ class GameSessionPolicy
 
     public function create(User $user): bool
     {
-        return $user->role === 'student';
+        return $user->role === 'teacher';
     }
 
     public function update(User $user, GameSession $session): bool
@@ -53,11 +53,11 @@ class GameSessionPolicy
     }
 
     /**
-     * Solo el creador (host) de la sala puede iniciar la partida.
+     * Solo el profesor dueño de la actividad puede iniciar la partida.
      */
     public function start(User $user, GameSession $session): bool
     {
-        if ($user->role !== 'student') {
+        if ($user->role !== 'teacher') {
             return false;
         }
 
@@ -65,8 +65,7 @@ class GameSessionPolicy
             return false;
         }
 
-        return $session->created_by === $user->id
-            && $this->isParticipant($user, $session);
+        return $session->activity->teacher_id === $user->id;
     }
 
     public function leave(User $user, GameSession $session): bool

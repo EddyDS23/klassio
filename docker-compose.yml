@@ -44,7 +44,7 @@ services:
     mem_limit: 512m
     cpus: "0.5"
 
-nginx:
+  nginx:
     image: nginx:alpine
     container_name: klassio_nginx
     volumes:
