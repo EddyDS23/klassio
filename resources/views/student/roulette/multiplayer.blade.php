@@ -57,7 +57,10 @@
         </div>
 
         <div class="text-center my-2">
-            <span class="turn-badge" id="turn-badge">Cargando turno...</span>
+            <span class="turn-badge" id="turn-badge">Preparando ronda...</span>
+            <span class="badge text-bg-light ms-2">
+                Ronda: <span id="round-timer">--</span>
+            </span>
             <span class="badge text-bg-light ms-2">
                 Tiempo: <span id="timer">--:--</span>
             </span>
@@ -81,15 +84,11 @@
                         </div>
 
                         <div class="mt-3">
-                            <button
-                                class="btn btn-klassio btn-lg w-100"
-                                id="spin-btn"
-                                @disabled(! $isMyTurn)
-                            >
-                                {{ $isMyTurn ? 'Girar la ruleta' : 'Esperando tu turno...' }}
-                            </button>
+                            <div class="alert alert-info mb-0" id="wait-msg">
+                                Esperando a que el profesor gire la ruleta…
+                            </div>
                             <div class="text-muted small mt-2" id="turn-hint">
-                                {{ $isMyTurn ? 'Es tu turno: gira y responde la pregunta.' : 'El jugador activo debe girar la ruleta.' }}
+                                Cuando el profesor gire, verás la pregunta y tendrás tiempo para responder.
                             </div>
                         </div>
 
@@ -165,14 +164,19 @@
         const answerUrl = @json(route('student.roulette.answer-session'));
         const resultUrl = @json(route('student.game-sessions.result', $session->id));
 
-        let remainingSeconds = @json($remainingSeconds ?? 0);
+        let remainingSeconds = @json($remainingSeconds ?? null);
+        let elapsedSeconds = @json($state['time_elapsed'] ?? 0);
+        let roundRemaining = @json($state['round_time_remaining'] ?? null);
         let currentItem = null;
+        let questionOpen = false;
         let answering = false;
+        let fetching = false;
+        let answeredThisRound = false;
 
         const wheel = document.getElementById('wheel');
-        const spinBtn = document.getElementById('spin-btn');
         const turnBadge = document.getElementById('turn-badge');
         const turnHint = document.getElementById('turn-hint');
+        const waitMsg = document.getElementById('wait-msg');
         const questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
 
         function formatTime(s) {
@@ -183,21 +187,59 @@
         }
 
         function tick() {
-            if (remainingSeconds === null) {
-                document.getElementById('timer').textContent = '--:--';
-                return;
+            const el = document.getElementById('timer');
+            if (remainingSeconds !== null) {
+                el.textContent = formatTime(remainingSeconds);
+                if (remainingSeconds > 0) remainingSeconds--;
+            } else {
+                el.textContent = formatTime(elapsedSeconds);
+                elapsedSeconds++;
             }
-            document.getElementById('timer').textContent = formatTime(remainingSeconds);
-            if (remainingSeconds > 0) remainingSeconds--;
+
+            const rt = document.getElementById('round-timer');
+            if (roundRemaining === null) {
+                rt.textContent = '--';
+            } else {
+                rt.textContent = Math.max(0, roundRemaining) + 's';
+                if (roundRemaining > 0) roundRemaining--;
+            }
         }
 
-        function applyTurn(isMyTurn) {
-            spinBtn.disabled = !isMyTurn;
-            spinBtn.textContent = isMyTurn ? 'Girar la ruleta' : 'Esperando tu turno...';
-            turnHint.textContent = isMyTurn
-                ? 'Es tu turno: gira y responde la pregunta.'
-                : 'El jugador activo debe girar la ruleta.';
-            document.querySelector('.wheel-wrap').classList.toggle('my-turn', isMyTurn);
+        function updateBadge(state) {
+            if (state.status !== 'playing') return;
+
+            if (state.roulette_item_id && state.answered_current) {
+                turnBadge.textContent = 'Esperando a los demás...';
+                turnHint.textContent = 'Ya respondiste esta ronda. Espera a que el profesor gire de nuevo.';
+                waitMsg.classList.remove('d-none');
+                waitMsg.textContent = 'Respuesta enviada. Esperando a los demás o al final del tiempo.';
+            } else if (state.roulette_item_id) {
+                turnBadge.textContent = '¡Responde la pregunta!';
+                turnHint.textContent = 'Tienes tiempo limitado para responder.';
+                waitMsg.classList.add('d-none');
+            } else {
+                turnBadge.textContent = 'Esperando al profesor...';
+                turnHint.textContent = 'El profesor girará la ruleta para la siguiente pregunta.';
+                waitMsg.classList.remove('d-none');
+                waitMsg.textContent = 'Esperando a que el profesor gire la ruleta…';
+            }
+        }
+
+        function resetQuestion() {
+            const body = document.querySelector('#questionModal .modal-body');
+            body.innerHTML =
+                '<p class="fw-semibold fs-5" id="q-text"></p>' +
+                '<div class="d-grid gap-2" id="q-options"></div>';
+            currentItem = null;
+            questionOpen = false;
+        }
+
+        function maybeAutoOpen(state) {
+            if (questionOpen || answering || fetching) return;
+            if (state.status !== 'playing') return;
+            if (state.roulette_item_id && !state.answered_current) {
+                fetchRoundItem();
+            }
         }
 
         function renderState(state) {
@@ -213,8 +255,7 @@
                 const id = Number(li.dataset.participationId);
                 const p = map[id];
                 if (p) {
-                    const scoreEl = li.querySelector('[data-role="score"]');
-                    scoreEl.textContent = p.score + ' / ' + maxScore;
+                    li.querySelector('[data-role="score"]').textContent = p.score + ' / ' + maxScore;
                 }
             });
 
@@ -228,15 +269,34 @@
                 return;
             }
 
-            const isMyTurn = state.current_turn_participation_id === myParticipationId;
-            applyTurn(isMyTurn);
-
-            const turnPlayer = state.players.find((p) => p.participation_id === state.current_turn_participation_id);
-            turnBadge.textContent = turnPlayer ? 'Turno de ' + turnPlayer.name : 'Sin turno';
+            roundRemaining = typeof state.round_time_remaining === 'number'
+                ? state.round_time_remaining
+                : null;
 
             if (state.time_remaining !== null) {
                 remainingSeconds = state.time_remaining;
+            } else if (typeof state.time_elapsed === 'number') {
+                remainingSeconds = null;
+                elapsedSeconds = state.time_elapsed;
             }
+
+            updateBadge(state);
+
+            if (questionOpen && !answering && currentItem && state.roulette_item_id !== currentItem.id) {
+                questionModal.hide();
+                resetQuestion();
+
+                if (!answeredThisRound) {
+                    turnBadge.textContent = 'Se acabó el tiempo';
+                    turnHint.textContent = 'No respondiste a tiempo; la pregunta quedó fallada.';
+                    if (waitMsg) {
+                        waitMsg.classList.remove('d-none');
+                        waitMsg.textContent = 'No respondiste a tiempo. Espera a que el profesor gire de nuevo.';
+                    }
+                }
+            }
+
+            maybeAutoOpen(state);
         }
 
         async function refreshState() {
@@ -252,49 +312,47 @@
         setInterval(refreshState, 1500);
         setInterval(tick, 1000);
 
-        async function spin() {
-            spinBtn.disabled = true;
-            wheel.classList.add('spinning');
+        async function fetchRoundItem() {
+            if (fetching || questionOpen) return;
+            fetching = true;
 
-            setTimeout(async () => {
-                try {
-                    const res = await fetch(spinUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                        body: JSON.stringify({ session_id: sessionId })
-                    });
+            try {
+                const res = await fetch(spinUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ session_id: sessionId })
+                });
 
-                    const data = await res.json();
+                const data = await res.json();
 
-                    if (!res.ok) {
-                        alert(data.error || 'No fue posible girar la ruleta.');
-                        return;
-                    }
+                if (!res.ok) return;
 
-                    if (data.finished) {
-                        window.location.href = resultUrl;
-                        return;
-                    }
-
-                    if (data.item) {
-                        currentItem = data.item;
-                        showQuestion(data.item);
-                    }
-                } catch (e) {
-                    alert('Error de conexión. Intenta de nuevo.');
-                } finally {
-                    wheel.classList.remove('spinning');
-                    refreshState();
+                if (data.finished) {
+                    window.location.href = resultUrl;
+                    return;
                 }
-            }, 1200);
+
+                if (data.already_answered) {
+                    refreshState();
+                    return;
+                }
+
+                if (data.item) {
+                    currentItem = data.item;
+                    showQuestion(data.item);
+                }
+            } catch (e) {
+                // Silencioso: el polling reintenta.
+            } finally {
+                fetching = false;
+            }
         }
 
         function showQuestion(item) {
-            turnBadge.textContent = 'Pregunta para ti';
             document.getElementById('q-text').textContent = item.question;
 
             const options = document.getElementById('q-options');
@@ -311,11 +369,13 @@
                 options.appendChild(btn);
             });
 
+            answeredThisRound = false;
+            questionOpen = true;
             questionModal.show();
         }
 
         async function answer(key, btn) {
-            if (answering) return;
+            if (answering || !currentItem) return;
             answering = true;
 
             Array.from(document.querySelectorAll('.opt-btn')).forEach((b) => b.disabled = true);
@@ -340,6 +400,10 @@
 
                 if (!res.ok) {
                     alert(data.error || 'No fue posible registrar tu respuesta.');
+                    Array.from(document.querySelectorAll('.opt-btn')).forEach((b) => b.disabled = false);
+                    btn.classList.remove('disabled');
+                    answering = false;
+                    refreshState();
                     return;
                 }
 
@@ -350,13 +414,11 @@
                     '<p class="mb-1"><small>Respuesta correcta: ' + data.correct_text + '</small></p>' +
                     '<p class="mb-0">Puntaje: <strong>' + data.participation_score + ' / ' + maxScore + '</strong></p>';
 
+                answeredThisRound = true;
+
                 setTimeout(() => {
                     questionModal.hide();
-                    body.innerHTML =
-                        '<p class="fw-semibold fs-5" id="q-text"></p>' +
-                        '<div class="d-grid gap-2" id="q-options"></div>';
-
-                    currentItem = null;
+                    resetQuestion();
                     answering = false;
 
                     if (data.finished) {
@@ -371,8 +433,6 @@
             }
         }
 
-        spinBtn.addEventListener('click', spin);
-
         window.addEventListener('DOMContentLoaded', () => {
             tick();
             refreshState();
@@ -381,6 +441,12 @@
 
             if (window.Echo && reverbEnabled) {
                 window.Echo.private('game-session.' + sessionId)
+                    .listen('.RoundStarted', () => {
+                        wheel.classList.add('spinning');
+                        setTimeout(() => wheel.classList.remove('spinning'), 1200);
+                        refreshState();
+                    })
+                    .listen('.RoundClosed', () => refreshState())
                     .listen('.TurnChanged', () => refreshState())
                     .listen('.ScoreUpdated', () => refreshState())
                     .listen('.GameFinished', () => { window.location.href = resultUrl; });

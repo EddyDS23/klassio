@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kahoot — Sala {{ $session->code }}</title>
+    @include('partials.assets', ['theme' => 'student'])
+    @if ((bool) config('broadcasting.connections.reverb.enabled', false))
+        <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+        <script>
+            window.Echo = new Echo({
+                broadcaster: 'reverb',
+                key: @json(config('broadcasting.connections.reverb.key')),
+                wsHost: @json(config('broadcasting.connections.reverb.options.host', 'localhost')),
+                wsPort: @json(config('broadcasting.connections.reverb.options.port', 8080)),
+                forceTLS: @json(config('broadcasting.connections.reverb.options.scheme', 'http') === 'https'),
+                enabledTransports: ['ws', 'wss']
+            });
+        </script>
+    @endif
+    <style>
+        .turn-badge { background: var(--klassio-primary); color: #fff; border-radius: 1rem; padding: .5rem 1rem; font-weight: 700; }
+        .opt-btn { border: 2px solid #cbd5e1; border-radius: 1rem; padding: 1rem; font-weight: 700; background: #fff; width: 100%; }
+        .opt-btn:hover { border-color: var(--klassio-primary); color: var(--klassio-primary); }
+        html[data-theme="dark"] .opt-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
+        .board {
+            border-radius: 1.25rem; padding: 2.5rem 1.5rem;
+            background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+            color: #fff; text-align: center;
+        }
+        .board-icon { font-size: 3rem; line-height: 1; }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-shell">
+
+        <div class="page-hero text-center">
+            <h1 class="fw-bold mb-1">Kahoot multijugador</h1>
+            <p class="mb-0 opacity-75">
+                {{ $activity->title }} — Sala <strong>{{ $session->code }}</strong>
+            </p>
+        </div>
+
+        <div class="text-center my-2">
+            <span class="turn-badge" id="turn-badge">Preparando...</span>
+            <span class="badge text-bg-light ms-2">
+                Tiempo pregunta: <span id="round-timer">--</span>
+            </span>
+            <span class="badge text-bg-light ms-2">
+                Tiempo: <span id="timer">--:--</span>
+            </span>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-7">
+                <div class="card surface-card">
+                    <div class="card-body p-4">
+                        <div class="board">
+                            <div class="board-icon mb-2">?</div>
+                            <div class="fw-bold" style="font-size: 1.35rem;">Pregunta en vivo</div>
+                            <div class="opacity-75 mt-1" id="board-hint">
+                                Esperando a que el profesor abra la siguiente pregunta…
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="alert alert-info mb-0" id="wait-msg">
+                                Esperando a que el profesor lance la pregunta…
+                            </div>
+                            <div class="text-muted small mt-2" id="turn-hint">
+                                Cuando el profesor abra la pregunta, aparecerá en pantalla y tendrás tiempo para responder.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card surface-card">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-bold mb-3">Marcador</h2>
+                        <span class="text-muted small">
+                            Respondidas: <span id="answered-count">{{ $answeredCount }}</span> / {{ $totalItems }}
+                        </span>
+                        <ul class="list-group list-group-flush mt-2" id="players">
+                            @foreach ($state['players'] as $p)
+                                <li
+                                    class="list-group-item d-flex justify-content-between align-items-center"
+                                    data-participation-id="{{ $p['participation_id'] }}"
+                                >
+                                    <span>
+                                        @if ($p['participation_id'] === $participation->id)
+                                            <span class="text-muted">(tú)</span>
+                                        @endif
+                                        {{ $p['name'] }}
+                                    </span>
+                                    <span class="fw-bold" data-role="score">{{ $p['score'] }} / {{ $maxScore }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card surface-card mt-4">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-bold mb-3">Acciones</h2>
+                        <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-secondary w-100">Abandonar partida</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- Modal de pregunta --}}
+    <div class="modal fade" id="questionModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pregunta</h5>
+                </div>
+                <div class="modal-body">
+                    <p class="fw-semibold fs-5" id="q-text"></p>
+                    <div class="d-grid gap-2" id="q-options"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sessionId = @json($session->id);
+        const myParticipationId = @json($participation->id);
+        const csrfToken = @json(csrf_token());
+        const totalItems = @json($totalItems);
+        const maxScore = @json($maxScore);
+
+        const stateUrl = @json(route('student.game-sessions.state', $session->id));
+        const questionUrl = @json(route('student.kahoot.question-session'));
+        const answerUrl = @json(route('student.kahoot.answer-session'));
+        const resultUrl = @json(route('student.game-sessions.result', $session->id));
+
+        let remainingSeconds = @json($remainingSeconds ?? null);
+        let elapsedSeconds = @json($state['time_elapsed'] ?? 0);
+        let roundRemaining = @json($state['round_time_remaining'] ?? null);
+        let currentItem = null;
+        let questionOpen = false;
+        let answering = false;
+        let fetching = false;
+        let answeredThisRound = false;
+
+        const turnBadge = document.getElementById('turn-badge');
+        const turnHint = document.getElementById('turn-hint');
+        const waitMsg = document.getElementById('wait-msg');
+        const boardHint = document.getElementById('board-hint');
+        const questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
+
+        function formatTime(s) {
+            s = Math.max(0, s);
+            const m = Math.floor(s / 60).toString().padStart(2, '0');
+            const sec = (s % 60).toString().padStart(2, '0');
+            return m + ':' + sec;
+        }
+
+        function tick() {
+            const el = document.getElementById('timer');
+            if (remainingSeconds !== null) {
+                el.textContent = formatTime(remainingSeconds);
+                if (remainingSeconds > 0) remainingSeconds--;
+            } else {
+                el.textContent = formatTime(elapsedSeconds);
+                elapsedSeconds++;
+            }
+
+            const rt = document.getElementById('round-timer');
+            if (roundRemaining === null) {
+                rt.textContent = '--';
+            } else {
+                rt.textContent = Math.max(0, roundRemaining) + 's';
+                if (roundRemaining > 0) roundRemaining--;
+            }
+        }
+
+        function updateBadge(state) {
+            if (state.status !== 'playing') return;
+
+            if (state.question_id && state.answered_current) {
+                turnBadge.textContent = 'Esperando a los demás...';
+                turnHint.textContent = 'Ya respondiste esta pregunta. Espera a que el profesor avance.';
+                waitMsg.classList.remove('d-none');
+                waitMsg.textContent = 'Respuesta enviada. Esperando a los demás o al final del tiempo.';
+                boardHint.textContent = 'Respondiste. Esperando al resto…';
+            } else if (state.question_id) {
+                turnBadge.textContent = '¡Responde la pregunta!';
+                turnHint.textContent = 'Tienes tiempo limitado para responder.';
+                waitMsg.classList.add('d-none');
+                boardHint.textContent = 'Pregunta activa: responde en pantalla.';
+            } else {
+                turnBadge.textContent = 'Esperando al profesor...';
+                turnHint.textContent = 'El profesor abrirá la siguiente pregunta.';
+                waitMsg.classList.remove('d-none');
+                waitMsg.textContent = 'Esperando a que el profesor lance la pregunta…';
+                boardHint.textContent = 'Esperando a que el profesor abra la siguiente pregunta…';
+            }
+        }
+
+        function resetQuestion() {
+            const body = document.querySelector('#questionModal .modal-body');
+            body.innerHTML =
+                '<p class="fw-semibold fs-5" id="q-text"></p>' +
+                '<div class="d-grid gap-2" id="q-options"></div>';
+            currentItem = null;
+            questionOpen = false;
+        }
+
+        function maybeAutoOpen(state) {
+            if (questionOpen || answering || fetching) return;
+            if (state.status !== 'playing') return;
+            if (state.question_id && !state.answered_current) {
+                fetchQuestion();
+            }
+        }
+
+        function renderState(state) {
+            const rows = document.querySelectorAll('#players li');
+            const map = {};
+            state.players.forEach((p) => {
+                map[p.participation_id] = p;
+            });
+
+            rows.forEach((li) => {
+                const id = Number(li.dataset.participationId);
+                const p = map[id];
+                if (p) {
+                    li.querySelector('[data-role="score"]').textContent = p.score + ' / ' + maxScore;
+                }
+            });
+
+            const me = state.players.find((p) => p.participation_id === myParticipationId);
+            if (me) {
+                document.getElementById('answered-count').textContent = me.answered;
+            }
+
+            if (state.status === 'finished') {
+                window.location.href = resultUrl;
+                return;
+            }
+
+            roundRemaining = typeof state.round_time_remaining === 'number'
+                ? state.round_time_remaining
+                : null;
+
+            if (state.time_remaining !== null) {
+                remainingSeconds = state.time_remaining;
+            } else if (typeof state.time_elapsed === 'number') {
+                remainingSeconds = null;
+                elapsedSeconds = state.time_elapsed;
+            }
+
+            updateBadge(state);
+
+            if (questionOpen && !answering && currentItem && state.question_id !== currentItem.id) {
+                questionModal.hide();
+                resetQuestion();
+
+                if (!answeredThisRound) {
+                    turnBadge.textContent = 'Se acabó el tiempo';
+                    turnHint.textContent = 'No respondiste a tiempo; la pregunta quedó fallada.';
+                    if (waitMsg) {
+                        waitMsg.classList.remove('d-none');
+                        waitMsg.textContent = 'No respondiste a tiempo. Espera a que el profesor avance.';
+                    }
+                }
+            }
+
+            maybeAutoOpen(state);
+        }
+
+        async function refreshState() {
+            try {
+                const res = await fetch(stateUrl, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                if (res.ok) renderState(await res.json());
+            } catch (e) {}
+        }
+
+        setInterval(refreshState, 1500);
+        setInterval(tick, 1000);
+
+        async function fetchQuestion() {
+            if (fetching || questionOpen) return;
+            fetching = true;
+
+            try {
+                const res = await fetch(questionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ session_id: sessionId })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) return;
+
+                if (data.finished) {
+                    window.location.href = resultUrl;
+                    return;
+                }
+
+                if (data.already_answered) {
+                    refreshState();
+                    return;
+                }
+
+                if (data.item) {
+                    currentItem = data.item;
+                    showQuestion(data.item);
+                }
+            } catch (e) {
+                // Silencioso: el polling reintenta.
+            } finally {
+                fetching = false;
+            }
+        }
+
+        function showQuestion(item) {
+            document.getElementById('q-text').textContent = item.question;
+
+            const options = document.getElementById('q-options');
+            options.innerHTML = '';
+
+            item.options.forEach((opt) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'opt-btn';
+                btn.textContent = opt.text;
+                btn.dataset.optionId = opt.id;
+                btn.addEventListener('click', () => answer(opt.id, btn));
+                options.appendChild(btn);
+            });
+
+            answeredThisRound = false;
+            questionOpen = true;
+            questionModal.show();
+        }
+
+        async function answer(optionId, btn) {
+            if (answering || !currentItem) return;
+            answering = true;
+
+            Array.from(document.querySelectorAll('.opt-btn')).forEach((b) => b.disabled = true);
+            btn.classList.add('disabled');
+
+            try {
+                const res = await fetch(answerUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        question_id: currentItem.id,
+                        option_id: optionId
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    alert(data.error || 'No fue posible registrar tu respuesta.');
+                    Array.from(document.querySelectorAll('.opt-btn')).forEach((b) => b.disabled = false);
+                    btn.classList.remove('disabled');
+                    answering = false;
+                    refreshState();
+                    return;
+                }
+
+                const correctText = (() => {
+                    if (data.is_correct) return null;
+                    const found = (currentItem.options || []).find((o) => o.id === data.correct_option_id);
+                    return found ? found.text : null;
+                })();
+
+                const body = document.querySelector('#questionModal .modal-body');
+                body.innerHTML =
+                    '<div class="alert ' + (data.is_correct ? 'alert-success' : 'alert-danger') + ' fw-bold">' +
+                    (data.is_correct ? '¡Correcto!' : 'Incorrecto') + '</div>' +
+                    (correctText ? '<p class="mb-1"><small>Respuesta correcta: ' + correctText + '</small></p>' : '') +
+                    '<p class="mb-0">Puntaje: <strong>' + data.participation_score + ' / ' + maxScore + '</strong></p>';
+
+                answeredThisRound = true;
+
+                setTimeout(() => {
+                    questionModal.hide();
+                    resetQuestion();
+                    answering = false;
+
+                    if (data.finished) {
+                        window.location.href = resultUrl;
+                    } else {
+                        refreshState();
+                    }
+                }, 1600);
+            } catch (e) {
+                answering = false;
+                alert('Error de conexión. Intenta de nuevo.');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            tick();
+            refreshState();
+
+            const reverbEnabled = @json((bool) config('broadcasting.connections.reverb.enabled', false));
+
+            if (window.Echo && reverbEnabled) {
+                window.Echo.private('game-session.' + sessionId)
+                    .listen('.RoundStarted', () => refreshState())
+                    .listen('.RoundClosed', () => refreshState())
+                    .listen('.TurnChanged', () => refreshState())
+                    .listen('.ScoreUpdated', () => refreshState())
+                    .listen('.GameFinished', () => { window.location.href = resultUrl; });
+            }
+        });
+    </script>
+
+</body>
+
+</html>

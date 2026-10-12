@@ -6,7 +6,9 @@ use App\Http\Requests\AnswerWordsearchRequest;
 use App\Http\Requests\StoreWordsearchRequest;
 use App\Http\Requests\UpdateWordsearchRequest;
 use App\Models\Activity;
+use App\Models\GameSession;
 use App\Models\Wordsearch;
+use App\Services\GameSessionService;
 use App\Services\ParticipationService;
 use App\Services\WordsearchService;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +20,8 @@ class WordsearchController extends Controller
 {
     public function __construct(
         protected WordsearchService $wordSearchService,
-        protected ParticipationService $participationService
+        protected ParticipationService $participationService,
+        protected GameSessionService $gameSessionService
     ) {}
 
     // -------------------------------------------------------------------------
@@ -106,6 +109,58 @@ class WordsearchController extends Controller
     // -------------------------------------------------------------------------
     // Student — Juego
     // -------------------------------------------------------------------------
+
+    /**
+     * Sala multijugador de sopa de letras (carrera libre).
+     */
+    public function playSession(int $sessionId): View|RedirectResponse
+    {
+        $session = GameSession::findOrFail($sessionId);
+
+        Gate::authorize('play', $session);
+
+        $activity = $session->activity;
+        $wordsearch = $activity->wordsearch;
+
+        abort_if($wordsearch === null, 404);
+
+        $participation = $this->gameSessionService->participationOf(
+            $session,
+            request()->user()
+        );
+
+        abort_if($participation === null, 403);
+
+        $session = $this->gameSessionService->closeRoundIfDue($session);
+
+        if ($session->status !== GameSession::STATUS_PLAYING) {
+            return redirect()->route('student.game-sessions.result', $session->id);
+        }
+
+        $found = $this->wordSearchService->foundWords(
+            $wordsearch,
+            $participation
+        );
+
+        $foundWords = $wordsearch
+            ->words()
+            ->whereIn('id', $found)
+            ->get();
+
+        return view('student.wordsearch.multiplayer', [
+            'session' => $session,
+            'activity' => $activity,
+            'wordsearch' => $wordsearch,
+            'participation' => $participation,
+            'grid' => $wordsearch->grid,
+            'remainingSeconds' => $this->gameSessionService->remainingSeconds($session),
+            'words' => $wordsearch->words()->orderBy('word')->get(),
+            'foundIds' => $found,
+            'foundCount' => $foundWords->count(),
+            'earnedPoints' => $foundWords->sum('score'),
+            'maxScore' => $wordsearch->words()->sum('score'),
+        ]);
+    }
 
     public function play(int $id)
     {

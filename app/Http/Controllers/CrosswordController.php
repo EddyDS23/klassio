@@ -7,16 +7,23 @@ use App\Http\Requests\UpdateCrosswordRequest;
 use App\Models\Activity;
 use App\Models\CrosswordAnswer;
 use App\Models\CrosswordWord;
+use App\Models\GameSession;
 use App\Models\Participation;
 use App\Services\CrosswordService;
+use App\Services\GameSessionService;
 use App\Services\ParticipationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 
 class CrosswordController extends Controller
 {
-    public function __construct(private CrosswordService $crosswordService, private ParticipationService $participationService) {}
+    public function __construct(
+        private CrosswordService $crosswordService,
+        private ParticipationService $participationService,
+        private GameSessionService $gameSessionService
+    ) {}
 
     /**
      * Mostrar formulario de configuración inicial del crucigrama.
@@ -116,7 +123,7 @@ class CrosswordController extends Controller
         $message = 'Crucigrama actualizado correctamente.';
 
         if (! empty($result['skipped'])) {
-            $skipped  = implode(', ', $result['skipped']);
+            $skipped = implode(', ', $result['skipped']);
             $message .= " Las siguientes palabras no pudieron colocarse: {$skipped}.";
         }
 
@@ -128,6 +135,43 @@ class CrosswordController extends Controller
     // -------------------------------------------------------------------------
     // Estudiante
     // -------------------------------------------------------------------------
+
+    /**
+     * Sala multijugador del crucigrama (carrera libre).
+     */
+    public function playSession(int $sessionId): View|RedirectResponse
+    {
+        $session = GameSession::findOrFail($sessionId);
+
+        Gate::authorize('play', $session);
+
+        $activity = $session->activity;
+        $crossword = $activity->crossword;
+
+        abort_if($crossword === null, 404);
+
+        $participation = $this->gameSessionService->participationOf(
+            $session,
+            request()->user()
+        );
+
+        abort_if($participation === null, 403);
+
+        $session = $this->gameSessionService->closeRoundIfDue($session);
+
+        if ($session->status !== GameSession::STATUS_PLAYING) {
+            return redirect()->route('student.game-sessions.result', $session->id);
+        }
+
+        return view('student.crossword.multiplayer', [
+            'session' => $session,
+            'activity' => $activity,
+            'crossword' => $crossword,
+            'words' => $crossword->words,
+            'participation' => $participation,
+            'remainingSeconds' => $this->gameSessionService->remainingSeconds($session),
+        ]);
+    }
 
     /**
      * Vista del juego para el estudiante.
@@ -158,6 +202,7 @@ class CrosswordController extends Controller
             $participation,
             $activity
         );
+
         return view('student.crossword.play', compact(
             'activity',
             'crossword',
@@ -177,17 +222,17 @@ class CrosswordController extends Controller
             'participation_id' => [
                 'required',
                 'integer',
-                'exists:participations,id'
+                'exists:participations,id',
             ],
             'crossword_word_id' => [
                 'required',
                 'integer',
-                'exists:crossword_words,id'
+                'exists:crossword_words,id',
             ],
             'response' => [
                 'required',
                 'string',
-                'max:100'
+                'max:100',
             ],
         ]);
 
@@ -196,7 +241,7 @@ class CrosswordController extends Controller
         );
 
         Gate::authorize('answer', $participation);
-        
+
         $crosswordWord = CrosswordWord::findOrFail(
             $validated['crossword_word_id']
         );
@@ -221,7 +266,7 @@ class CrosswordController extends Controller
 
         if ($alreadyAnswered) {
             return response()->json([
-                'error' => 'Esta palabra ya fue respondida.'
+                'error' => 'Esta palabra ya fue respondida.',
             ], 409);
         }
 
@@ -237,11 +282,11 @@ class CrosswordController extends Controller
 
         // Guardar respuesta
         CrosswordAnswer::create([
-            'participation_id'  => $participation->id,
+            'participation_id' => $participation->id,
             'crossword_word_id' => $crosswordWord->id,
-            'response'          => $validated['response'],
-            'is_correct'        => $isCorrect,
-            'score'             => $score,
+            'response' => $validated['response'],
+            'is_correct' => $isCorrect,
+            'score' => $score,
         ]);
 
         // Actualizar score
@@ -275,12 +320,12 @@ class CrosswordController extends Controller
         }
 
         return response()->json([
-            'is_correct'   => $isCorrect,
-            'score'        => $score,
+            'is_correct' => $isCorrect,
+            'score' => $score,
             'correct_word' => $isCorrect
                 ? null
                 : $crosswordWord->word,
-            'completed'    => $completed,
+            'completed' => $completed,
         ]);
     }
 }

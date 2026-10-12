@@ -23,6 +23,8 @@
 
 <body>
 
+    @php($isRace = in_array($session->activity->type, ['crossword', 'word_search', 'matching'], true))
+
     <div class="page-shell">
 
         <div class="page-hero text-center">
@@ -95,9 +97,73 @@
             @endif
 
             @if ($session->status === 'playing')
-                <div class="alert alert-info w-100 mb-2">
-                    Partida en curso. Tus estudiantes están jugando…
-                </div>
+                @php($isKahoot = $session->activity->type === 'kahoot')
+
+                @if ($isRace)
+                    <div class="card surface-card w-100 mb-2" id="race-panel">
+                        <div class="card-body p-4">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                                <h2 class="h5 fw-bold mb-0">Carrera libre en curso</h2>
+                                <span class="badge text-bg-light">
+                                    Tiempo: <span id="race-timer">--</span>
+                                </span>
+                            </div>
+
+                            <p class="text-muted">
+                                Cada jugador resuelve el juego a su ritmo. La partida termina cuando
+                                todos terminan o se agota el tiempo de la actividad.
+                            </p>
+
+                            <h3 class="h6 fw-bold">Posiciones</h3>
+                            <ul class="list-group list-group-flush" id="race-standings"></ul>
+                        </div>
+                    </div>
+                @else
+                    <div class="card surface-card w-100 mb-2" id="round-panel">
+                        <div class="card-body p-4">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                                <h2 class="h5 fw-bold mb-0">
+                                    {{ $isKahoot ? 'Control del kahoot' : 'Control de la ruleta' }}
+                                </h2>
+                                <span class="badge text-bg-light">
+                                    Tiempo: <span id="round-timer">--</span>
+                                </span>
+                            </div>
+
+                            <div id="round-question" class="mb-3">
+                                <p class="text-muted mb-0">
+                                    {{ $isKahoot
+                                        ? 'Avanza para mostrar la siguiente pregunta.'
+                                        : 'Gira la ruleta para mostrar la siguiente pregunta.' }}
+                                </p>
+                            </div>
+
+                            <div class="d-flex flex-wrap align-items-end gap-3">
+                                <div>
+                                    <label class="form-label small mb-1" for="round-seconds">Segundos para responder</label>
+                                    <input
+                                        type="number"
+                                        class="form-control"
+                                        id="round-seconds"
+                                        min="5"
+                                        max="300"
+                                        step="5"
+                                        value="30"
+                                        style="width: 8rem;"
+                                    >
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-klassio" id="spin-btn">
+                                        {{ $isKahoot ? 'Siguiente pregunta' : 'Girar la ruleta' }}
+                                    </button>
+                                </div>
+                                <div class="text-muted small">
+                                    Respondieron: <span id="round-answered">0</span> / <span id="round-total">{{ $players->count() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             @endif
 
             @if ($session->status === 'finished')
@@ -117,6 +183,15 @@
         const sessionId = @json($session->id);
         const stateUrl = @json(route('teacher.game-sessions.state', $session->id));
         const resultUrl = @json(route('teacher.game-sessions.result', $session->id));
+        const spinUrl = @json(route('teacher.game-sessions.spin', $session->id));
+        const csrfToken = @json(csrf_token());
+
+        const isKahoot = @json($session->activity->type === 'kahoot');
+        const isRace = @json($isRace);
+        const idleButton = isKahoot ? 'Siguiente pregunta' : 'Girar la ruleta';
+        const idleHint = isKahoot
+            ? 'Avanza para mostrar la siguiente pregunta.'
+            : 'Gira la ruleta para mostrar la siguiente pregunta.';
 
         const statusLabel = {
             waiting: 'Esperando jugadores',
@@ -125,6 +200,60 @@
             finished: 'Finalizada',
             cancelled: 'Cancelada'
         };
+
+        let roundRemaining = null;
+        let roundOpen = false;
+        let raceRemaining = null;
+
+        function formatTime(s) {
+            s = Math.max(0, s);
+            const m = Math.floor(s / 60).toString().padStart(2, '0');
+            const sec = (s % 60).toString().padStart(2, '0');
+            return m + ':' + sec;
+        }
+
+        function renderRound(state) {
+            const panel = document.getElementById('round-panel');
+            if (!panel) return;
+
+            const spinBtn = document.getElementById('spin-btn');
+            const questionEl = document.getElementById('round-question');
+            const answeredEl = document.getElementById('round-answered');
+            const totalEl = document.getElementById('round-total');
+
+            if (state.status !== 'playing') {
+                return;
+            }
+
+            roundOpen = state.roulette_item_id !== null || state.question_id !== null;
+            roundRemaining = typeof state.round_time_remaining === 'number'
+                ? state.round_time_remaining
+                : null;
+
+            totalEl.textContent = state.players.filter(
+                (p) => p.status === 'started'
+            ).length;
+
+            const answered = state.players.filter((p) => p.answered_current).length;
+            answeredEl.textContent = answered;
+
+            if (roundOpen && state.current_item) {
+                const opts = state.current_item.options
+                    .map((o, i) => '<li><strong>' + (o.key ? o.key.toUpperCase() : i + 1) + '.</strong> ' + o.text + '</li>')
+                    .join('');
+                questionEl.innerHTML =
+                    '<p class="fw-semibold mb-2">' + state.current_item.question + '</p>' +
+                    '<ul class="mb-0">' + opts + '</ul>';
+
+                spinBtn.disabled = true;
+                spinBtn.textContent = 'Ronda en curso';
+            } else {
+                questionEl.innerHTML =
+                    '<p class="text-muted mb-0">' + idleHint + '</p>';
+                spinBtn.disabled = false;
+                spinBtn.textContent = idleButton;
+            }
+        }
 
         function renderState(state) {
             const statusEl = document.getElementById('room-status');
@@ -146,14 +275,95 @@
                 li.appendChild(name);
 
                 const badge = document.createElement('span');
-                badge.className = 'text-success small';
-                badge.textContent = 'Conectado';
+                if ((state.roulette_item_id || state.question_id) && p.answered_current) {
+                    badge.className = 'badge text-bg-success';
+                    badge.textContent = 'Respondió';
+                } else {
+                    badge.className = 'text-success small';
+                    badge.textContent = 'Conectado';
+                }
                 li.appendChild(badge);
 
                 list.appendChild(li);
             });
 
             document.getElementById('empty-players').classList.toggle('d-none', state.players.length > 0);
+
+            if (isRace) {
+                raceRemaining = typeof state.time_remaining === 'number'
+                    ? state.time_remaining
+                    : null;
+
+                const standings = document.getElementById('race-standings');
+                if (standings) {
+                    standings.innerHTML = state.players
+                        .filter((p) => p.status !== 'abandoned')
+                        .slice()
+                        .sort((a, b) => b.score - a.score)
+                        .map((p) => {
+                            const suffix = p.status === 'completed' ? ' ✓' : '';
+                            return '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+                                '<span>' + p.name + '</span>' +
+                                '<span class="badge text-bg-light">' + p.score + ' pts' + suffix + '</span>' +
+                                '</li>';
+                        })
+                        .join('');
+                }
+            }
+
+            renderRound(state);
+        }
+
+        function tick() {
+            const el = document.getElementById('round-timer');
+            if (el) {
+                if (roundOpen && roundRemaining !== null) {
+                    el.textContent = formatTime(roundRemaining);
+                    if (roundRemaining > 0) roundRemaining--;
+                } else {
+                    el.textContent = '--';
+                }
+            }
+
+            const raceEl = document.getElementById('race-timer');
+            if (raceEl) {
+                raceEl.textContent = raceRemaining !== null ? formatTime(raceRemaining) : '--';
+                if (raceRemaining !== null && raceRemaining > 0) raceRemaining--;
+            }
+        }
+
+        async function spin() {
+            const spinBtn = document.getElementById('spin-btn');
+            if (!spinBtn || spinBtn.disabled) return;
+
+            spinBtn.disabled = true;
+            spinBtn.textContent = 'Girando...';
+
+            const seconds = Number(document.getElementById('round-seconds').value) || 30;
+
+            try {
+                const res = await fetch(spinUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ seconds: seconds })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'No se pudo girar la ruleta.');
+                } else if (data.state) {
+                    renderState(data.state);
+                    if (data.finished) {
+                        window.location.href = resultUrl;
+                        return;
+                    }
+                }
+            } catch (e) {
+                alert('Error de conexión.');
+            }
         }
 
         async function refresh() {
@@ -176,14 +386,26 @@
         }
 
         setInterval(refresh, 2000);
+        setInterval(tick, 1000);
 
         window.addEventListener('DOMContentLoaded', () => {
+            tick();
+            refresh();
+
+            const spinBtn = document.getElementById('spin-btn');
+            if (spinBtn) {
+                spinBtn.addEventListener('click', spin);
+            }
+
             const reverbEnabled = @json((bool) config('broadcasting.connections.reverb.enabled', false));
             if (window.Echo && reverbEnabled) {
                 window.Echo.private('game-session.' + sessionId)
                     .listen('.GameFinished', (e) => { window.location.href = resultUrl; })
                     .listen('.PlayerJoined', (e) => refresh())
                     .listen('.PlayerLeft', (e) => refresh())
+                    .listen('.RoundStarted', (e) => refresh())
+                    .listen('.RoundClosed', (e) => refresh())
+                    .listen('.ScoreUpdated', (e) => refresh())
                     .listen('.TurnChanged', (e) => refresh());
             }
         });

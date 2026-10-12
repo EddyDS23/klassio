@@ -108,6 +108,7 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
         Route::post('/', [TeacherGameSessionController::class, 'store'])->name('store');
         Route::get('/{id}', [TeacherGameSessionController::class, 'show'])->where(['id' => '[1-9][0-9]*'])->name('show');
         Route::post('/{id}/start', [TeacherGameSessionController::class, 'start'])->where(['id' => '[1-9][0-9]*'])->name('start');
+        Route::post('/{id}/spin', [TeacherGameSessionController::class, 'spin'])->where(['id' => '[1-9][0-9]*'])->name('spin');
         Route::get('/{id}/state', [GameSessionController::class, 'state'])->where(['id' => '[1-9][0-9]*'])->name('state');
         Route::get('/{id}/result', [TeacherGameSessionController::class, 'result'])->where(['id' => '[1-9][0-9]*'])->name('result');
     });
@@ -135,6 +136,12 @@ Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:
     Route::get('/game-sessions/{id}/roulette', [RouletteController::class, 'playSession'])->where(['id' => '[1-9][0-9]*'])->name('roulette.play-session');
     Route::post('/roulette/spin-session', [RouletteController::class, 'spinSession'])->name('roulette.spin-session');
     Route::post('/roulette/answer-session', [RouletteController::class, 'answerSession'])->name('roulette.answer-session');
+    Route::get('/game-sessions/{id}/kahoot', [KahootController::class, 'playSession'])->where(['id' => '[1-9][0-9]*'])->name('kahoot.play-session');
+    Route::post('/kahoot/question-session', [KahootController::class, 'fetchQuestion'])->name('kahoot.question-session');
+    Route::post('/kahoot/answer-session', [KahootController::class, 'answerSession'])->name('kahoot.answer-session');
+    Route::get('/game-sessions/{id}/crossword', [CrosswordController::class, 'playSession'])->where(['id' => '[1-9][0-9]*'])->name('crossword.play-session');
+    Route::get('/game-sessions/{id}/wordsearch', [WordsearchController::class, 'playSession'])->where(['id' => '[1-9][0-9]*'])->name('wordsearch.play-session');
+    Route::get('/game-sessions/{id}/matching', [MatchingController::class, 'playSession'])->where(['id' => '[1-9][0-9]*'])->name('matching.play-session');
     Route::post('/activities/{id}/start', [ParticipationController::class, 'start'])->where(['id' => '[1-9][0-9]*'])->name('participation.start');
     Route::post('/activities/{id}/finish', [ParticipationController::class, 'finish'])->where(['id' => '[1-9][0-9]*'])->name('participation.finish');
     Route::post('/activities/{id}/abandon', [ParticipationController::class, 'abandon'])->where(['id' => '[1-9][0-9]*'])->name('participation.abandon');

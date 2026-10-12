@@ -7,6 +7,7 @@ use App\Models\Activity;
 use App\Models\GameSession;
 use App\Services\GameSessionService;
 use App\Services\ParticipationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -107,6 +108,46 @@ class TeacherGameSessionController extends Controller
         }
 
         return redirect()->route('teacher.game-sessions.show', $session->id);
+    }
+
+    /**
+     * El profesor avanza la partida: gira la ruleta o abre la siguiente
+     * pregunta del kahoot, según el tipo de actividad.
+     */
+    public function spin(Request $request, int $id): JsonResponse
+    {
+        $session = GameSession::findOrFail($id);
+
+        Gate::authorize('spin', $session);
+
+        $seconds = (int) $request->input(
+            'seconds',
+            GameSessionService::ROULETTE_ROUND_SECONDS
+        );
+
+        try {
+            $type = $session->activity->type;
+
+            if (in_array($type, GameSessionService::RACE_TYPES, true)) {
+                throw new RuntimeException(
+                    'Este juego se juega en carrera libre: no hay rondas que avanzar.'
+                );
+            }
+
+            $session = $type === 'kahoot'
+                ? $this->gameSessionService->startKahootRound($session, $seconds)
+                : $this->gameSessionService->startRound($session, $seconds);
+        } catch (RuntimeException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'finished' => $session->status !== GameSession::STATUS_PLAYING,
+            'roulette_item_id' => $this->gameSessionService->currentRouletteItemId($session),
+            'question_id' => $this->gameSessionService->currentKahootQuestionId($session),
+            'round_seconds' => $session->state['round_seconds'] ?? null,
+            'state' => $this->gameSessionService->getState($session),
+        ]);
     }
 
     /**

@@ -6,8 +6,10 @@ use App\Http\Requests\AnswerMatchingRequest;
 use App\Http\Requests\StoreMatchingRequest;
 use App\Http\Requests\UpdateMatchingRequest;
 use App\Models\Activity;
+use App\Models\GameSession;
 use App\Models\Matching;
 use App\Models\Participation;
+use App\Services\GameSessionService;
 use App\Services\MatchingService;
 use App\Services\ParticipationService;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +21,8 @@ class MatchingController extends Controller
 {
     public function __construct(
         protected MatchingService $matchingService,
-        protected ParticipationService $participationService
+        protected ParticipationService $participationService,
+        protected GameSessionService $gameSessionService
     ) {}
 
     /**
@@ -156,6 +159,57 @@ class MatchingController extends Controller
             'participation' => $participation,
             'items' => $items,
             'remainingSeconds' => $remainingSeconds,
+            'rightOptions' => $items->shuffle(),
+            'correctIds' => $this->matchingService->correctItemIds(
+                $matching,
+                $participation
+            ),
+            'earnedPoints' => $this->matchingService->earnedScore(
+                $matching,
+                $participation
+            ),
+            'maxScore' => $this->matchingService->maxScore(
+                $matching
+            ),
+        ]);
+    }
+
+    /**
+     * Sala multijugador de Matching (carrera libre).
+     */
+    public function playSession(int $sessionId): View|RedirectResponse
+    {
+        $session = GameSession::findOrFail($sessionId);
+
+        Gate::authorize('play', $session);
+
+        $activity = $session->activity;
+        $matching = $activity->matching;
+
+        abort_if($matching === null, 404);
+
+        $participation = $this->gameSessionService->participationOf(
+            $session,
+            request()->user()
+        );
+
+        abort_if($participation === null, 403);
+
+        $session = $this->gameSessionService->closeRoundIfDue($session);
+
+        if ($session->status !== GameSession::STATUS_PLAYING) {
+            return redirect()->route('student.game-sessions.result', $session->id);
+        }
+
+        $items = $matching->items()->get();
+
+        return view('student.matching.multiplayer', [
+            'session' => $session,
+            'activity' => $activity,
+            'matching' => $matching,
+            'participation' => $participation,
+            'items' => $items,
+            'remainingSeconds' => $this->gameSessionService->remainingSeconds($session),
             'rightOptions' => $items->shuffle(),
             'correctIds' => $this->matchingService->correctItemIds(
                 $matching,

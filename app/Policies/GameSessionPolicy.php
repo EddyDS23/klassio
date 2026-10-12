@@ -68,6 +68,22 @@ class GameSessionPolicy
         return $session->activity->teacher_id === $user->id;
     }
 
+    /**
+     * Solo el profesor dueño de la actividad puede girar la ruleta.
+     */
+    public function spin(User $user, GameSession $session): bool
+    {
+        if ($user->role !== 'teacher') {
+            return false;
+        }
+
+        if ($session->status !== GameSession::STATUS_PLAYING) {
+            return false;
+        }
+
+        return $session->activity->teacher_id === $user->id;
+    }
+
     public function leave(User $user, GameSession $session): bool
     {
         if (in_array($session->status, ['finished', 'cancelled'], true)) {

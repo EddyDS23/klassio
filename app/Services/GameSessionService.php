@@ -6,14 +6,22 @@ use App\Events\GameFinished;
 use App\Events\GameStarted;
 use App\Events\PlayerJoined;
 use App\Events\PlayerLeft;
+use App\Events\RoundClosed;
+use App\Events\RoundStarted;
 use App\Events\ScoreUpdated;
 use App\Events\TurnChanged;
 use App\Models\Activity;
 use App\Models\Enrollment;
 use App\Models\GameSession;
+use App\Models\KahootAnswer;
 use App\Models\Participation;
+use App\Models\Question;
+use App\Models\RouletteAnswer;
+use App\Models\RouletteItem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class GameSessionService
@@ -24,6 +32,40 @@ class GameSessionService
     public const MIN_PLAYERS = 2;
 
     public const MAX_PLAYERS = 16;
+
+    /**
+     * Segundos por defecto para responder cada ronda de la ruleta.
+     *
+     * El profesor elige el tiempo antes de girar; este valor se usa
+     * cuando no envía ninguno.
+     */
+    public const ROULETTE_ROUND_SECONDS = 30;
+
+    /**
+     * Límites del tiempo configurable por ronda.
+     */
+    public const MIN_ROUND_SECONDS = 5;
+
+    public const MAX_ROUND_SECONDS = 300;
+
+    /**
+     * Texto con el que se registra una respuesta no enviada al agotarse
+     * el tiempo de la ronda (fallo).
+     */
+    public const MISSED_RESPONSE = '(sin respuesta)';
+
+    /**
+     * Tipos de actividad que se juegan por rondas controladas por el
+     * profesor (el profesor abre cada ronda).
+     */
+    public const ROUND_TYPES = ['roulette', 'kahoot'];
+
+    /**
+     * Tipos de actividad que se juegan en "carrera libre": el profesor
+     * solo inicia y fija el time_limit; cada jugador resuelve todo el
+     * juego a su ritmo y gana quien más puntaje obtiene.
+     */
+    public const RACE_TYPES = ['crossword', 'word_search', 'matching'];
 
     /**
      * Crea una sala en estado waiting y asigna un código único.
@@ -305,6 +347,483 @@ class GameSessionService
     }
 
     /**
+     * Inicia una nueva ronda de la ruleta. Solo el profesor gira.
+     *
+     * - Cierra la ronda anterior si ya terminó (marca fallos por tiempo).
+     * - Selecciona un ítem aleatorio no usado.
+     * - Si no quedan ítems, finaliza la partida.
+     *
+     * Es segura ante peticiones concurrentes.
+     */
+    public function startRound(
+        GameSession $session,
+        int $seconds = self::ROULETTE_ROUND_SECONDS
+    ): GameSession {
+        return DB::transaction(function () use ($session, $seconds) {
+            $locked = GameSession::whereKey($session->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null || $locked->status !== GameSession::STATUS_PLAYING) {
+                throw new RuntimeException('La partida no está en curso.');
+            }
+
+            $roulette = $locked->activity?->roulette;
+
+            if ($roulette === null) {
+                throw new RuntimeException('Esta actividad no tiene una ruleta configurada.');
+            }
+
+            if ($this->isExpired($locked)) {
+                return $this->finish($locked);
+            }
+
+            $locked = $this->closeRoundIfDueLocked($locked);
+
+            if ($locked->status !== GameSession::STATUS_PLAYING) {
+                return $locked;
+            }
+
+            if ($this->currentRouletteItemId($locked) !== null) {
+                throw new RuntimeException('Espera a que termine la ronda actual.');
+            }
+
+            $state = $locked->state ?? [];
+            $used = $state['round_item_ids'] ?? [];
+
+            $candidates = $roulette->items()
+                ->when($used, fn ($query) => $query->whereNotIn('id', $used))
+                ->get();
+
+            if ($candidates->isEmpty()) {
+                return $this->finish($locked);
+            }
+
+            $next = $candidates->random();
+
+            $safeSeconds = max(
+                self::MIN_ROUND_SECONDS,
+                min($seconds, self::MAX_ROUND_SECONDS)
+            );
+
+            $state['roulette_item_id'] = $next->id;
+            $state['round_started_at'] = now()->toIso8601String();
+            $state['round_seconds'] = $safeSeconds;
+            $state['round_item_ids'] = array_merge($used, [$next->id]);
+
+            $locked->update(['state' => $state]);
+
+            event(new RoundStarted($locked->fresh(), [
+                'roulette_item_id' => $next->id,
+                'round_seconds' => $safeSeconds,
+            ]));
+
+            return $locked->fresh();
+        });
+    }
+
+    /**
+     * Inicia una nueva ronda de kahoot. Solo el profesor avanza.
+     *
+     * Igual que la ruleta: cierra la ronda anterior si terminó (marca
+     * fallos por tiempo), elige una pregunta aleatoria no usada y, si no
+     * quedan, finaliza la partida.
+     *
+     * Es segura ante peticiones concurrentes.
+     */
+    public function startKahootRound(
+        GameSession $session,
+        int $seconds = self::ROULETTE_ROUND_SECONDS
+    ): GameSession {
+        return DB::transaction(function () use ($session, $seconds) {
+            $locked = GameSession::whereKey($session->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null || $locked->status !== GameSession::STATUS_PLAYING) {
+                throw new RuntimeException('La partida no está en curso.');
+            }
+
+            $kahoot = $locked->activity?->kahoot;
+
+            if ($kahoot === null) {
+                throw new RuntimeException('Esta actividad no tiene un kahoot configurado.');
+            }
+
+            if ($this->isExpired($locked)) {
+                return $this->finish($locked);
+            }
+
+            $locked = $this->closeRoundIfDueLocked($locked);
+
+            if ($locked->status !== GameSession::STATUS_PLAYING) {
+                return $locked;
+            }
+
+            if ($this->currentKahootQuestionId($locked) !== null) {
+                throw new RuntimeException('Espera a que termine la pregunta actual.');
+            }
+
+            $state = $locked->state ?? [];
+            $used = $state['round_question_ids'] ?? [];
+
+            $candidates = $kahoot->questions()
+                ->when($used, fn ($query) => $query->whereNotIn('id', $used))
+                ->get();
+
+            if ($candidates->isEmpty()) {
+                return $this->finish($locked);
+            }
+
+            $next = $candidates->random();
+
+            $safeSeconds = max(
+                self::MIN_ROUND_SECONDS,
+                min($seconds, self::MAX_ROUND_SECONDS)
+            );
+
+            $state['kahoot_question_id'] = $next->id;
+            $state['round_started_at'] = now()->toIso8601String();
+            $state['round_seconds'] = $safeSeconds;
+            $state['round_question_ids'] = array_merge($used, [$next->id]);
+
+            $locked->update(['state' => $state]);
+
+            event(new RoundStarted($locked->fresh(), [
+                'question_id' => $next->id,
+                'round_seconds' => $safeSeconds,
+            ]));
+
+            return $locked->fresh();
+        });
+    }
+
+    /**
+     * Cierra la ronda actual si ya se agotó el tiempo o todos
+     * respondieron. Registra como fallo a quien no respondió y, si no
+     * quedan ítems, finaliza la partida.
+     *
+     * Es idempotente y segura ante peticiones concurrentes.
+     */
+    public function closeRoundIfDue(GameSession $session): GameSession
+    {
+        return DB::transaction(function () use ($session) {
+            $locked = GameSession::whereKey($session->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null || $locked->status !== GameSession::STATUS_PLAYING) {
+                return $locked ?? $session;
+            }
+
+            if ($this->isRace($locked)) {
+                return $this->closeRaceIfDueLocked($locked);
+            }
+
+            return $this->closeRoundIfDueLocked($locked);
+        });
+    }
+
+    /**
+     * Cierra la carrera si ya terminó: se agotó el tiempo de la actividad
+     * o todos los jugadores activos completaron el juego. El llamador ya
+     * bloqueó la sesión dentro de una transacción.
+     */
+    private function closeRaceIfDueLocked(GameSession $locked): GameSession
+    {
+        if ($this->isExpired($locked)) {
+            return $this->finish($locked);
+        }
+
+        $stillPlaying = $locked->participations()
+            ->where('status', 'started')
+            ->count();
+
+        if ($stillPlaying === 0 && $locked->participations()->exists()) {
+            return $this->finish($locked);
+        }
+
+        return $locked;
+    }
+
+    /**
+     * Cierra la ronda si corresponde. El llamador ya bloqueó la sesión
+     * dentro de una transacción.
+     */
+    private function closeRoundIfDueLocked(GameSession $locked): GameSession
+    {
+        $type = $locked->activity?->type;
+
+        if (! in_array($type, ['roulette', 'kahoot'], true)) {
+            return $locked;
+        }
+
+        if ($this->isExpired($locked)) {
+            return $this->finish($locked);
+        }
+
+        $itemId = $this->currentRoundItemId($locked);
+
+        if ($itemId === null) {
+            return $locked;
+        }
+
+        $due = $this->roundTimedOut($locked)
+            || $this->roundFullyAnswered($locked, $itemId);
+
+        if (! $due) {
+            return $locked;
+        }
+
+        $this->recordMisses($locked, $itemId);
+
+        $state = $locked->state ?? [];
+
+        if ($type === 'kahoot') {
+            unset($state['kahoot_question_id'], $state['round_seconds']);
+        } else {
+            unset($state['roulette_item_id'], $state['round_seconds']);
+        }
+
+        $state['round_started_at'] = null;
+
+        $locked->update(['state' => $state]);
+        $locked = $locked->fresh();
+
+        event(new RoundClosed($locked, [
+            'roulette_item_id' => $type === 'roulette' ? $itemId : null,
+            'question_id' => $type === 'kahoot' ? $itemId : null,
+        ]));
+
+        if ($this->noItemsRemain($locked)) {
+            return $this->finish($locked);
+        }
+
+        return $locked;
+    }
+
+    /**
+     * Registra un fallo (sin respuesta) para cada jugador activo que no
+     * respondió el ítem al cerrarse la ronda.
+     */
+    private function recordMisses(GameSession $session, int $itemId): void
+    {
+        if ($this->isKahoot($session)) {
+            $this->recordKahootMisses($session, $itemId);
+
+            return;
+        }
+
+        $players = $session->participations()
+            ->where('status', 'started')
+            ->pluck('id');
+
+        $answered = RouletteAnswer::where('roulette_item_id', $itemId)
+            ->whereIn('participation_id', $players)
+            ->pluck('participation_id');
+
+        foreach ($players->diff($answered) as $participationId) {
+            RouletteAnswer::create([
+                'participation_id' => $participationId,
+                'roulette_item_id' => $itemId,
+                'response' => self::MISSED_RESPONSE,
+                'is_correct' => false,
+                'score' => 0,
+                'answered_at' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Registra un fallo (opción nula) para cada jugador activo que no
+     * respondió la pregunta al cerrarse la ronda de kahoot.
+     */
+    private function recordKahootMisses(GameSession $session, int $questionId): void
+    {
+        $players = $session->participations()
+            ->where('status', 'started')
+            ->pluck('id');
+
+        $answered = KahootAnswer::where('question_id', $questionId)
+            ->whereIn('participation_id', $players)
+            ->pluck('participation_id');
+
+        foreach ($players->diff($answered) as $participationId) {
+            KahootAnswer::create([
+                'participation_id' => $participationId,
+                'question_id' => $questionId,
+                'option_id' => null,
+                'is_correct' => false,
+                'score' => 0,
+                'answered_at' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Indica si ya no quedan ítems/preguntas sin usar en la partida.
+     */
+    private function noItemsRemain(GameSession $session): bool
+    {
+        if ($this->isKahoot($session)) {
+            $kahoot = $session->activity?->kahoot;
+
+            if ($kahoot === null) {
+                return true;
+            }
+
+            $used = $session->state['round_question_ids'] ?? [];
+
+            return $kahoot->questions()
+                ->when($used, fn ($query) => $query->whereNotIn('id', $used))
+                ->count() === 0;
+        }
+
+        $roulette = $session->activity?->roulette;
+
+        if ($roulette === null) {
+            return true;
+        }
+
+        $used = $session->state['round_item_ids'] ?? [];
+
+        return $roulette->items()
+            ->when($used, fn ($query) => $query->whereNotIn('id', $used))
+            ->count() === 0;
+    }
+
+    /**
+     * Indica si la sesión pertenece a una actividad de kahoot.
+     */
+    public function isKahoot(GameSession $session): bool
+    {
+        return $session->activity?->type === 'kahoot';
+    }
+
+    /**
+     * Indica si la sesión pertenece a un juego de "carrera libre".
+     */
+    public function isRace(GameSession $session): bool
+    {
+        return in_array(
+            $session->activity?->type,
+            self::RACE_TYPES,
+            true
+        );
+    }
+
+    /**
+     * Id del ítem (ruleta) o pregunta (kahoot) de la ronda actual, o null.
+     */
+    public function currentRoundItemId(GameSession $session): ?int
+    {
+        return $this->isKahoot($session)
+            ? $this->currentKahootQuestionId($session)
+            : $this->currentRouletteItemId($session);
+    }
+
+    /**
+     * Id de la pregunta de kahoot de la ronda actual, o null.
+     */
+    public function currentKahootQuestionId(GameSession $session): ?int
+    {
+        $id = $session->state['kahoot_question_id'] ?? null;
+
+        return $id === null ? null : (int) $id;
+    }
+
+    /**
+     * Id del ítem de la ronda actual de la ruleta, o null.
+     */
+    public function currentRouletteItemId(GameSession $session): ?int
+    {
+        $id = $session->state['roulette_item_id'] ?? null;
+
+        return $id === null ? null : (int) $id;
+    }
+
+    /**
+     * Segundos restantes de la ronda actual, o null si no hay ronda.
+     */
+    public function roundTimeRemaining(GameSession $session): ?int
+    {
+        $state = $session->state ?? [];
+
+        if ($this->currentRoundItemId($session) === null) {
+            return null;
+        }
+
+        $seconds = (int) ($state['round_seconds'] ?? self::ROULETTE_ROUND_SECONDS);
+        $startedAt = $state['round_started_at'] ?? null;
+
+        if ($startedAt === null) {
+            return $seconds;
+        }
+
+        $elapsed = (int) abs(now()->diffInSeconds(Carbon::parse($startedAt)));
+
+        return max(0, $seconds - $elapsed);
+    }
+
+    /**
+     * Indica si la ronda actual superó su tiempo.
+     */
+    public function roundTimedOut(GameSession $session): bool
+    {
+        $remaining = $this->roundTimeRemaining($session);
+
+        return $remaining !== null && $remaining <= 0;
+    }
+
+    /**
+     * Indica si todos los jugadores activos respondieron el ítem dado.
+     */
+    public function roundFullyAnswered(GameSession $session, int $itemId): bool
+    {
+        $players = $session->participations()
+            ->where('status', 'started')
+            ->pluck('id');
+
+        if ($players->isEmpty()) {
+            return true;
+        }
+
+        $answered = $this->isKahoot($session)
+            ? KahootAnswer::whereIn('participation_id', $players)
+                ->where('question_id', $itemId)
+                ->distinct()
+                ->pluck('participation_id')
+            : RouletteAnswer::whereIn('participation_id', $players)
+                ->where('roulette_item_id', $itemId)
+                ->distinct()
+                ->pluck('participation_id');
+
+        return $players->diff($answered)->isEmpty();
+    }
+
+    /**
+     * Indica si la participación ya respondió el ítem de la ronda actual.
+     */
+    public function hasAnsweredCurrentRound(
+        GameSession $session,
+        Participation $participation
+    ): bool {
+        $itemId = $this->currentRoundItemId($session);
+
+        if ($itemId === null) {
+            return false;
+        }
+
+        return $this->isKahoot($session)
+            ? KahootAnswer::where('participation_id', $participation->id)
+                ->where('question_id', $itemId)
+                ->exists()
+            : RouletteAnswer::where('participation_id', $participation->id)
+                ->where('roulette_item_id', $itemId)
+                ->exists();
+    }
+
+    /**
      * Finaliza la partida y determina resultado general e individual.
      */
     public function finish(GameSession $session): GameSession
@@ -314,7 +833,7 @@ class GameSessionService
         }
 
         $active = $session->participations()
-            ->where('status', 'started')
+            ->whereIn('status', ['started', 'completed', 'expired'])
             ->get();
 
         $winner = null;
@@ -411,6 +930,24 @@ class GameSessionService
     {
         $activity = $session->activity;
 
+        $isKahoot = $this->isKahoot($session);
+
+        $currentRouletteItemId = $isKahoot ? null : $this->currentRouletteItemId($session);
+        $currentQuestionId = $isKahoot ? $this->currentKahootQuestionId($session) : null;
+        $currentItemId = $isKahoot ? $currentQuestionId : $currentRouletteItemId;
+
+        if ($isKahoot) {
+            $answeredCurrent = $currentQuestionId === null
+                ? collect()
+                : KahootAnswer::where('question_id', $currentQuestionId)
+                    ->pluck('participation_id');
+        } else {
+            $answeredCurrent = $currentRouletteItemId === null
+                ? collect()
+                : RouletteAnswer::where('roulette_item_id', $currentRouletteItemId)
+                    ->pluck('participation_id');
+        }
+
         return [
             'session_id' => $session->id,
             'code' => $session->code,
@@ -426,6 +963,14 @@ class GameSessionService
             'result_type' => $session->result_type,
             'winner_participation_id' => $session->winner_participation_id,
             'time_remaining' => $this->remainingSeconds($session),
+            'time_elapsed' => $session->started_at !== null ? $this->elapsedSeconds($session) : 0,
+            'roulette_item_id' => $currentRouletteItemId,
+            'question_id' => $currentQuestionId,
+            'round_time_remaining' => $this->roundTimeRemaining($session),
+            'round_seconds' => $session->state['round_seconds'] ?? self::ROULETTE_ROUND_SECONDS,
+            'current_item' => $isKahoot
+                ? $this->currentKahootQuestion($session, $currentQuestionId)
+                : $this->currentRoundItem($session, $currentItemId),
             'players' => $session->participations()
                 ->with('student')
                 ->whereIn('status', ['waiting', 'started', 'completed'])
@@ -437,8 +982,81 @@ class GameSessionService
                     'score' => $p->score,
                     'status' => $p->status,
                     'answered' => $this->answeredCount($activity, $p),
+                    'answered_current' => $answeredCurrent->contains($p->id),
                     'connected' => true,
                 ])
+                ->all(),
+        ];
+    }
+
+    /**
+     * Pregunta de kahoot de la ronda actual serializada para mostrar
+     * (sin opción correcta), o null si no hay ronda activa.
+     */
+    private function currentKahootQuestion(GameSession $session, ?int $questionId): ?array
+    {
+        if ($questionId === null) {
+            return null;
+        }
+
+        $kahoot = $session->activity?->kahoot;
+
+        if ($kahoot === null) {
+            return null;
+        }
+
+        $question = Question::query()
+            ->where('kahoot_id', $kahoot->id)
+            ->with(['options' => fn ($query) => $query->orderBy('position')])
+            ->find($questionId);
+
+        return $question === null ? null : [
+            'id' => $question->id,
+            'question' => $question->question,
+            'position' => $question->position,
+            'time_limit' => $question->time_limit,
+            'score' => $question->score,
+            'options' => $question->options
+                ->map(fn ($option) => [
+                    'id' => $option->id,
+                    'text' => $option->text,
+                    'position' => $option->position,
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * Ítem de la ronda actual serializado para mostrar (sin opción correcta),
+     * o null si no hay ronda activa.
+     */
+    private function currentRoundItem(GameSession $session, ?int $itemId): ?array
+    {
+        if ($itemId === null) {
+            return null;
+        }
+
+        $roulette = $session->activity?->roulette;
+
+        if ($roulette === null) {
+            return null;
+        }
+
+        $item = RouletteItem::query()
+            ->where('roulette_id', $roulette->id)
+            ->find($itemId);
+
+        return $item === null ? null : [
+            'id' => $item->id,
+            'question' => $item->question,
+            'points' => $item->points,
+            'options' => collect(['a', 'b', 'c', 'd'])
+                ->map(fn ($key) => [
+                    'key' => $key,
+                    'text' => $item->{'option_'.$key},
+                ])
+                ->values()
                 ->all(),
         ];
     }

@@ -81,6 +81,8 @@ services:
     profiles: ["realtime"]
     env_file:
       - .env
+    volumes:
+      - .:/var/www/html
     expose:
       - "2001"
     networks:

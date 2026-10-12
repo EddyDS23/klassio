@@ -109,9 +109,19 @@ class GameSessionController extends Controller
 
         Gate::authorize('view', $session);
 
-        return response()->json(
-            $this->gameSessionService->getState($session)
+        $session = $this->gameSessionService->closeRoundIfDue($session);
+
+        $state = $this->gameSessionService->getState($session);
+
+        $participation = $this->gameSessionService->participationOf(
+            $session,
+            Auth::user()
         );
+
+        $state['answered_current'] = $participation !== null
+            && $this->gameSessionService->hasAnsweredCurrentRound($session, $participation);
+
+        return response()->json($state);
     }
 
     /**
@@ -125,6 +135,10 @@ class GameSessionController extends Controller
 
         return match ($session->activity->type) {
             'roulette' => redirect()->route('student.roulette.play-session', $session->id),
+            'kahoot' => redirect()->route('student.kahoot.play-session', $session->id),
+            'crossword' => redirect()->route('student.crossword.play-session', $session->id),
+            'word_search' => redirect()->route('student.wordsearch.play-session', $session->id),
+            'matching' => redirect()->route('student.matching.play-session', $session->id),
             default => redirect()
                 ->route('student.game-sessions.show', $session->id)
                 ->with('error', 'Este juego aún no soporta modo multijugador.'),
