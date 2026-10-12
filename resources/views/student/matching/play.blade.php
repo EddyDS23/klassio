@@ -6,13 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Unir Conceptos — Jugar</title>
-    <script>
-        try {
-            if (localStorage.getItem('klassio-theme') === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
-        } catch (e) {}
-    </script>
     <style>
         a { text-decoration: none; }
         body {
@@ -159,34 +152,6 @@
             cursor: pointer;
         }
 
-        .klassio-theme-btn {
-            border: 1px solid #cbd5e1;
-            border-radius: .6rem;
-            background: #fff;
-            color: #475569;
-            padding: .6rem 1rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        /* Negro solo si el alumno lo activa */
-        html[data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
-        html[data-theme="dark"] .card { background: #1e293b; border-color: #1e293b; box-shadow: none; }
-        html[data-theme="dark"] h1 { color: #f1f5f9; }
-        html[data-theme="dark"] #timer, html[data-theme="dark"] .scoreline { color: #94a3b8; }
-        html[data-theme="dark"] .col-title { color: #94a3b8; }
-        html[data-theme="dark"] .card-item { background: #0f172a; border-color: #0f172a; color: #e2e8f0; }
-        html[data-theme="dark"] .card-item.selected { background: #0c4a6e; border-color: #38bdf8; color: #e0f2fe; }
-        html[data-theme="dark"] .card-item.matched { background: #14532d; border-color: #22c55e; color: #bbf7d0; }
-        html[data-theme="dark"] .card-item.wrong { background: #7f1d1d; border-color: #ef4444; color: #fecaca; }
-        html[data-theme="dark"] .how-to { background: #0c4a6e; color: #bae6fd; }
-        html[data-theme="dark"] .result.ok { background: #052e16; color: #22c55e; }
-        html[data-theme="dark"] .result.bad { background: #450a0a; color: #f87171; }
-        html[data-theme="dark"] .finish { background: #14532d; color: #bbf7d0; }
-        html[data-theme="dark"] .connection-line { stroke: #22c55e; }
-        html[data-theme="dark"] form button[type="submit"] { background: #334155; color: #e2e8f0; }
-        html[data-theme="dark"] .klassio-theme-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
-
         @media (max-width: 640px) {
             .layout {
                 grid-template-columns: 1fr;
@@ -195,13 +160,13 @@
     </style>
 </head>
 
-<body>
+<body class="student-kids">
     @include('partials.toast')
     <div class="wrap">
         <div class="card">
-            <h1>Unir Conceptos</h1>
+            <h1>✨ Unir Parejas</h1>
             <div id="timer">
-                Tiempo restante:
+                ⏱ Te queda:
                 <span id="timer-value">--:--</span>
             </div>
             <p class="scoreline">
@@ -210,7 +175,7 @@
                 / {{ $maxScore }} · Parejas: <strong
                     id="matched-count">{{ count($correctIds) }}</strong>/{{ $items->count() }}
             </p>
-            <p class="how-to">🔗 <strong>Cómo jugar:</strong> arrastra un concepto hacia su definición o selecciónalos uno después del otro.</p>
+            <p class="how-to">🔗 <strong>¿Cómo se juega?</strong> ¡Une cada cosa con su pareja! 🎉</p>
 
             <div id="result" class="result"></div>
 
@@ -236,42 +201,22 @@
                 </div>
             </div>
 
-            <div id="finish" class="finish">¡Completaste la actividad!</div>
+            <div id="finish" class="finish">¡Lo lograste! 🎉</div>
             <div style="margin-top: 1rem; text-align: center;">
-                <button type="button" id="theme-btn" class="klassio-theme-btn">🌙 Negro</button>
                 <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-                    onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+                    onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
                     style="display: inline;">
                     @csrf
 
                     <button type="submit">
-                        Abandonar actividad
+                        Dejar el juego 👋
                     </button>
                 </form>
             </div>
-            <script>
-                (function () {
-                    var btn = document.getElementById('theme-btn');
-                    function label() {
-                        return document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Claro' : '🌙 Negro';
-                    }
-                    btn.textContent = label();
-                    btn.addEventListener('click', function () {
-                        var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
-                        if (dark) {
-                            document.documentElement.setAttribute('data-theme', 'dark');
-                        } else {
-                            document.documentElement.removeAttribute('data-theme');
-                        }
-                        try { localStorage.setItem('klassio-theme', dark ? 'dark' : 'light'); } catch (e) {}
-                        btn.textContent = label();
-                    });
-                })();
-            </script>
         </div>
     </div>
 
-    <script src="/js/klassio-sounds.js?v=4"></script>
+    <script src="/js/klassio-sounds.js?v=5"></script>
     <script>
         // Sonido del juego (si el archivo no carga, KS queda mudo sin romper nada).
         window.KS = window.KlassioSounds || { click: function () {}, correcto: function () {}, error: function () {}, terminado: function () {}, completado: function () {}, expirado: function () {}, startMusic: function () {}, stopMusic: function () {} };

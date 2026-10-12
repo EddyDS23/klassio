@@ -355,23 +355,20 @@
                                 Límite de tiempo
                             </label>
 
-                            <div class="relative">
-
-                                <input
-                                    type="number"
-                                    id="time_limit"
-                                    name="time_limit"
-                                    value="{{ old('time_limit', $activity->time_limit) }}"
-                                    min="1"
-                                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-24 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                    placeholder="Ej. 30"
-                                >
-
-                                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                                    minutos
-                                </span>
-
-                            </div>
+                            <select
+                                id="time_limit"
+                                name="time_limit"
+                                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            >
+                                @php($timeOptions = ['' => 'Sin límite', 180 => '3 minutos', 300 => '5 minutos', 600 => '10 minutos', 900 => '15 minutos', 1200 => '20 minutos', 1800 => '30 minutos', 2700 => '45 minutos'])
+                                @php($currentTime = old('time_limit', $activity->time_limit))
+                                @if ($currentTime !== null && $currentTime !== '' && ! array_key_exists((int) $currentTime, $timeOptions))
+                                    <option value="{{ $currentTime }}" selected>Actual ({{ $currentTime }} segundos)</option>
+                                @endif
+                                @foreach ($timeOptions as $seconds => $label)
+                                    <option value="{{ $seconds }}" @selected((string) $currentTime === (string) $seconds)>{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
 

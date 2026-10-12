@@ -297,17 +297,17 @@
                         <div>
                             <label for="time_limit"
                                    class="mb-2 block text-sm font-bold text-slate-700">
-                                Tiempo límite en segundos
+                                Tiempo límite
                             </label>
 
-                            <input type="number"
-                                   id="time_limit"
+                            <select id="time_limit"
                                    name="time_limit"
-                                   value="{{ old('time_limit') }}"
-                                   min="1"
-                                   max="60000"
-                                   placeholder="Ej. 600"
-                                   class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+                                @php($timeOptions = ['' => 'Sin límite', 180 => '3 minutos', 300 => '5 minutos', 600 => '10 minutos', 900 => '15 minutos', 1200 => '20 minutos', 1800 => '30 minutos', 2700 => '45 minutos'])
+                                @foreach ($timeOptions as $seconds => $label)
+                                    <option value="{{ $seconds }}" @selected((string) old('time_limit', '') === (string) $seconds)>{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <!-- FECHA -->

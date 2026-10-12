@@ -8,9 +8,9 @@
     @include('partials.assets', ['theme' => 'student'])
 </head>
 
-<body class="student-activity">
+<body class="student-activity student-kids">
 
-    <h1>{{ $activity->title }}</h1>
+    <h1>🎮 {{ $activity->title }}</h1>
 
     @if ($activity->description)
         <p>{{ $activity->description }}</p>
@@ -123,68 +123,68 @@
     @endphp
 
     <section>
-        <h2>Acciones</h2>
+        <h2>¡A jugar! 🎮</h2>
 
         @if ($activeParticipation)
 
             {{-- Intento activo: continuar, finalizar o abandonar --}}
-            <p>Tienes un intento en curso (intento #{{ $activeParticipation->attempt }}).</p>
+            <p>¡Sigue jugando! (intento #{{ $activeParticipation->attempt }}).</p>
 
             @if ($playRouteExists)
                 <a href="{{ route($playRoute, $activity->id) }}">
-                    Continuar actividad
+                    Seguir jugando ▶
                 </a>
             @else
-                <p>El juego para esta actividad aún no está disponible.</p>
+                <p>Este juego aún no está disponible.</p>
             @endif
 
             <form method="POST" action="{{ route('student.participation.finish', $activity->id) }}"
                 style="display: inline;">
                 @csrf
-                <button type="submit">Finalizar actividad</button>
+                <button type="submit">Terminar 🏁</button>
             </form>
 
             <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
                 style="display: inline;">
                 @csrf
-                <button type="submit" onclick="return confirm('¿Estás seguro de que quieres abandonar?')">
-                    Abandonar
+                <button type="submit" onclick="return confirm('¿Seguro que quieres dejar el juego?')">
+                    Dejar el juego 👋
                 </button>
             </form>
         @elseif ($activity->due_at && now()->isAfter($activity->due_at))
             {{-- Actividad vencida --}}
-            <p>La fecha límite de esta actividad ya pasó.</p>
+            <p>Este juego ya terminó. ⏰</p>
 
             @if ($lastParticipation)
                 <a href="{{ route('student.participation.result', $activity->id) }}">
-                    Ver mi resultado
+                    Ver mi puntaje ⭐
                 </a>
             @endif
         @elseif ($activity->mode === 'team' && !isset($myTeam))
             {{-- Sin equipo asignado --}}
             <p>
-                Aún no perteneces a ningún equipo en esta actividad.
-                Espera a que tu maestro te asigne uno.
+                Todavía no tienes equipo en este juego.
+                Pídele a tu maestro que te ponga en uno. 👥
             </p>
         @else
             {{-- Sin intento activo: mostrar historial y botón de inicio --}}
             @if ($lastParticipation)
                 <p>
-                    Último intento: #{{ $lastParticipation->attempt }}
+                    Última vez: #{{ $lastParticipation->attempt }}
                     ({{ match ($lastParticipation->status) {
-                        'completed' => 'Completado',
-                        'abandoned' => 'Abandonado',
-                        'expired' => 'Expirado',
+                        'completed' => '¡Lo lograste! 🎉',
+                        'abandoned' => 'Lo dejaste',
+                        'expired' => 'Se acabó el tiempo ⏰',
                         default => $lastParticipation->status,
                     } }})
-                    — {{ $lastParticipation->score }} pts
+                    — {{ $lastParticipation->score }} pts ⭐
                 </p>
             @endif
 
             <div class="mt-3 flex flex-wrap items-center gap-2">
                 @if ($lastParticipation)
                     <a href="{{ route('student.participation.result', $activity->id) }}">
-                        Ver resultado
+                        ¡Ver mi puntaje! ⭐
                     </a>
                 @endif
 
@@ -192,7 +192,7 @@
                     <form method="POST" action="{{ route('student.participation.start', $activity->id) }}">
                         @csrf
                         <button type="submit">
-                            {{ $lastParticipation ? 'Intentar de nuevo' : 'Iniciar actividad' }}
+                            {{ $lastParticipation ? '¡Otra vez! 🎮' : '¡A jugar! 🎮' }}
                         </button>
                     </form>
                 @else
@@ -206,7 +206,7 @@
 
     <hr>
 
-    <script src="/js/klassio-sounds.js?v=4"></script>
+    <script src="/js/klassio-sounds.js?v=5"></script>
     <script>
         // Al dar Iniciar / Intentar de nuevo: suena el clic y la música
         // arranca al abrir el juego. Además se precarga la música aquí

@@ -7,13 +7,6 @@
 
     <title>{{ $activity->title }}</title>
     @include('partials.assets', ['theme' => 'student'])
-    <script>
-        try {
-            if (localStorage.getItem('klassio-theme') === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
-        } catch (e) {}
-    </script>
     <style>
         body { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem 3rem; color: #172554; }
         body > h1 { display: inline-block; margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 800; color: #0f766e; letter-spacing: -.02em; }
@@ -23,7 +16,7 @@
         body > p { max-width: 700px; color: #475569; }
         body > section { background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin: 1.25rem 0; box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08); border: 1px solid #f0fdfa; }
         section h2 { margin-top: 0; color: #0f766e; font-weight: 800; }
-        #crossword-grid { max-width: 100%; overflow: auto; padding: 1rem; border-radius: 1.25rem; background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .25), inset 0 0 0 1px rgb(255 255 255 / .08); }
+        #crossword-grid { max-width: 100%; overflow: auto; padding: 1rem; border-radius: 1.25rem; background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .25), inset 0 0 0 1px rgb(255 255 255 / .08); content-visibility: auto; contain-intrinsic-size: 300px 300px; }
         #crossword-grid input { border: 2px solid #cbd5e1; border-radius: .4rem; color: #0f172a; background: #fff; outline: none; transition: transform .15s, border-color .15s, box-shadow .15s; }
         #crossword-grid input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgb(20 184 166 / .25); transform: scale(1.08); }
         #crossword-grid input.correct { border-color: #22c55e; background: #dcfce7; color: #15803d; }
@@ -37,39 +30,29 @@
         button:hover { filter: brightness(1.05); }
         nav a { display: inline-block; color: #0f766e; font-weight: 700; text-decoration: none; padding: .7rem 1rem; border-radius: .8rem; }
         nav a:hover { background: #f0fdfa; }
-        .klassio-theme-btn { border: 1px solid #cbd5e1 !important; background: #fff !important; color: #475569 !important; }
         @media (max-width: 600px) { #timer { float: none; display: inline-block; margin-bottom: 1rem; } body > section { padding: 1rem; } }
-        /* Negro solo si el alumno lo activa */
-        html[data-theme="dark"] body { color: #e2e8f0; }
-        html[data-theme="dark"] body > h1, html[data-theme="dark"] section h2 { color: #2dd4bf; }
-        html[data-theme="dark"] body > h2, html[data-theme="dark"] body > p { color: #cbd5e1; }
-        html[data-theme="dark"] #timer { background: #1e293b; color: #2dd4bf; box-shadow: none; }
-        html[data-theme="dark"] #timer-value { color: #a78bfa; }
-        html[data-theme="dark"] body > section { background: #1e293b; border-color: #334155; box-shadow: none; }
-        html[data-theme="dark"] #clues-horizontal li, html[data-theme="dark"] #clues-vertical li { background: #0f172a; color: #e2e8f0; }
-        html[data-theme="dark"] #clues-horizontal li:hover, html[data-theme="dark"] #clues-vertical li:hover { background: #134e4a; border-color: #14b8a6; }
-        html[data-theme="dark"] #results p { background: #1e3a8a; color: #dbeafe; }
-        html[data-theme="dark"] nav a { color: #2dd4bf; }
-        html[data-theme="dark"] .klassio-theme-btn { background: #0f172a !important; color: #f1f5f9 !important; border-color: #475569 !important; }
+        /* Modo kids: tablero un poco más grande */
+        body.student-kids #crossword-grid { zoom: 1.18; }
+        body.student-kids #clues-horizontal li, body.student-kids #clues-vertical li { font-size: 1.05rem; }
     </style>
 </head>
 
-<body>
+<body class="student-kids">
 
-    <h1>{{ $activity->title }}</h1>
+    <h1>🧩 {{ $activity->title }}</h1>
 
-    <h2>Crucigrama</h2>
+    <h2>¡Adivina las palabras!</h2>
     <div id="timer">
-        Tiempo restante:
+        ⏱ Te queda:
         <span id="timer-value">--:--</span>
     </div>
 
     <p>
-        Completa las palabras utilizando las pistas.
+        Lee la pista y escribe la palabra. ✏️
     </p>
 
     <p>
-        Puntaje:
+        ⭐ Puntos:
         <strong id="score-display">0</strong>
     </p>
 
@@ -100,36 +83,16 @@
     <hr>
 
     <div style="margin: 1rem 0; text-align: center;">
-        <button type="button" id="theme-btn" class="klassio-theme-btn">🌙 Negro</button>
         <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-            onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+            onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
             style="display: inline;">
             @csrf
 
             <button type="submit">
-                Abandonar actividad
+                Dejar el juego 👋
             </button>
         </form>
     </div>
-    <script>
-        (function () {
-            var btn = document.getElementById('theme-btn');
-            function label() {
-                return document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Claro' : '🌙 Negro';
-            }
-            btn.textContent = label();
-            btn.addEventListener('click', function () {
-                var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
-                if (dark) {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                } else {
-                    document.documentElement.removeAttribute('data-theme');
-                }
-                try { localStorage.setItem('klassio-theme', dark ? 'dark' : 'light'); } catch (e) {}
-                btn.textContent = label();
-            });
-        })();
-    </script>
 
 
     <nav>
@@ -153,7 +116,7 @@
         );
     @endphp
 
-    <script src="/js/klassio-sounds.js?v=4"></script>
+    <script src="/js/klassio-sounds.js?v=5"></script>
     <script>
         // Sonido del juego (si el archivo no carga, KS queda mudo sin romper nada).
         window.KS = window.KlassioSounds || { click: function () {}, correcto: function () {}, error: function () {}, terminado: function () {}, completado: function () {}, expirado: function () {}, startMusic: function () {}, stopMusic: function () {} };

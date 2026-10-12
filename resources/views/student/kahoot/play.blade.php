@@ -268,18 +268,34 @@
             text-decoration: none;
             display: inline-block;
         }
+
+        /* Botón de sonido del motor (fijo en oscuro, como el juego) */
+        .klassio-sound-btn, .klassio-sound-fab {
+            border: 1px solid #475569 !important;
+            background: #312e81 !important;
+            color: #e0e7ff !important;
+        }
+
+        /* Modo kids: botones y textos más grandes */
+        body.student-kids #question-text { font-size: 25px; }
+        body.student-kids .option-btn { padding: 22px 14px; font-size: 19px; }
+        body.student-kids #btn-start, body.student-kids #btn-next, body.student-kids #btn-back {
+            padding: 16px 40px; font-size: 18px;
+        }
+        body.student-kids #timer-text { font-size: 24px; }
+        body.student-kids #result-text { font-size: 27px; }
     </style>
 </head>
 
-<body>
+<body class="student-kids">
 
     @include('partials.toast')
 
     {{-- Pantalla inicio --}}
     <div id="screen-start">
-        <h1>{{ $activity->title }}</h1>
-        <p>{{ count($questions) }} preguntas · Responde una a la vez</p>
-        <button id="btn-start" onclick="startGame()">Iniciar</button>
+        <h1>🎯 {{ $activity->title }}</h1>
+        <p>{{ count($questions) }} preguntas · ¡Responde rapidísimo! ⚡</p>
+        <button id="btn-start" onclick="startGame()">¡A jugar! 🎮</button>
     </div>
 
     {{-- Pantalla pregunta --}}
@@ -301,12 +317,12 @@
         <div id="error-msg"></div>
 
         <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-            onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+            onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
             style="margin-top: 1.5rem; text-align: center;">
             @csrf
 
             <button type="submit">
-                Abandonar actividad
+                Dejar el juego 👋
             </button>
         </form>
     </div>
@@ -322,15 +338,15 @@
 
     {{-- Pantalla final --}}
     <div id="screen-finish">
-        <h1>¡Kahoot completado!</h1>
+        <h1>¡Increíble! 🎉</h1>
         <div id="final-score"></div>
-        <p>Puntaje acumulado</p>
+        <p>Tus puntos ⭐</p>
         <a id="btn-back" href="{{ route('student.activities.show', $activity->id) }}">
-            Volver a la actividad
+            ¡Jugar otra vez! 🎮
         </a>
     </div>
 
-    <script src="/js/klassio-sounds.js?v=4"></script>
+    <script src="/js/klassio-sounds.js?v=5"></script>
     <script>
         // Sonido del juego (si el archivo no carga, KS queda mudo sin romper nada).
         window.KS = window.KlassioSounds || { click: function () {}, correcto: function () {}, error: function () {}, terminado: function () {}, completado: function () {}, expirado: function () {}, startMusic: function () {}, stopMusic: function () {} };
@@ -447,7 +463,7 @@
         function timeExpired() {
             answered = true;
             disableOptions();
-            showResult(false, 0, null, '⏰ Tiempo agotado');
+            showResult(false, 0, null, '⏰ ¡Se acabó el tiempo!');
         }
 
         // -------------------------------------------------------------------------
@@ -591,20 +607,20 @@
                 isCorrect ? '🎉' : '❌';
 
             document.getElementById('result-text').textContent =
-                overrideMessage ?? (isCorrect ? '¡Correcto!' : 'Incorrecto');
+                overrideMessage ?? (isCorrect ? '¡Bien! 🎉' : '¡Casi! 😅');
 
             document.getElementById('result-score').textContent =
-                isCorrect ? `+${score} puntos` : 'Sin puntos';
+                isCorrect ? `+${score} puntos ⭐` : 'Sin puntos';
 
             document.getElementById('result-correct-text').textContent =
-                `Puntaje acumulado: ${totalScore}`;
+                `Llevas: ${totalScore} ⭐`;
 
             const remaining = QUESTIONS.slice(currentIndex + 1)
                 .filter(q => !ANSWERED_IDS.includes(q.id));
 
             document.getElementById('btn-next').textContent = remaining.length > 0 ?
-                'Siguiente pregunta →' :
-                'Ver resultados';
+                'Siguiente 👉' :
+                'Ver mi puntaje ⭐';
         }
 
         // -------------------------------------------------------------------------
