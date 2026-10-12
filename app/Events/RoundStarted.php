@@ -19,6 +19,11 @@ class RoundStarted implements ShouldBroadcast
         return new PrivateChannel('game-session.'.$this->session->id);
     }
 
+    public function broadcastAs(): string
+    {
+        return 'RoundStarted';
+    }
+
     public function broadcastWith(): array
     {
         return [

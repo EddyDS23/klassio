@@ -43,3 +43,6 @@ if [ "$1" = 'php-fpm' ] || [ -z "$1" ]; then
 fi
 
 exec "$@"
+docker compose --profile realtime \
+  -f docker-compose.yml \
+  -f docker-compose.dev.yml logs --tail=50 reverb

@@ -7,12 +7,13 @@
     <title>Sala {{ $session->code }} — Profesor</title>
     @include('partials.assets', ['theme' => 'teacher'])
     @if ((bool) config('broadcasting.connections.reverb.enabled', false))
+        <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
         <script>
             window.Echo = new Echo({
                 broadcaster: 'reverb',
                 key: @json(config('broadcasting.connections.reverb.key')),
-                wsHost: @json(config('broadcasting.connections.reverb.options.host', 'localhost')),
+                wsHost: @json(config('broadcasting.connections.reverb.client_host', 'localhost')),
                 wsPort: @json(config('broadcasting.connections.reverb.options.port', 8080)),
                 forceTLS: @json(config('broadcasting.connections.reverb.options.scheme', 'http') === 'https'),
                 enabledTransports: ['ws', 'wss']

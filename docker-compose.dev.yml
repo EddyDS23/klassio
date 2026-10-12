@@ -69,11 +69,23 @@ services:
     cpus: "0.25"
 
   reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: klassio_reverb
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=2001"]
     ports:
       - "2001:2001"
+    env_file:
+      - .env
+    volumes:
+      - .:/var/www/html
     networks:
       - klassio-network
+    depends_on:
+      app:
+        condition: service_started
+    restart: unless-stopped
 
 networks:
   klassio-network:
