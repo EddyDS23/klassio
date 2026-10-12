@@ -196,6 +196,7 @@
 </head>
 
 <body>
+    @include('partials.toast')
     <div class="wrap">
         <div class="card">
             <h1>Unir Conceptos</h1>
@@ -270,6 +271,13 @@
         </div>
     </div>
 
+    <script src="/js/klassio-sounds.js?v=4"></script>
+    <script>
+        // Sonido del juego (si el archivo no carga, KS queda mudo sin romper nada).
+        window.KS = window.KlassioSounds || { click: function () {}, correcto: function () {}, error: function () {}, terminado: function () {}, completado: function () {}, expirado: function () {}, startMusic: function () {}, stopMusic: function () {} };
+        if (window.KlassioSounds) KlassioSounds.setup('matching');
+    </script>
+
     <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
         style="display: none;">
         @csrf
@@ -299,7 +307,17 @@
 
                 timerValue.textContent = '00:00';
 
-                document.getElementById('expire-form').submit();
+                var leftTotal = (typeof leftCards !== 'undefined') ? leftCards.length : 0;
+                var leftDone = document.querySelectorAll('.card-item.left.matched').length;
+                if (leftTotal > 0 && leftDone >= leftTotal) {
+                    KS.terminado();
+                } else {
+                    KS.expirado();
+                }
+
+                setTimeout(function () {
+                    document.getElementById('expire-form').submit();
+                }, 900);
 
                 return;
             }
@@ -347,19 +365,29 @@
             }
         }
 
+        // Línea de arrastre limitada a 1 actualización por frame (rAF).
+        let dragQueued = false;
+        let dragPoint = null;
         document.addEventListener('pointermove', (event) => {
             if (!dragLeftCard) return;
-            const bounds = layout.getBoundingClientRect();
-            const from = dragLeftCard.getBoundingClientRect();
-            if (!dragLine) {
-                dragLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                dragLine.setAttribute('class', 'connection-line drag-line');
-                connectionLayer.appendChild(dragLine);
-            }
-            dragLine.setAttribute('x1', from.right - bounds.left);
-            dragLine.setAttribute('y1', from.top + from.height / 2 - bounds.top);
-            dragLine.setAttribute('x2', event.clientX - bounds.left);
-            dragLine.setAttribute('y2', event.clientY - bounds.top);
+            dragPoint = { x: event.clientX, y: event.clientY };
+            if (dragQueued) return;
+            dragQueued = true;
+            requestAnimationFrame(() => {
+                dragQueued = false;
+                if (!dragLeftCard || !dragPoint) return;
+                const bounds = layout.getBoundingClientRect();
+                const from = dragLeftCard.getBoundingClientRect();
+                if (!dragLine) {
+                    dragLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    dragLine.setAttribute('class', 'connection-line drag-line');
+                    connectionLayer.appendChild(dragLine);
+                }
+                dragLine.setAttribute('x1', from.right - bounds.left);
+                dragLine.setAttribute('y1', from.top + from.height / 2 - bounds.top);
+                dragLine.setAttribute('x2', dragPoint.x - bounds.left);
+                dragLine.setAttribute('y2', dragPoint.y - bounds.top);
+            });
         });
 
         document.addEventListener('pointerup', clearDragLine);
@@ -376,6 +404,7 @@
                 leftCards.forEach((c) => c.classList.remove('selected'));
                 card.classList.add('selected');
                 selectedLeft = parseInt(card.dataset.itemId, 10);
+                KS.click();
             });
             card.addEventListener('pointerdown', (event) => {
                 if (card.classList.contains('matched')) return;
@@ -396,6 +425,7 @@
                     return;
                 }
                 const leftCard = leftCards.find((c) => parseInt(c.dataset.itemId, 10) === selectedLeft);
+                KS.click();
                 fetchAnswer(leftCard, card);
             });
         });
@@ -406,6 +436,7 @@
             const rightCard = document.elementFromPoint(event.clientX, event.clientY)?.closest('.card-item.right');
             if (rightCard && !rightCard.classList.contains('matched')) {
                 suppressRightClick = true;
+                KS.click();
                 fetchAnswer(dragLeftCard, rightCard);
                 setTimeout(() => { suppressRightClick = false; }, 0);
             }
@@ -413,6 +444,13 @@
         });
 
         function showResult(message, ok) {
+            // Notificación en la esquina (se quita sola); con respaldo
+            // al mensaje en línea si el parcial no cargó.
+            if (window.KlassioToast) {
+                if (ok) { KlassioToast.success('¡Correcto!', message); }
+                else { KlassioToast.error('Revisa', message); }
+                return;
+            }
             const el = document.getElementById('result');
             el.textContent = message;
             el.className = 'result ' + (ok ? 'ok' : 'bad');
@@ -457,6 +495,7 @@
                      * RESPUESTA CORRECTA
                      */
                     if (data.correct && !data.already_answered) {
+                        KS.correcto();
 
                         leftCard.classList.remove('selected');
 
@@ -481,6 +520,7 @@
                          * TERMINÓ EL MATCHING
                          */
                         if (data.completed) {
+                            KS.completado();
 
                             // Bloquear las tarjetas
                             leftCards.forEach((card) => {
@@ -520,6 +560,7 @@
                     if (data.already_answered) {
 
                         leftCard.classList.remove('selected');
+                        KS.error();
 
                         showResult(
                             'Esa pareja ya estaba resuelta.',
@@ -536,6 +577,7 @@
                         leftCard,
                         rightCard
                     ]);
+                    KS.error();
 
                     leftCard.classList.remove('selected');
 
@@ -587,7 +629,12 @@
             }
         });
         renderConnections();
-        window.addEventListener('resize', renderConnections);
+        // Redibujar al rotar/redimensionar, con rebote para no saturar.
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(renderConnections, 120);
+        });
     </script>
 </body>
 

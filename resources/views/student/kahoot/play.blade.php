@@ -273,6 +273,8 @@
 
 <body>
 
+    @include('partials.toast')
+
     {{-- Pantalla inicio --}}
     <div id="screen-start">
         <h1>{{ $activity->title }}</h1>
@@ -328,6 +330,13 @@
         </a>
     </div>
 
+    <script src="/js/klassio-sounds.js?v=4"></script>
+    <script>
+        // Sonido del juego (si el archivo no carga, KS queda mudo sin romper nada).
+        window.KS = window.KlassioSounds || { click: function () {}, correcto: function () {}, error: function () {}, terminado: function () {}, completado: function () {}, expirado: function () {}, startMusic: function () {}, stopMusic: function () {} };
+        if (window.KlassioSounds) KlassioSounds.setup('kahoot');
+    </script>
+
     <script>
         // -------------------------------------------------------------------------
         // Datos del servidor
@@ -356,6 +365,8 @@
         // Inicio
         // -------------------------------------------------------------------------
         function startGame() {
+            KS.click();
+            KS.startMusic();
             if (currentIndex >= QUESTIONS.length) {
                 showFinish();
                 return;
@@ -388,7 +399,7 @@
                 btn.classList.add('option-btn');
                 btn.textContent = opt.text;
                 btn.dataset.optionId = opt.id;
-                btn.onclick = () => submitAnswer(opt.id, q.id);
+                btn.onclick = () => { KS.click(); submitAnswer(opt.id, q.id); };
                 grid.appendChild(btn);
             });
 
@@ -529,6 +540,7 @@
              * redirigir a la página de resultados.
              */
             if (result.completed) {
+                KS.completado();
 
                 setTimeout(() => {
 
@@ -555,6 +567,7 @@
         // Helpers de error inline
         // -------------------------------------------------------------------------
         function showError(msg) {
+            KS.error();
             const el = document.getElementById('error-msg');
             el.textContent = msg;
             el.style.display = 'block';
@@ -570,6 +583,7 @@
         // Mostrar resultado de la pregunta
         // -------------------------------------------------------------------------
         function showResult(isCorrect, score, correctOptionId, overrideMessage) {
+            if (isCorrect) { KS.correcto(); } else { KS.error(); }
             document.getElementById('screen-question').style.display = 'none';
             document.getElementById('screen-result').style.display = 'block';
 
@@ -597,6 +611,7 @@
         // Siguiente pregunta
         // -------------------------------------------------------------------------
         function nextQuestion() {
+            KS.click();
             currentIndex++;
 
             while (currentIndex < QUESTIONS.length && ANSWERED_IDS.includes(QUESTIONS[currentIndex].id)) {
@@ -618,6 +633,7 @@
         // Pantalla final
         // -------------------------------------------------------------------------
         function showFinish() {
+            KS.completado();
             document.getElementById('screen-start').style.display = 'none';
             document.getElementById('screen-question').style.display = 'none';
             document.getElementById('screen-result').style.display = 'none';

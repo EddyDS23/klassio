@@ -199,6 +199,7 @@
 </head>
 
 <body>
+    @include('partials.toast')
     <div class="wrap">
         <div class="card">
             <h1>Sopa de Letras</h1>
@@ -274,6 +275,13 @@
         </div>
     </div>
 
+    <script src="/js/klassio-sounds.js?v=4"></script>
+    <script>
+        // Sonido del juego (si el archivo no carga, KS queda mudo sin romper nada).
+        window.KS = window.KlassioSounds || { click: function () {}, correcto: function () {}, error: function () {}, terminado: function () {}, completado: function () {}, expirado: function () {}, startMusic: function () {}, stopMusic: function () {} };
+        if (window.KlassioSounds) KlassioSounds.setup('wordsearch');
+    </script>
+
     <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
         style="display: none;">
         @csrf
@@ -296,6 +304,13 @@
         });
 
         function showResult(message, ok) {
+            // Notificación en la esquina (se quita sola); con respaldo
+            // al mensaje en línea si el parcial no cargó.
+            if (window.KlassioToast) {
+                if (ok) { KlassioToast.success('¡Correcto!', message); }
+                else { KlassioToast.error('Revisa', message); }
+                return;
+            }
             const el = document.getElementById('result');
             el.textContent = message;
             el.className = 'result ' + (ok ? 'ok' : 'bad');
@@ -337,6 +352,7 @@
                      * PALABRA CORRECTA
                      */
                     if (data.correct && !data.already_found) {
+                        KS.correcto();
 
                         // Marcar las celdas encontradas
                         data.cells.forEach(([r, c]) => {
@@ -380,6 +396,7 @@
                          * SI TERMINÓ LA SOPA
                          */
                         if (data.finished) {
+                            KS.completado();
                             document.getElementById('finish').style.display = 'block';
 
                             setTimeout(() => {
@@ -393,6 +410,7 @@
                     } else if (data.already_found) {
 
                         markWrong(data.cells);
+                        KS.error();
 
                         showResult(
                             'Esa palabra ya la encontraste.',
@@ -407,6 +425,7 @@
                         markWrong(
                             cellsBetween(startCell, endCell)
                         );
+                        KS.error();
 
                         showResult(
                             data.error ||
@@ -503,6 +522,7 @@
             cell.addEventListener('pointerdown', (event) => {
                 if (cell.dataset.found === '1') return;
                 event.preventDefault();
+                KS.click();
                 dragging = true;
                 start = cell;
                 end = cell;
@@ -510,13 +530,24 @@
             });
         });
 
+        // Vista previa limitada a 1 por frame (rAF): evita recalcular
+        // decenas de veces por segundo mientras se arrastra.
+        let previewQueued = false;
+        let previewPoint = null;
         document.getElementById('grid').addEventListener('pointermove', (event) => {
             if (!dragging || !start) return;
-            const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.cell');
-            if (target && target.dataset.found !== '1') {
-                end = target;
-                previewSelection(target);
-            }
+            previewPoint = { x: event.clientX, y: event.clientY };
+            if (previewQueued) return;
+            previewQueued = true;
+            requestAnimationFrame(() => {
+                previewQueued = false;
+                if (!dragging || !start || !previewPoint) return;
+                const target = document.elementFromPoint(previewPoint.x, previewPoint.y)?.closest('.cell');
+                if (target && target.dataset.found !== '1') {
+                    end = target;
+                    previewSelection(target);
+                }
+            });
         });
 
         window.addEventListener('pointerup', () => {
@@ -553,7 +584,17 @@
 
                 timerValue.textContent = '00:00';
 
-                document.getElementById('expire-form').submit();
+                var hints = document.querySelectorAll('.hint');
+                var done = document.querySelectorAll('.hint.found');
+                if (hints.length > 0 && done.length >= hints.length) {
+                    KS.terminado();
+                } else {
+                    KS.expirado();
+                }
+
+                setTimeout(function () {
+                    document.getElementById('expire-form').submit();
+                }, 900);
 
                 return;
             }

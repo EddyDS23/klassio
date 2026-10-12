@@ -93,31 +93,6 @@
                     <h1 class="text-3xl font-black tracking-tight sm:text-4xl">
                         Reporte de actividad
                     </h1>
-            <tr>
-                <th>
-                    {{ $activity->mode === 'team' ? 'Equipos' : 'Estudiantes inscritos' }}
-                </th>
-
-                <td>
-                    {{ $activity->mode === 'team' ? $summary['total_teams'] : $summary['total_students'] }}
-                </td>
-            </tr>
-
-            <tr>
-                <th>
-                    {{ $activity->mode === 'team' ? 'Equipos que participaron' : 'Estudiantes que participaron' }}
-                </th>
-
-                <td>{{ $summary['participated'] }}</td>
-            </tr>
-
-            <tr>
-                <th>
-                    {{ $activity->mode === 'team' ? 'Equipos que no participaron' : 'Estudiantes que no participaron' }}
-                </th>
-
-                <td>{{ $summary['not_participated'] }}</td>
-            </tr>
 
                     <p class="mt-3 text-sm leading-6 text-emerald-50 sm:text-base">
                         Revisa la participación, el estado de las entregas y el rendimiento
@@ -208,31 +183,12 @@
                         @endif
                     </p>
                 </div>
-                <td>
-                    @if ($summary['average_score'] !== null)
-                        {{ $summary['average_score'] }}
-                        / {{ $activity->max_score }}
-                    @else
-                        -
-                    @endif
-                </td>
-            </tr>
 
             </div>
         </section>
 
         <!-- Participación -->
         <section class="mb-8">
-                <td>
-                    @if ($summary['best_score'] !== null)
-                        {{ $summary['best_score'] }}
-                        / {{ $activity->max_score }}
-                    @else
-                        -
-                    @endif
-                </td>
-            </tr>
-
             <div class="mb-4">
                 <h2 class="text-2xl font-black text-slate-900">
                     Participación
@@ -259,16 +215,7 @@
                     <p class="mt-5 text-sm font-bold text-slate-500">
                         Estudiantes inscritos
                     </p>
-                <td>
-                    @if ($summary['average_time'] !== null)
-                        {{ floor($summary['average_time'] / 60) }}:{{ str_pad($summary['average_time'] % 60, 2, '0', STR_PAD_LEFT) }}
-                    @else
-                        -
-                    @endif
-                </td>
-            </tr>
 
-                 
                 </div>
 
                 <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
