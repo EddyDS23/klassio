@@ -467,6 +467,27 @@ class GameSessionTest extends TestCase
         ]);
     }
 
+    public function test_non_participant_cannot_leave_someone_elses_room(): void
+    {
+        ['s1' => $participant, 's2' => $otherStudent, 'session' => $session] = $this->setupRoom();
+        $this->actingAs($participant)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+
+        $this->actingAs($otherStudent)
+            ->post(route('student.game-sessions.leave', $session->id))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('participations', [
+            'game_session_id' => $session->id,
+            'student_id' => $participant->id,
+            'status' => 'waiting',
+        ]);
+        $this->assertDatabaseMissing('participations', [
+            'game_session_id' => $session->id,
+            'student_id' => $otherStudent->id,
+        ]);
+    }
+
     public function test_cannot_join_playing_session(): void
     {
         ['teacher' => $teacher, 's1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();

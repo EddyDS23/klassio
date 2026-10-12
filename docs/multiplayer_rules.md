@@ -25,6 +25,12 @@ Roadmap_Multiplayer_Klassio). Se definen por juego antes de implementar.
 | Salir | marca `Participation` como `abandoned`; si quedan <2 activos la partida termina |
 | Sala vacía en `waiting` | se cancela |
 
+Los botones de salida dentro de Crossword, Wordsearch y Matching envían
+`POST /student/game-sessions/{id}/leave` con el identificador de la sala y
+token CSRF. El abandono conserva respuestas y puntaje ya persistidos. Una
+participación terminal no cambia de estado; las solicitudes repetidas se
+rechazan por autorización o se responden sin volver a modificarla.
+
 Autoridad: el servidor valida rondas, puntaje y finalización. El frontend solo muestra.
 
 ## Ruleta (implementada)
@@ -57,6 +63,11 @@ Autoridad: el servidor valida rondas, puntaje y finalización. El frontend solo 
 - Una pregunta no se repite (se registra en `state.round_question_ids`).
 - La partida termina cuando se agotan las preguntas (tras cerrar la última ronda) o cuando expira `Activity.time_limit`.
 - Puntaje en el servidor con `KahootService::validateAnswer` + `ParticipationService::syncScore` (normaliza a `Activity.max_score`).
+- El Kahoot convencional permanece en `POST /student/kahoot/answer`: solo acepta
+  una participación activa sin `game_session_id`, valida propietario/equipo y
+  tiempo antes de persistir, y verifica que pregunta y opción pertenezcan al
+  Kahoot y pregunta correspondientes. Una participación de sala solo responde
+  mediante `POST /student/kahoot/answer-session`.
 
 ## Crucigrama, sopa de letras y unir conceptos (implementado)
 
@@ -78,6 +89,10 @@ controladas por el profesor.
   La respuesta se registra contra la `Participation` de la sala
   (`game_session_id`) y el puntaje se sincroniza con `ParticipationService::syncScore`.
 - Al completar todo el juego, la `Participation` pasa a `completed`.
+- Los servicios de Wordsearch y Matching serializan la comprobación y escritura
+  por participación. Wordsearch también mantiene la clave única
+  `participation_id + word_id`; Matching permite guardar intentos incorrectos
+  repetidos, pero un acierto previo no vuelve a crear una fila ni sumar puntos.
 - La carrera termina cuando **todos los jugadores activos completaron** el juego o
   cuando **expira `Activity.time_limit`**. Si `time_limit` es `null`, solo termina
   cuando todos completan (o quedan <2 activos).
@@ -98,7 +113,8 @@ participación y el servidor sigue aplicando el tiempo límite; no hay detecció
 de desconexión ni presencia en línea.
 
 Los eventos usan el canal privado `game-session.{id}` (participantes y docente
-propietario):
+propietario). La autorización usa `GameSessionPolicy::view`, que valida la
+sesión concreta y reconoce miembros del equipo asociado a la actividad:
 
 - `PlayerJoined`, `PlayerLeft`
 - `GameStarted`, `GameFinished`
@@ -111,10 +127,12 @@ carrera libre observadas dependen del polling de
 `GET /student/game-sessions/{id}/state`; no reciben esos eventos con Echo.
 
 La configuración de ejemplo usa `BROADCAST_CONNECTION=log` y
-`REVERB_SERVER_ENABLED=false`. El servicio Reverb existe en Compose bajo el
-perfil `realtime`, y Nginx tiene proxy para `/app/`, pero la configuración por
-defecto no activa Reverb. Las clases de evento implementan `ShouldBroadcast` y
-`QUEUE_CONNECTION` usa `database`; Compose no define un worker de colas. Para
-usar eventos en producción hay que activar Reverb, ejecutar un worker de cola y
-validar el acceso WebSocket desde el navegador. El polling sigue siendo el
-comportamiento operativo disponible con la configuración de ejemplo.
+`REVERB_SERVER_ENABLED=false`. Compose declara un servicio Reverb bajo el perfil
+`realtime`; no se inicia con los servicios por defecto. Nginx tiene proxy para
+`/app/`, pero la configuración predeterminada no activa Reverb. Las clases de
+evento implementan `ShouldBroadcast` y `QUEUE_CONNECTION` usa `database`;
+Compose no define un worker de colas. Para usar eventos en producción hay que
+activar el perfil y las variables de Reverb, ejecutar un worker de cola y
+validar autenticación de canales y WebSocket desde el navegador. No hay health
+check de Reverb ni prueba end-to-end WebSocket configurados. El polling sigue
+siendo el comportamiento operativo disponible con la configuración de ejemplo.

@@ -227,9 +227,13 @@
 
         function resetQuestion() {
             const body = document.querySelector('#questionModal .modal-body');
-            body.innerHTML =
-                '<p class="fw-semibold fs-5" id="q-text"></p>' +
-                '<div class="d-grid gap-2" id="q-options"></div>';
+            const question = document.createElement('p');
+            question.id = 'q-text';
+            question.className = 'fw-semibold fs-5';
+            const options = document.createElement('div');
+            options.id = 'q-options';
+            options.className = 'd-grid gap-2';
+            body.replaceChildren(question, options);
             currentItem = null;
             questionOpen = false;
         }
@@ -356,14 +360,17 @@
             document.getElementById('q-text').textContent = item.question;
 
             const options = document.getElementById('q-options');
-            options.innerHTML = '';
+            options.replaceChildren();
 
             item.options.forEach((opt) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'opt-btn';
-                btn.innerHTML = '<span class="badge me-2" style="background: var(--klassio-primary);">' +
-                    opt.key.toUpperCase() + '</span>' + opt.text;
+                const badge = document.createElement('span');
+                badge.className = 'badge me-2';
+                badge.style.background = 'var(--klassio-primary)';
+                badge.textContent = opt.key.toUpperCase();
+                btn.append(badge, document.createTextNode(opt.text));
                 btn.dataset.key = opt.key;
                 btn.addEventListener('click', () => answer(btn.dataset.key, btn));
                 options.appendChild(btn);
@@ -408,11 +415,20 @@
                 }
 
                 const body = document.querySelector('#questionModal .modal-body');
-                body.innerHTML =
-                    '<div class="alert ' + (data.is_correct ? 'alert-success' : 'alert-danger') + ' fw-bold">' +
-                    (data.is_correct ? '¡Correcto!' : 'Incorrecto') + '</div>' +
-                    '<p class="mb-1"><small>Respuesta correcta: ' + data.correct_text + '</small></p>' +
-                    '<p class="mb-0">Puntaje: <strong>' + data.participation_score + ' / ' + maxScore + '</strong></p>';
+                const result = document.createElement('div');
+                result.className = 'alert ' + (data.is_correct ? 'alert-success' : 'alert-danger') + ' fw-bold';
+                result.textContent = data.is_correct ? '¡Correcto!' : 'Incorrecto';
+                const correct = document.createElement('p');
+                correct.className = 'mb-1';
+                const correctText = document.createElement('small');
+                correctText.textContent = 'Respuesta correcta: ' + data.correct_text;
+                correct.appendChild(correctText);
+                const score = document.createElement('p');
+                score.className = 'mb-0';
+                const scoreValue = document.createElement('strong');
+                scoreValue.textContent = data.participation_score + ' / ' + maxScore;
+                score.append(document.createTextNode('Puntaje: '), scoreValue);
+                body.replaceChildren(result, correct, score);
 
                 answeredThisRound = true;
 

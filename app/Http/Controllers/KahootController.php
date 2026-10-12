@@ -9,6 +9,7 @@ use App\Models\GameSession;
 use App\Models\KahootAnswer;
 use App\Models\Participation;
 use App\Models\Question;
+use App\Services\GameSessionAnswerService;
 use App\Services\GameSessionService;
 use App\Services\KahootService;
 use App\Services\ParticipationService;
@@ -24,7 +25,8 @@ class KahootController extends Controller
     public function __construct(
         private KahootService $kahootService,
         private ParticipationService $participationService,
-        private GameSessionService $gameSessionService
+        private GameSessionService $gameSessionService,
+        private GameSessionAnswerService $gameSessionAnswerService,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -193,20 +195,55 @@ class KahootController extends Controller
             ],
         ]);
 
-        $participation = Participation::findOrFail(
+        $participation = Participation::query()->with('activity.kahoot')->findOrFail(
             $validated['participation_id']
         );
 
-        Gate::authorize('answer', $participation);
+        abort_if(
+            $participation->game_session_id !== null,
+            404,
+            'Las participaciones de sala deben responder desde la ruta multijugador.'
+        );
+        abort_unless(
+            $participation->activity->type === 'kahoot'
+            && $participation->activity->kahoot !== null,
+            404,
+        );
 
         $question = Question::findOrFail(
             $validated['question_id']
         );
 
-        $result = $this->kahootService->submitAnswer(
-            $participation,
-            $question,
-            $validated['option_id']
+        $result = $this->gameSessionAnswerService->answer(
+            $participation->activity,
+            $participation->id,
+            null,
+            function (Participation $lockedParticipation) use ($question, $validated): array {
+                $answer = $this->kahootService->submitAnswer(
+                    $lockedParticipation,
+                    $question,
+                    (int) $validated['option_id'],
+                );
+
+                if (isset($answer['error'])) {
+                    return $answer;
+                }
+
+                $totalQuestions = $lockedParticipation->activity->kahoot
+                    ->questions()
+                    ->count();
+                $answeredQuestions = KahootAnswer::query()
+                    ->where('participation_id', $lockedParticipation->id)
+                    ->count();
+                $completed = $totalQuestions > 0
+                    && $answeredQuestions >= $totalQuestions;
+
+                if ($completed) {
+                    $this->participationService->finish($lockedParticipation->fresh());
+                }
+
+                return array_merge($answer, ['completed' => $completed]);
+            },
         );
 
         /*
@@ -215,36 +252,7 @@ class KahootController extends Controller
         if (isset($result['error'])) {
             return response()->json(
                 ['error' => $result['error']],
-                $result['status']
-            );
-        }
-
-        /*
-     * Comprobar si ya se respondieron todas
-     * las preguntas del Kahoot.
-     */
-        $totalQuestions = $participation
-            ->activity
-            ->kahoot
-            ->questions()
-            ->count();
-
-        $answeredQuestions = KahootAnswer::where(
-            'participation_id',
-            $participation->id
-        )->count();
-
-        $completed =
-            $totalQuestions > 0 &&
-            $answeredQuestions >= $totalQuestions;
-
-        /*
-     * Si terminó todas las preguntas,
-     * finalizar la Participation.
-     */
-        if ($completed) {
-            $this->participationService->finish(
-                $participation->fresh()
+                (int) ($result['status'] ?? 409)
             );
         }
 
@@ -252,7 +260,7 @@ class KahootController extends Controller
             'is_correct' => $result['is_correct'],
             'score' => $result['score'],
             'correct_option_id' => $result['correct_option_id'],
-            'completed' => $completed,
+            'completed' => $result['completed'],
         ]);
     }
 

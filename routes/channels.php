@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\GameSession;
+use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Gate;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,18 +15,15 @@ use Illuminate\Support\Facades\Broadcast;
 */
 
 Broadcast::channel('game-session.{id}', function ($user, $id) {
-    $session = GameSession::find($id);
-
-    if ($session === null) {
+    if (! $user instanceof User) {
         return false;
     }
 
-    if ($user->role === 'teacher') {
-        return $session->activity->teacher_id === $user->id;
+    $session = GameSession::query()->with('activity')->find($id);
+
+    if ($session === null || ! Gate::forUser($user)->allows('view', $session)) {
+        return false;
     }
 
-    return $session->participations()
-        ->where('student_id', $user->id)
-        ->whereIn('status', ['waiting', 'started', 'completed'])
-        ->exists();
+    return true;
 });

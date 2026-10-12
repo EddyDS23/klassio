@@ -136,7 +136,7 @@
             countEl.textContent = state.players.length + ' / ' + state.max_players + ' jugadores';
 
             const list = document.getElementById('players');
-            list.innerHTML = '';
+            list.replaceChildren();
             state.players.forEach((p) => {
                 if (p.status === 'abandoned' || p.status === 'expired') return;
 
@@ -149,7 +149,7 @@
 
                 const badge = document.createElement('span');
                 badge.className = 'text-success small';
-                badge.textContent = 'Conectado';
+                badge.textContent = 'En la sala';
                 li.appendChild(badge);
 
                 list.appendChild(li);

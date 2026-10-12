@@ -7,16 +7,16 @@ use App\Models\Matching;
 use App\Models\MatchingAnswer;
 use App\Models\MatchingItem;
 use App\Models\Participation;
+use Illuminate\Support\Facades\DB;
 
 class MatchingService
 {
-
     public function __construct(private ParticipationService $participationService) {}
 
     public function buildMatching(Activity $activity, array $items): Matching
     {
         $normalized = array_map(
-            fn(array $item) => [
+            fn (array $item) => [
                 'left_text' => $this->normalize($item['left']),
                 'right_text' => $this->normalize($item['right']),
                 'score' => max(1, (int) ($item['score'] ?? 1)),
@@ -94,6 +94,24 @@ class MatchingService
         int $matchingItemId,
         string $response
     ): array {
+        return DB::transaction(function () use ($matching, $participation, $matchingItemId, $response): array {
+            $participation = Participation::query()
+                ->whereKey($participation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            return $this->checkAnswerLocked($matching, $participation, $matchingItemId, $response);
+        });
+    }
+
+    private function checkAnswerLocked(
+        Matching $matching,
+        Participation $participation,
+        int $matchingItemId,
+        string $response
+    ): array {
+        abort_unless($participation->activity_id === $matching->activity_id, 403);
+
         /*
          * No permitir respuestas después de completar
          * la participación.
@@ -182,7 +200,6 @@ class MatchingService
          * Actualizar el score acumulado.
          */
         $this->participationService->syncScore($participation);
-
 
         /*
          * Comprobar si ya encontró todos los pares.

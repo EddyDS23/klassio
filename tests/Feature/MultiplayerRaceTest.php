@@ -229,33 +229,45 @@ class MultiplayerRaceTest extends TestCase
     {
         ['s1' => $s1, 'session' => $session] = $this->setupRace('matching');
 
+        $leaveRoute = route('student.game-sessions.leave', $session->id);
+
         $this->actingAs($s1)
             ->get(route('student.matching.play-session', $session->id))
             ->assertOk()
             ->assertViewIs('student.matching.multiplayer')
-            ->assertViewHas('session', fn ($value) => $value->id === $session->id);
+            ->assertViewHas('session', fn ($value) => $value->id === $session->id)
+            ->assertSee('action="'.$leaveRoute.'"', false)
+            ->assertSee('name="_token"', false);
     }
 
     public function test_wordsearch_race_page_is_available_for_participants(): void
     {
         ['s1' => $s1, 'session' => $session] = $this->setupRace('word_search');
 
+        $leaveRoute = route('student.game-sessions.leave', $session->id);
+
         $this->actingAs($s1)
             ->get(route('student.wordsearch.play-session', $session->id))
             ->assertOk()
             ->assertViewIs('student.wordsearch.multiplayer')
-            ->assertViewHas('session', fn ($value) => $value->id === $session->id);
+            ->assertViewHas('session', fn ($value) => $value->id === $session->id)
+            ->assertSee('action="'.$leaveRoute.'"', false)
+            ->assertSee('name="_token"', false);
     }
 
     public function test_crossword_race_page_is_available_for_participants(): void
     {
         ['s1' => $s1, 'session' => $session] = $this->setupRace('crossword');
 
+        $leaveRoute = route('student.game-sessions.leave', $session->id);
+
         $this->actingAs($s1)
             ->get(route('student.crossword.play-session', $session->id))
             ->assertOk()
             ->assertViewIs('student.crossword.multiplayer')
-            ->assertViewHas('session', fn ($value) => $value->id === $session->id);
+            ->assertViewHas('session', fn ($value) => $value->id === $session->id)
+            ->assertSee('action="'.$leaveRoute.'"', false)
+            ->assertSee('name="_token"', false);
     }
 
     public function test_non_participant_cannot_open_the_race(): void
@@ -291,6 +303,39 @@ class MultiplayerRaceTest extends TestCase
             ->get(route('teacher.game-sessions.show', $session->id))
             ->assertOk()
             ->assertViewIs('teacher.game_sessions.show');
+    }
+
+    public function test_room_escapes_initial_names_and_renders_polled_names_as_text(): void
+    {
+        ['s1' => $student, 'teacher' => $teacher, 'session' => $session] = $this->setupRace('matching');
+        $unsafeName = '<img src=x onerror=alert(1)> "&';
+        $student->update(['name' => $unsafeName]);
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.show', $session->id))
+            ->assertOk()
+            ->assertSee(e($unsafeName), false)
+            ->assertDontSee($unsafeName, false);
+
+        $roomViews = [
+            resource_path('views/teacher/game_sessions/show.blade.php'),
+            resource_path('views/student/game_sessions/lobby.blade.php'),
+            resource_path('views/student/matching/multiplayer.blade.php'),
+            resource_path('views/student/wordsearch/multiplayer.blade.php'),
+            resource_path('views/student/crossword/multiplayer.blade.php'),
+            resource_path('views/student/kahoot/multiplayer.blade.php'),
+            resource_path('views/student/roulette/multiplayer.blade.php'),
+            resource_path('views/student/kahoot/play.blade.php'),
+        ];
+
+        foreach ($roomViews as $viewPath) {
+            $source = file_get_contents($viewPath);
+            $this->assertIsString($source);
+            $this->assertStringNotContainsString('innerHTML', $source, $viewPath);
+        }
+
+        $this->assertStringContainsString('name.textContent', file_get_contents($roomViews[0]));
+        $this->assertStringContainsString('name.textContent', file_get_contents($roomViews[1]));
     }
 
     // -------------------------------------------------------------------------
@@ -695,6 +740,38 @@ class MultiplayerRaceTest extends TestCase
         $this->assertSame('completed', $participation->fresh()->status);
         $this->actingAs($student)->post(route('student.game-sessions.leave', $session->id));
         $this->assertSame('completed', $participation->fresh()->status);
+    }
+
+    public function test_leaving_a_race_preserves_answers_and_excludes_abandoned_score_from_result(): void
+    {
+        ['s1' => $student, 's2' => $otherStudent, 'activity' => $activity, 'session' => $session] = $this->setupRace('matching');
+        $participation = $this->participationOf($session, $student);
+        $matching = $activity->matching;
+        $item = $matching->items()->firstOrFail();
+
+        $this->answerMatching($matching, $item, $student)->assertOk();
+        $answerCount = $participation->matchingAnswers()->count();
+        $score = $participation->fresh()->score;
+
+        $this->actingAs($student)
+            ->post(route('student.game-sessions.leave', $session->id))
+            ->assertRedirect(route('student.activities.show', $activity->id));
+
+        $this->assertSame('abandoned', $participation->fresh()->status);
+        $this->assertSame($score, $participation->fresh()->score);
+        $this->assertSame($answerCount, $participation->matchingAnswers()->count());
+        $this->assertSame(GameSession::STATUS_FINISHED, $session->fresh()->status);
+        $this->assertSame(
+            $this->participationOf($session, $otherStudent)->id,
+            $session->fresh()->winner_participation_id,
+        );
+
+        $this->actingAs($student)
+            ->post(route('student.game-sessions.leave', $session->id))
+            ->assertForbidden();
+
+        $this->assertSame($answerCount, $participation->matchingAnswers()->count());
+        $this->assertSame('abandoned', $participation->fresh()->status);
     }
 
     // -------------------------------------------------------------------------

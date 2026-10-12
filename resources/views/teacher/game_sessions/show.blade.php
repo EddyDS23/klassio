@@ -65,7 +65,7 @@
                             data-participation-id="{{ $p->id }}"
                         >
                             <span>{{ $p->team?->name ?? $p->student?->name }}</span>
-                            <span class="text-success small">Conectado</span>
+                            <span class="text-success small">En la sala</span>
                         </li>
                     @endforeach
                 </ul>
@@ -257,8 +257,10 @@
                 spinBtn.disabled = true;
                 spinBtn.textContent = 'Ronda en curso';
             } else {
-                questionEl.innerHTML =
-                    '<p class="text-muted mb-0">' + idleHint + '</p>';
+                const hint = document.createElement('p');
+                hint.className = 'text-muted mb-0';
+                hint.textContent = idleHint;
+                questionEl.replaceChildren(hint);
                 spinBtn.disabled = false;
                 spinBtn.textContent = idleButton;
             }
@@ -272,7 +274,7 @@
             countEl.textContent = state.players.length + ' / ' + state.max_players + ' jugadores';
 
             const list = document.getElementById('players');
-            list.innerHTML = '';
+            list.replaceChildren();
             state.players.forEach((p) => {
                 if (p.status === 'abandoned' || p.status === 'expired') return;
 

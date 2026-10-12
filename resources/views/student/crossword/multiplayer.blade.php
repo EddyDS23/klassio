@@ -82,13 +82,13 @@
 
     <hr>
 
-    <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-        onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+    <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}"
+        onsubmit="return confirm('¿Estás seguro de que quieres salir de esta sala?');"
         style="margin: 1rem 0; text-align: center;">
         @csrf
 
         <button type="submit">
-            Abandonar actividad
+            Salir de la sala
         </button>
     </form>
 

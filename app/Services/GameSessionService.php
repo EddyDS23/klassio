@@ -116,7 +116,9 @@ class GameSessionService
         GameSession $session,
         User $user
     ): ?Participation {
-        $query = $session->participations();
+        $query = $session->participations()
+            ->whereIn('status', ['waiting', 'started', 'completed'])
+            ->orderByDesc('id');
 
         if ($session->activity->mode === 'team') {
             $teamId = Team::query()

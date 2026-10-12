@@ -213,9 +213,13 @@
 
         function resetQuestion() {
             const body = document.querySelector('#questionModal .modal-body');
-            body.innerHTML =
-                '<p class="fw-semibold fs-5" id="q-text"></p>' +
-                '<div class="d-grid gap-2" id="q-options"></div>';
+            const question = document.createElement('p');
+            question.id = 'q-text';
+            question.className = 'fw-semibold fs-5';
+            const options = document.createElement('div');
+            options.id = 'q-options';
+            options.className = 'd-grid gap-2';
+            body.replaceChildren(question, options);
             currentItem = null;
             questionOpen = false;
         }
@@ -340,7 +344,7 @@
             document.getElementById('q-text').textContent = item.question;
 
             const options = document.getElementById('q-options');
-            options.innerHTML = '';
+            options.replaceChildren();
 
             item.options.forEach((opt) => {
                 const btn = document.createElement('button');
@@ -397,11 +401,27 @@
                 })();
 
                 const body = document.querySelector('#questionModal .modal-body');
-                body.innerHTML =
-                    '<div class="alert ' + (data.is_correct ? 'alert-success' : 'alert-danger') + ' fw-bold">' +
-                    (data.is_correct ? '¡Correcto!' : 'Incorrecto') + '</div>' +
-                    (correctText ? '<p class="mb-1"><small>Respuesta correcta: ' + correctText + '</small></p>' : '') +
-                    '<p class="mb-0">Puntaje: <strong>' + data.participation_score + ' / ' + maxScore + '</strong></p>';
+                const result = document.createElement('div');
+                result.className = 'alert ' + (data.is_correct ? 'alert-success' : 'alert-danger') + ' fw-bold';
+                result.textContent = data.is_correct ? '¡Correcto!' : 'Incorrecto';
+                const children = [result];
+
+                if (correctText) {
+                    const correct = document.createElement('p');
+                    correct.className = 'mb-1';
+                    const small = document.createElement('small');
+                    small.textContent = 'Respuesta correcta: ' + correctText;
+                    correct.appendChild(small);
+                    children.push(correct);
+                }
+
+                const score = document.createElement('p');
+                score.className = 'mb-0';
+                const scoreValue = document.createElement('strong');
+                scoreValue.textContent = data.participation_score + ' / ' + maxScore;
+                score.append(document.createTextNode('Puntaje: '), scoreValue);
+                children.push(score);
+                body.replaceChildren(...children);
 
                 answeredThisRound = true;
 
