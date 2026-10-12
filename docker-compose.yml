@@ -102,6 +102,28 @@ services:
         restart: unless-stopped
         mem_limit: 256m
         cpus: "0.25"
+
+
+    worker:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: [ "php", "artisan", "queue:work", "database", "--queue=default", "--tries=3", "--timeout=90" ]
+        restart: unless-stopped
+        env_file:
+            - .env
+        volumes:
+            - .:/var/www/html
+        networks:
+            - klassio-network
+        depends_on:
+            mariadb:
+                condition: service_healthy
+            app:
+                condition: service_started
+        mem_limit: 256m
+        cpus: "0.25"
+
 networks:
     klassio-network:
     proxy_network:

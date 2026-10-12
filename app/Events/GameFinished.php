@@ -15,7 +15,12 @@ class GameFinished implements ShouldBroadcast
 
     public function broadcastOn(): Channel
     {
-        return new PrivateChannel('game-session.'.$this->session->id);
+        return new PrivateChannel('game-session.' . $this->session->id);
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'GameFinished';
     }
 
     public function broadcastWith(): array

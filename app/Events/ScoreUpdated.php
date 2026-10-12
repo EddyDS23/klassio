@@ -19,6 +19,11 @@ class ScoreUpdated implements ShouldBroadcast
         return new PrivateChannel('game-session.'.$this->session->id);
     }
 
+    public function broadcastAs(): string
+    {
+        return 'ScoreUpdated';
+    }
+
     public function broadcastWith(): array
     {
         return ['payload' => $this->payload];
