@@ -382,7 +382,7 @@
             document.getElementById('question-text').textContent = q.question;
 
             const grid = document.getElementById('options-grid');
-            grid.innerHTML = '';
+            grid.replaceChildren();
             q.options.forEach(opt => {
                 const btn = document.createElement('button');
                 btn.classList.add('option-btn');

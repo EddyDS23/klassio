@@ -385,12 +385,49 @@
 
                     </a>
 
+                <!-- UNIRSE A UNA SALA -->
+
+                    <a
+                        href="{{ route('student.game-sessions.join-page') }}"
+                        class="group relative overflow-hidden rounded-2xl border border-amber-100 bg-amber-50 p-6 transition hover:-translate-y-1 hover:shadow-lg md:col-span-2"
+                    >
+
+                        <div class="flex items-start justify-between">
+
+                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-white">
+
+                                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12a4 4 0 014 4v3a4 4 0 01-4 4h-1l-3-3H10l-3 3H6a4 4 0 01-4-4v-3a4 4 0 014-4zM8 12v4M6 14h4M16 13h.01M19 11h.01"/>
+                                </svg>
+
+                            </div>
+
+
+                            <span class="text-2xl text-amber-300 transition group-hover:translate-x-1">
+                                →
+                            </span>
+
+                        </div>
+
+
+                        <h3 class="mt-5 text-xl font-extrabold text-amber-950">
+                            Unirse a una sala multijugador
+                        </h3>
+
+
+                        <p class="mt-2 text-sm leading-6 text-amber-700">
+                            ¿Tu profesor te compartió un código de sala?
+                            Entra y juega en tiempo real con tus compañeros.
+                        </p>
+
+
+                        <span class="mt-5 inline-block text-sm font-bold text-amber-600">
+                            Entrar con código →
+                        </span>
+
+                    </a>
+
                 </section>
-
-
-                <!-- =====================================
-                     UNIRSE A UNA CLASE
-                ====================================== -->
 
                 <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
 

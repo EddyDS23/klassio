@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Override;
 
-#[Fillable(['activity_id', 'student_id', 'team_id', 'attempt', 'status', 'score', 'completed_at', 'elapsed_seconds'])]
+#[Fillable(['game_session_id', 'activity_id', 'student_id', 'team_id', 'attempt', 'status', 'score', 'completed_at', 'elapsed_seconds'])]
 #[Hidden(['created_at', 'updated_at'])]
 class Participation extends Model
 {
@@ -27,6 +27,11 @@ class Participation extends Model
     public function activity(): BelongsTo
     {
         return $this->belongsTo(Activity::class);
+    }
+
+    public function gameSession(): BelongsTo
+    {
+        return $this->belongsTo(GameSession::class, 'game_session_id');
     }
 
     public function student(): BelongsTo

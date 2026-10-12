@@ -81,6 +81,27 @@ services:
         mem_limit: 256m
         cpus: "0.25"
 
+    reverb:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: klassio_reverb
+        command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=2001"]
+        profiles: ["realtime"]
+        env_file:
+            - .env
+        volumes:
+            - .:/var/www/html
+        expose:
+            - "2001"
+        networks:
+            - klassio-network
+        depends_on:
+            app:
+                condition: service_started
+        restart: unless-stopped
+        mem_limit: 256m
+        cpus: "0.25"
 networks:
     klassio-network:
     proxy_network:

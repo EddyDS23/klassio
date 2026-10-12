@@ -1,30 +1,25 @@
 #!/bin/bash
-
 set -e
 
 cd /var/www/klassio
 
 echo "==> Actualizando código..."
-
 git fetch origin master
 git reset --hard origin/master
 
 echo "==> Construyendo contenedores..."
-
-docker compose -f docker-compose.yml build
+docker compose build
 
 echo "==> Levantando servicios..."
+docker compose up -d
 
-docker compose -f docker-compose.yml up -d
+echo "==> Esperando a que la aplicación esté lista..."
+sleep 5
 
-echo "==> Ejecutando migraciones..."
+echo "==> Limpiando caché de Laravel..."
+docker compose exec -T app php artisan optimize:clear
 
-docker compose -f docker-compose.yml exec -T app \
-    php artisan migrate --force
-
-echo "==> Optimizando Laravel..."
-
-docker compose -f docker-compose.yml exec -T app \
-    php artisan optimize
+echo "==> Verificando migraciones..."
+docker compose exec -T app php artisan migrate:status
 
 echo "==> Deployment terminado."

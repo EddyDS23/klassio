@@ -448,6 +448,37 @@
 
             </div>
 
+            @if ($activity->status === 'published')
+                <div class="mt-5 rounded-3xl border border-violet-200 bg-violet-50 p-6 shadow-sm">
+
+                    <div class="flex items-start justify-between gap-4">
+
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-600 text-2xl">
+                                🎮
+                            </div>
+
+                            <div>
+                                <h4 class="font-black text-slate-900">
+                                    Sala multijugador
+                                </h4>
+
+                                <p class="text-sm font-medium text-slate-500">
+                                    Crea una partida en vivo y comparte el código con tus estudiantes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <a href="{{ route('teacher.game-sessions.create', ['activity_id' => $activity->id]) }}"
+                            class="inline-flex items-center justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-700">
+                            Crear sala
+                        </a>
+
+                    </div>
+
+                </div>
+            @endif
+
         </section>
 
 

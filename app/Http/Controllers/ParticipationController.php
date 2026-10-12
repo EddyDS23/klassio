@@ -130,6 +130,7 @@ class ParticipationController extends Controller
             abort_if($team === null, 404, 'No perteneces a ningún equipo en esta actividad.');
 
             $participation = Participation::where('activity_id', $activity->id)
+                ->whereNull('game_session_id')
                 ->where('team_id', $team->id)
                 ->whereIn('status', ['completed', 'abandoned', 'expired'])
                 ->latest()
@@ -137,6 +138,7 @@ class ParticipationController extends Controller
         } else {
             // Estudiante individual
             $participation = Participation::where('activity_id', $activity->id)
+                ->whereNull('game_session_id')
                 ->where('student_id', $user->id)
                 ->whereIn('status', ['completed', 'abandoned', 'expired'])
                 ->latest()

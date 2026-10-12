@@ -1,15 +1,18 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\Activity;
 use App\Models\Enrollment;
+use App\Models\GameSession;
 use App\Models\KahootAnswer;
 use App\Models\Option;
 use App\Models\Participation;
-use App\Models\Question;
 use App\Models\SchoolClass;
 use App\Models\User;
 use App\Services\KahootService;
+use App\Services\ParticipationService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -318,15 +321,14 @@ class KahootTest extends TestCase
         $class = $this->createClass($teacher);
         $activity = $this->createDraftActivity($class, $teacher);
 
-         $activity->kahoot()->create();
+        $activity->kahoot()->create();
 
         $response = $this->actingAs($teacher)
             ->get(route('teacher.kahoot.configure', $activity->id));
 
         $response->assertOk();
         $response->assertViewIs('teacher.kahoot.configure');
-        $response->assertViewHas('activity', fn ($value) =>
-            $value->id === $activity->id
+        $response->assertViewHas('activity', fn ($value) => $value->id === $activity->id
         );
     }
 
@@ -350,7 +352,7 @@ class KahootTest extends TestCase
         $class = $this->createClass($teacher);
         $activity = $this->createDraftActivity($class, $teacher);
 
-         $activity->kahoot()->create();
+        $activity->kahoot()->create();
 
         $response = $this->actingAs($teacher)
             ->post(route('teacher.kahoot.store', $activity->id), [
@@ -801,7 +803,7 @@ class KahootTest extends TestCase
             ->options()
             ->firstOrFail();
 
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
 
         app(KahootService::class)->validateAnswer(
             $questions[0],
@@ -1050,6 +1052,114 @@ class KahootTest extends TestCase
         $this->assertDatabaseMissing('kahoot_answers', [
             'participation_id' => $participation->id,
             'question_id' => $question->id,
+        ]);
+    }
+
+    public function test_conventional_kahoot_route_rejects_a_session_participation(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $class = $this->createClass($teacher);
+        $this->enroll($class, $student);
+        $activity = $this->createActivity($class, $teacher);
+        $kahoot = $this->createKahoot($activity);
+        $session = GameSession::create([
+            'activity_id' => $activity->id,
+            'code' => 'KLS901',
+            'status' => GameSession::STATUS_PLAYING,
+            'max_players' => 4,
+        ]);
+        $participation = $this->createParticipation($activity, $student, [
+            'game_session_id' => $session->id,
+        ]);
+        $question = $kahoot->questions()->firstOrFail();
+        $option = $question->options()->firstOrFail();
+
+        $this->actingAs($student)
+            ->postJson(route('student.kahoot.answer'), [
+                'participation_id' => $participation->id,
+                'question_id' => $question->id,
+                'option_id' => $option->id,
+            ])
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('kahoot_answers', [
+            'participation_id' => $participation->id,
+            'question_id' => $question->id,
+        ]);
+    }
+
+    public function test_expired_conventional_kahoot_participation_is_not_answered(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $class = $this->createClass($teacher);
+        $this->enroll($class, $student);
+        $activity = $this->createActivity($class, $teacher, ['time_limit' => 30]);
+        $kahoot = $this->createKahoot($activity);
+        $participation = $this->createParticipation($activity, $student);
+        $participation->started_at = now()->subSeconds(31);
+        $participation->save();
+        $question = $kahoot->questions()->firstOrFail();
+        $option = $question->options()->firstOrFail();
+
+        $this->actingAs($student)
+            ->postJson(route('student.kahoot.answer'), [
+                'participation_id' => $participation->id,
+                'question_id' => $question->id,
+                'option_id' => $option->id,
+            ])
+            ->assertStatus(410);
+
+        $this->assertSame('expired', $participation->fresh()->status);
+        $this->assertDatabaseMissing('kahoot_answers', [
+            'participation_id' => $participation->id,
+            'question_id' => $question->id,
+        ]);
+    }
+
+    public function test_conventional_kahoot_route_rejects_option_from_another_question(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $class = $this->createClass($teacher);
+        $this->enroll($class, $student);
+        $activity = $this->createActivity($class, $teacher);
+        $kahoot = $this->createKahoot($activity, [
+            [
+                'question' => 'Pregunta A',
+                'time_limit' => 20,
+                'score' => 10,
+                'options' => [
+                    ['text' => 'A1', 'is_correct' => '1'],
+                    ['text' => 'A2', 'is_correct' => '0'],
+                ],
+            ],
+            [
+                'question' => 'Pregunta B',
+                'time_limit' => 20,
+                'score' => 10,
+                'options' => [
+                    ['text' => 'B1', 'is_correct' => '1'],
+                    ['text' => 'B2', 'is_correct' => '0'],
+                ],
+            ],
+        ]);
+        $participation = $this->createParticipation($activity, $student);
+        $questions = $kahoot->questions()->orderBy('position')->get();
+        $foreignOption = $questions[1]->options()->firstOrFail();
+
+        $this->actingAs($student)
+            ->postJson(route('student.kahoot.answer'), [
+                'participation_id' => $participation->id,
+                'question_id' => $questions[0]->id,
+                'option_id' => $foreignOption->id,
+            ])
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('kahoot_answers', [
+            'participation_id' => $participation->id,
+            'question_id' => $questions[0]->id,
         ]);
     }
 
@@ -1421,7 +1531,7 @@ class KahootTest extends TestCase
             ]
         )->assertOk();
 
-        $result = app(\App\Services\ParticipationService::class)
+        $result = app(ParticipationService::class)
             ->getResult($participation->fresh());
 
         $this->assertCount(1, $result['answers']);
