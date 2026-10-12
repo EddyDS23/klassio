@@ -1762,3 +1762,343 @@ Proyecto académico desarrollado para la plataforma educativa **Klassio**.
 
 Plataforma educativa modular para la creación, administración y ejecución de actividades interactivas, con soporte para estudiantes, docentes, administradores, participación individual y por equipos.
 # CI/CD funcionando
+
+---
+
+> **Nota de esta sección (aporte nuevo):** todo lo que sigue se **agrega** a la documentación
+> existente. No reemplaza ninguna sección anterior; describe la incorporación del
+> **modo multijugador** (salas por código) sobre la infraestructura ya documentada,
+> incluyendo cambios de **base de datos, código, funcionalidades, tiempo real, vistas
+> y pruebas**.
+
+# 42. Modo multijugador (salas)
+
+Además del flujo individual/por equipos ya documentado, Klassio incorpora un
+**modo multijugador por salas** en el que varios estudiantes juegan la **misma
+actividad** al mismo tiempo, coordinados por el docente mediante un **código de
+sala**.
+
+El multijugador **no reemplaza** el flujo normal de participación: se apoya en las
+mismas entidades (`Activity`, `Participation`) y añade una capa de orquestación.
+
+## 42.1 Roles dentro de la sala
+
+- **Docente (dueño de la actividad):** crea la sala, la inicia, controla el avance
+  de las rondas (en juegos por rondas) y consulta el panel de la partida.
+- **Estudiante (inscrito en la clase):** se une con el código y juega.
+- **Servidor:** es la única autoridad; valida rondas, puntaje y finalización. El
+  frontend solo refleja el estado.
+
+## 42.2 Tipos de juego con multijugador
+
+Actualmente Klassio integra **cinco** tipos de juego:
+
+| Tipo | Descripción | Multijugador |
+|---|---|---|
+| `roulette` | Ruleta de preguntas | ✅ por rondas |
+| `kahoot` | Preguntas de opción múltiple | ✅ por rondas |
+| `word_search` | Sopa de letras | ✅ carrera libre |
+| `crossword` | Crucigrama | ✅ carrera libre |
+| `matching` | Relacionar elementos | ✅ carrera libre |
+
+> La tabla de la sección 2 listaba cuatro juegos; este aporte confirma que el
+> catálogo se completó con **Ruleta** y con el modo multijugador de los cinco.
+
+## 42.3 Reglas generales de sala
+
+| Regla | Valor |
+| --- | --- |
+| Mínimo para iniciar | 2 jugadores |
+| Máximo de jugadores | configurable al crear la sala (por defecto 4) |
+| Quién crea la sala | el docente dueño de la actividad |
+| Quién inicia | solo el docente dueño |
+| Entrada de estudiantes | solo con el código único de la sala |
+| Estados de sala | `waiting`, `starting`, `playing`, `finished`, `cancelled` |
+| Jugador duplicado | rechazado |
+| Sala llena / en `playing` o `finished` | rechaza nuevos jugadores |
+| Salir de la sala | marca la participación como `abandoned`; si quedan <2 activos la partida termina |
+| Sala vacía en `waiting` | se cancela |
+
+El detalle completo y por juego está en `docs/multiplayer_rules.md`.
+
+## 42.4 Dos dinámicas de juego
+
+### A) Competitiva por rondas (Ruleta y Kahoot)
+
+- El profesor **abre cada ronda**: `POST /teacher/game-sessions/{id}/spin`.
+- El profesor fija los **segundos para responder** por ronda (`round_seconds`,
+  entre 5 y 300; por defecto 30).
+- **Todos ven y responden la misma pregunta a la vez.**
+- Cada jugador responde cada ítem/pregunta **una sola vez**.
+- La ronda se cierra cuando **todos responden** o **se agota el tiempo**.
+- **Quien no responde a tiempo falla**: se registra una respuesta con
+  `response = '(sin respuesta)'` (Ruleta) u `option_id = NULL` (Kahoot),
+  `is_correct = false` y `score = 0`.
+- Un ítem/pregunta no se repite.
+- La partida termina cuando se agotan los ítems/preguntas o expira
+  `Activity.time_limit`. Resultado: `winner` (máximo puntaje único) o `draw`.
+
+### B) Carrera libre con tiempo (Sopa de letras, Crucigrama, Unir conceptos)
+
+- **No hay rondas.** El profesor solo **inicia** la partida.
+- Cada jugador resuelve **todo el juego a su ritmo** y gana quien más puntaje
+  obtiene; solo ve sus posiciones en vivo, no la pantalla de los demás.
+- Para no romper el diseño, el endpoint de rondas `spin` se **rechaza** en estos
+  tipos con `422` ("Este juego se juega en carrera libre: no hay rondas que avanzar.").
+- **Se reutilizan los endpoints de un jugador** para responder (Crucigrama
+  `POST /crossword/answer`, Sopa de letras `POST /wordsearch/answer`, Unir
+  conceptos `POST /matching/answer`), registrando la respuesta contra la
+  `Participation` de la sala.
+- Al completar todo, la `Participation` pasa a `completed`.
+- La carrera termina cuando **todos los activos completan** o **expira
+  `Activity.time_limit`** (si es `null`, solo cuando todos completan o quedan <2).
+
+---
+
+# 43. Cambios en la base de datos
+
+Se agregaron/ajustaron tablas y columnas para soportar las salas. **No se
+eliminó ni renombró** ninguna estructura existente.
+
+## 43.1 Nueva tabla `game_sessions`
+
+Migración: `database/migrations/2026_10_07_000001_create_game_sessions_table.php`
+
+Representa **una partida/sala concreta**.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | bigint PK | |
+| `activity_id` | FK → `activities.id` | `cascadeOnDelete` |
+| `code` | string(8) único | código de sala |
+| `status` | enum | `waiting`, `starting`, `playing`, `finished`, `cancelled` (def. `waiting`) |
+| `max_players` | tinyint | por defecto 4 |
+| `created_by` | FK → `users.id` (nullable) | `nullOnDelete` |
+| `started_at` / `finished_at` | timestamp nullable | |
+| `current_turn_participation_id` | bigint nullable indexado | sin FK para evitar dependencia circular |
+| `result_type` | enum nullable | `winner`, `draw`, `collaborative_success` |
+| `winner_participation_id` | bigint nullable indexado | |
+| `state` | json nullable | estado de la partida (rondas, etc.) |
+| `timestamps` | | índices en `activity_id` y `status` |
+
+## 43.2 Cambios en `participations`
+
+Migración: `database/migrations/2026_10_07_000002_add_game_session_id_to_participations_table.php`
+
+- Se agregó la columna `game_session_id` (FK nullable → `game_sessions.id`,
+  `nullOnDelete`, indexada). Permite que una participación pertenezca a una sala
+  multijugador sin afectar las participaciones individuales/por equipos.
+- Se amplió el enum `status` de participación para incluir los estados de sala:
+  `waiting`, `started`, `completed`, `abandoned`, `expired` (por defecto `started`).
+
+## 43.3 `kahoot_answers.option_id` ahora es nullable
+
+Migración: `database/migrations/2026_10_11_000001_make_option_id_nullable_on_kahoot_answers_table.php`
+
+- Permite registrar los **fallos por tiempo agotado** en Kahoot
+  (`option_id = NULL`, `is_correct = false`, `score = 0`), sin asociar una opción.
+
+## 43.4 Ruleta (base ya existente, confirmada)
+
+El tipo `roulette` y sus tablas `roulettes`, `roulette_items` y `roulette_answers`
+ya forman parte del esquema (migraciones `2026_09_25_*`); el multijugador reutiliza
+esa estructura sin cambios.
+
+---
+
+# 44. Tiempo real (Laravel Reverb)
+
+El multijugador transmite cambios de estado en vivo, con **degradación elegante**
+a *polling* cuando no hay servidor realtime disponible.
+
+## 44.1 Dependencia
+
+- Se incorporó **`laravel/reverb`** (`^1.12`) en `composer.json`/`composer.lock`.
+
+## 44.2 Servicio Docker
+
+- En `docker-compose.yml` se agregó el servicio **`reverb`**
+  (`klassio_reverb`, perfil `realtime`):
+
+  ```bash
+  php artisan reverb:start --host=0.0.0.0 --port=2001
+  ```
+
+- En `docker-compose.dev.yml` el servicio publica el puerto `2001:2001`.
+
+## 44.3 Configuración de entorno
+
+Variables (véase el ejemplo de entorno del proyecto):
+
+```env
+BROADCAST_CONNECTION=reverb
+REVERB_APP_ID=klassio
+REVERB_APP_KEY=...
+REVERB_APP_SECRET=...
+REVERB_HOST=localhost
+REVERB_PORT=2001
+REVERB_SCHEME=http
+REVERB_SERVER_ENABLED=true
+```
+
+## 44.4 Canales y autorización
+
+- `bootstrap/app.php` registra los canales (`withRouting` → `channels`).
+- `routes/channels.php` define el canal privado `game-session.{id}`
+  (autorizado solo para participantes y el docente de la actividad).
+
+## 44.5 Eventos difundidos
+
+En `app/Events/`:
+
+```text
+PlayerJoined, PlayerLeft
+GameStarted, GameFinished
+TurnChanged, ScoreUpdated
+RoundStarted, RoundClosed
+```
+
+## 44.6 Cliente
+
+- El frontend usa **Laravel Echo** cuando Reverb está habilitado.
+- Como respaldo, hay *polling* de `GET /student/game-sessions/{id}/state`.
+- Se corrigió la carga de Bootstrap en `resources/views/partials/assets.blade.php`
+  (se retiró `defer`), para que el JavaScript de las salas funcione correctamente.
+
+---
+
+# 45. Backend agregado
+
+## 45.1 Servicio principal
+
+- **`app/Services/GameSessionService.php`** — motor del multijugador:
+  crear/unirse/unir sala, iniciar, avanzar ronda (`spin`), cierre de ronda por
+  tiempo o por respuestas (`closeRoundIfDue`), cierre de carrera
+  (`closeRaceIfDueLocked`), registro de fallos (`recordMisses`), finalización con
+  ranking (`finish`), estado público (`getState`), notificación de puntaje
+  (`notifyScore`), tiempo restante (`roundTimeRemaining`) y distinción de tipos
+  (`ROUND_TYPES`, `RACE_TYPES`, `isRace`).
+
+Servicios de juego reutilizados/extendidos: `RouletteService`, `KahootService`,
+`MatchingService`, `WordsearchService`, `CrosswordService` (lógica de un jugador
+reutilizada dentro de la sala).
+
+## 45.2 Controladores
+
+```text
+app/Http/Controllers/TeacherGameSessionController.php   (crear, iniciar, spin, panel, estado, resultado)
+app/Http/Controllers/GameSessionController.php          (unirse, jugar, estado, salir, resultado)
+```
+
+Extendidos con `playSession` / endpoints de sala:
+
+```text
+RouletteController   → playSession, spinSession, answerSession
+KahootController     → playSession, fetchQuestion, answerSession
+MatchingController   → playSession
+WordsearchController → playSession
+CrosswordController  → playSession
+```
+
+## 45.3 Policy
+
+- **`app/Policies/GameSessionPolicy.php`** — autoriza `spin`, `play`, `view` y
+  `result` según el rol y la propiedad de la actividad.
+
+## 45.4 Rutas principales (nombres)
+
+```text
+teacher.game-sessions.create / store / show / start / spin / state / result
+student.game-sessions.join-page / join / show / play / state / leave / result
+student.roulette.spin-session / answer-session
+student.kahoot.question-session / answer-session
+student.matching.play-session
+student.wordsearch.play-session
+student.crossword.play-session
+```
+
+> Las respuestas de la **carrera libre** reutilizan los endpoints de un jugador
+> (`student.crossword.answer`, `student.wordsearch.answer`,
+> `student.matching.answer`).
+
+---
+
+# 46. Vistas agregadas
+
+```text
+resources/views/teacher/game_sessions/show.blade.php     (panel del docente; incluye la rama de carrera libre)
+resources/views/student/game_sessions/                   (sala y resultado)
+resources/views/student/roulette/multiplayer.blade.php   (sala por rondas)
+resources/views/student/kahoot/multiplayer.blade.php     (sala por rondas)
+resources/views/student/matching/multiplayer.blade.php   (carrera libre)
+resources/views/student/wordsearch/multiplayer.blade.php (carrera libre)
+resources/views/student/crossword/multiplayer.blade.php  (carrera libre)
+```
+
+El panel del docente muestra en vivo las **posiciones** y el **tiempo restante**;
+en juegos por rondas incluye el control de avance, y en carrera libre lo omite.
+
+---
+
+# 47. Pruebas automatizadas del multijugador
+
+Se añadieron suites de **Feature** específicas (además de las ya existentes):
+
+```text
+tests/Feature/GameSessionTest.php          (ciclo de vida de la sala)
+tests/Feature/MultiplayerRouletteTest.php  (13 pruebas)
+tests/Feature/KahootMultiplayerTest.php    (13 pruebas)
+tests/Feature/MultiplayerRaceTest.php      (15 pruebas)
+```
+
+Cubren, entre otros:
+
+- Creación/unión/inicio de sala y autorización por roles.
+- Rondas simultáneas: misma pregunta para todos, cierre por tiempo y por respuestas.
+- Fallos por tiempo agotado y respuestas duplicadas/fuera de ronda.
+- Carrera libre: respuesta que actualiza la participación de la sala, finalización
+  por completar todos y por `time_limit`, `winner`/`draw`.
+- Rechazo de `spin` en juegos de carrera (`422`).
+- Páginas de sala disponibles para participantes y panel del docente.
+
+**Estado de la suite:** `344` pruebas pasando (`1430` aserciones), de las cuales
+`160` corresponden a los cinco juegos. Además se realizó una **verificación E2E en
+vivo** (nginx + PHP-FPM + MariaDB) con `19/19` comprobaciones correctas para los
+cinco juegos.
+
+---
+
+# 48. Documentación de reglas del multijugador
+
+Se agregó **`docs/multiplayer_rules.md`** con las reglas detalladas por juego
+(sala, rondas, carrera libre, eventos realtime), que sirve como referencia
+funcional del modo multijugador.
+
+---
+
+# 49. Cómo levantar el proyecto con multijugador (realtime)
+
+Además del arranque normal (sección 8/39), para habilitar el servidor realtime:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile realtime up -d
+```
+
+Contenedores esperados:
+
+```text
+klassio_app, klassio_db, klassio_nginx  (base)
+klassio_reverb                           (perfil realtime, puerto 2001)
+```
+
+En el entorno de desarrollo, la aplicación queda disponible en:
+
+```text
+http://localhost:200
+```
+
+Para ejecutar toda la suite (incluye el multijugador):
+
+```bash
+docker compose exec app php artisan test
+```
