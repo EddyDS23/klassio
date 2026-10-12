@@ -46,9 +46,6 @@
         from { opacity: 0; transform: translateX(24px); }
         to { opacity: 1; transform: none; }
     }
-    html[data-theme="dark"] .klassio-toast { background: #052e16; border-color: rgb(34 197 94 / .4); color: #bbf7d0; }
-    html[data-theme="dark"] .klassio-toast.error { background: #450a0a; border-color: rgb(239 68 68 / .4); color: #fecaca; }
-    html[data-theme="dark"] .klassio-toast.info { background: #172554; border-color: rgb(59 130 246 / .4); color: #bfdbfe; }
 </style>
 <script>
     (function () {

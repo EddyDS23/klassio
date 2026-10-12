@@ -53,6 +53,56 @@
     var sfxCache = {};
     var ended = false;
 
+    // --- Web Audio: efectos decodificados en memoria (latencia ~10ms) ---
+    var actx = null;
+    var sfxBuffers = {};
+    var waOK = false;
+
+    function wctx() {
+        if (actx) {
+            if (actx.state === 'suspended') { try { actx.resume(); } catch (e) {} }
+            return actx;
+        }
+        try {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            actx = new AC();
+            waOK = true;
+        } catch (e) { actx = null; }
+        return actx;
+    }
+
+    function decodeAll() {
+        var c = wctx();
+        if (!c) return;
+        Object.keys(SFX).forEach(function (k) {
+            if (sfxBuffers[k]) return;
+            try {
+                fetch(SFX[k]).then(function (r) {
+                    if (!r.ok) throw new Error('http ' + r.status);
+                    return r.arrayBuffer();
+                }).then(function (buf) {
+                    return c.decodeAudioData(buf);
+                }).then(function (decoded) {
+                    sfxBuffers[k] = decoded;
+                }).catch(function () {});
+            } catch (e) {}
+        });
+    }
+
+    function playBuffer(name) {
+        var c = wctx();
+        var buf = sfxBuffers[name];
+        if (!c || !buf) return false;
+        try {
+            var src = c.createBufferSource();
+            src.buffer = buf;
+            src.connect(c.destination);
+            src.start(0);
+            return true;
+        } catch (e) { return false; }
+    }
+
     function paintButtons() {
         var label = muted ? '🔇 Silencio' : '🔊 Sonido';
         var btns = document.querySelectorAll('[data-sound-toggle]');
@@ -94,7 +144,8 @@
         paintButtons();
     }
 
-    // Precarga todo al arrancar el juego para que suene al instante.
+    // Precarga todo al arrancar el juego para que suene al instante:
+    // efectos a memoria (Web Audio) + música en streaming.
     function preloadAll() {
         try {
             Object.keys(SFX).forEach(function (k) {
@@ -104,6 +155,7 @@
                 sfxCache[k] = a;
             });
         } catch (e) {}
+        decodeAll();
     }
 
     function ensureMusic() {
@@ -136,6 +188,8 @@
 
     function sfx(name) {
         if (muted || !SFX[name]) return;
+        // Vía rápida: buffer ya decodificado (casi sin latencia).
+        if (playBuffer(name)) return;
         try {
             var a = sfxCache[name];
             if (!a) {
@@ -207,6 +261,7 @@
             return {
                 game: game, muted: muted, musicStarted: musicStarted,
                 musicPlaying: !!(music && !music.paused && !music.ended),
+                decoded: Object.keys(sfxBuffers),
             };
         },
         startMusic: playMusic,

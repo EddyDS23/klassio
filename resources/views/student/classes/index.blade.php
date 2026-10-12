@@ -14,7 +14,7 @@
 </head>
 
 
-<body class="min-h-screen bg-slate-50 text-slate-900">
+<body class="min-h-screen bg-slate-50 text-slate-900 student-kids">
 
 
     <!-- =====================================
@@ -306,9 +306,9 @@
 
 
                         <span
-                            class="inline-flex rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-100">
+                            class="inline-flex rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-indigo-100">
 
-                            Espacio académico
+                            🎒 Mi mochila
 
                         </span>
 
@@ -320,10 +320,9 @@
                         </h1>
 
 
-                        <p class="mt-4 max-w-lg text-sm leading-7 text-indigo-100 sm:text-base">
+                        <p class="mt-4 max-w-lg text-base font-medium leading-7 text-indigo-100 sm:text-lg">
 
-                            Consulta las materias en las que estás inscrito,
-                            revisa su información y continúa aprendiendo.
+                            Aquí están tus clases. ¡Toca una para jugar! 👇
 
                         </p>
 
@@ -407,23 +406,23 @@
                         <div>
 
 
-                            <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
+                            <p class="text-xs font-black uppercase tracking-widest text-indigo-600">
 
-                                Mi aprendizaje
+                                🎒 Mis clases
 
                             </p>
 
 
                             <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900">
 
-                                Clases inscritas
+                                ¿A qué jugamos hoy?
 
                             </h2>
 
 
-                            <p class="mt-2 text-sm text-slate-500">
+                            <p class="mt-2 text-base font-medium text-slate-500">
 
-                                Selecciona una clase para consultar su contenido.
+                                Toca tu clase 👇
 
                             </p>
 
@@ -542,15 +541,9 @@
                                     <!-- BOTÓN -->
 
                                     <a href="{{ route('student.class.show', $class->id) }}"
-                                        class="mt-6 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                        class="mt-6 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-4 text-base font-black text-white shadow-md transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 active:scale-95">
 
-                                        Ver clase
-
-                                        <span class="ml-2 text-lg">
-
-                                            →
-
-                                        </span>
+                                        ¡Entrar! 🚪
 
                                     </a>
 
@@ -578,24 +571,23 @@
 
                                 <h3 class="mt-5 text-xl font-extrabold text-slate-900">
 
-                                    Aún no tienes clases
+                                    ¿Sin clases? 🎈
 
                                 </h3>
 
 
-                                <p class="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
+                                <p class="mx-auto mt-3 max-w-md text-base font-medium leading-6 text-slate-500">
 
-                                    Todavía no estás inscrito en ninguna clase.
-                                    Puedes unirte utilizando el código proporcionado
-                                    por tu maestro.
+                                    Pide el código a tu maestro
+                                    y únete desde el inicio. 👆
 
                                 </p>
 
 
                                 <a href="{{ route('student.dashboard') }}"
-                                    class="mt-6 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-700">
+                                    class="mt-6 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-7 py-4 text-base font-black text-white shadow-md transition hover:bg-indigo-700 active:scale-95">
 
-                                    Ir al dashboard →
+                                    Ir al inicio 🏠
 
                                 </a>
 
