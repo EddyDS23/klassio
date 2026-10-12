@@ -15,6 +15,7 @@ use App\Services\ParticipationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -330,9 +331,7 @@ class KahootController extends Controller
             ],
         ]);
 
-        $session = GameSession::findOrFail(
-            (int) $validated['session_id']
-        );
+        $session = GameSession::findOrFail((int) $validated['session_id']);
 
         Gate::authorize('play', $session);
 
@@ -342,7 +341,6 @@ class KahootController extends Controller
         );
 
         abort_if($participation === null, 403);
-
         $session = $this->gameSessionService->closeRoundIfDue($session);
 
         if ($session->status !== GameSession::STATUS_PLAYING) {
@@ -415,86 +413,93 @@ class KahootController extends Controller
             ],
         ]);
 
-        $session = GameSession::findOrFail(
-            (int) $validated['session_id']
-        );
+        return DB::transaction(function () use ($request, $validated): JsonResponse {
+            $session = GameSession::query()
+                ->whereKey((int) $validated['session_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        Gate::authorize('play', $session);
+            Gate::authorize('play', $session);
 
-        $participation = $this->gameSessionService->participationOf(
-            $session,
-            $request->user()
-        );
-
-        abort_if($participation === null, 403);
-
-        $session = $this->gameSessionService->closeRoundIfDue($session);
-
-        if ($session->status !== GameSession::STATUS_PLAYING) {
-            return response()->json([
-                'completed' => true,
-                'finished' => true,
-                'participation_score' => $participation->fresh()->score,
-            ]);
-        }
-
-        $currentQuestionId = $this->gameSessionService->currentKahootQuestionId($session);
-
-        if ($currentQuestionId === null) {
-            return response()->json([
-                'error' => 'La pregunta terminó. Espera a que el profesor avance.',
-            ], 422);
-        }
-
-        if ($currentQuestionId !== (int) $validated['question_id']) {
-            return response()->json([
-                'error' => 'Responde la pregunta actual.',
-            ], 422);
-        }
-
-        if ($this->gameSessionService->hasAnsweredCurrentRound($session, $participation)) {
-            return response()->json([
-                'error' => 'Ya respondiste esta pregunta.',
-            ], 422);
-        }
-
-        $question = Question::query()
-            ->where('kahoot_id', $session->activity->kahoot->id)
-            ->find((int) $validated['question_id']);
-
-        if ($question === null) {
-            return response()->json([
-                'error' => 'La pregunta no pertenece a esta actividad.',
-            ], 422);
-        }
-
-        $result = $this->kahootService->submitAnswer(
-            $participation,
-            $question,
-            (int) $validated['option_id']
-        );
-
-        if (isset($result['error'])) {
-            return response()->json(
-                ['error' => $result['error']],
-                (int) ($result['status'] ?? 422)
+            $participation = $this->gameSessionService->participationOf(
+                $session,
+                $request->user()
             );
-        }
 
-        $this->gameSessionService->notifyScore(
-            $session,
-            $participation->fresh()
-        );
+            abort_if($participation === null, 403);
+            $participation = Participation::query()
+                ->whereKey($participation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $session = $this->gameSessionService->closeRoundIfDue($session->fresh());
-        $finished = $session->status === GameSession::STATUS_FINISHED;
+            $session = $this->gameSessionService->closeRoundIfDue($session);
 
-        return response()->json(array_merge($result, [
-            'finished' => $finished,
-            'waiting_for_others' => ! $finished
-                && $this->gameSessionService->currentKahootQuestionId($session) === $currentQuestionId,
-            'participation_score' => $participation->fresh()->score,
-            'session_status' => $finished ? 'finished' : $session->status,
-        ]));
+            if ($session->status !== GameSession::STATUS_PLAYING) {
+                return response()->json([
+                    'completed' => true,
+                    'finished' => true,
+                    'participation_score' => $participation->fresh()->score,
+                ]);
+            }
+
+            $currentQuestionId = $this->gameSessionService->currentKahootQuestionId($session);
+
+            if ($currentQuestionId === null) {
+                return response()->json([
+                    'error' => 'La pregunta terminó. Espera a que el profesor avance.',
+                ], 422);
+            }
+
+            if ($currentQuestionId !== (int) $validated['question_id']) {
+                return response()->json([
+                    'error' => 'Responde la pregunta actual.',
+                ], 422);
+            }
+
+            if ($this->gameSessionService->hasAnsweredCurrentRound($session, $participation)) {
+                return response()->json([
+                    'error' => 'Ya respondiste esta pregunta.',
+                ], 422);
+            }
+
+            $question = Question::query()
+                ->where('kahoot_id', $session->activity->kahoot->id)
+                ->find((int) $validated['question_id']);
+
+            if ($question === null) {
+                return response()->json([
+                    'error' => 'La pregunta no pertenece a esta actividad.',
+                ], 422);
+            }
+
+            $result = $this->kahootService->submitAnswer(
+                $participation,
+                $question,
+                (int) $validated['option_id']
+            );
+
+            if (isset($result['error'])) {
+                return response()->json(
+                    ['error' => $result['error']],
+                    (int) ($result['status'] ?? 422)
+                );
+            }
+
+            $this->gameSessionService->notifyScore(
+                $session,
+                $participation->fresh()
+            );
+
+            $session = $this->gameSessionService->closeRoundIfDue($session->fresh());
+            $finished = $session->status === GameSession::STATUS_FINISHED;
+
+            return response()->json(array_merge($result, [
+                'finished' => $finished,
+                'waiting_for_others' => ! $finished
+                    && $this->gameSessionService->currentKahootQuestionId($session) === $currentQuestionId,
+                'participation_score' => $participation->fresh()->score,
+                'session_status' => $finished ? 'finished' : $session->status,
+            ]));
+        });
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\GameSession;
+use App\Models\Team;
 use App\Models\User;
 
 class GameSessionPolicy
@@ -114,9 +115,18 @@ class GameSessionPolicy
      */
     private function isParticipant(User $user, GameSession $session): bool
     {
-        return $session->participations()
-            ->where('student_id', $user->id)
-            ->whereIn('status', ['waiting', 'started', 'completed'])
-            ->exists();
+        $query = $session->participations()
+            ->whereIn('status', ['waiting', 'started', 'completed']);
+
+        if ($session->activity->mode === 'team') {
+            $teamId = Team::query()
+                ->where('activity_id', $session->activity_id)
+                ->whereHas('members', fn ($members) => $members->where('student_id', $user->id))
+                ->value('id');
+
+            return $teamId !== null && $query->where('team_id', $teamId)->exists();
+        }
+
+        return $query->where('student_id', $user->id)->exists();
     }
 }

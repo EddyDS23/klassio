@@ -8,6 +8,7 @@ use App\Http\Requests\StoreRouletteRequest;
 use App\Http\Requests\UpdateRouletteRequest;
 use App\Models\Activity;
 use App\Models\GameSession;
+use App\Models\Participation;
 use App\Models\Roulette;
 use App\Models\RouletteAnswer;
 use App\Models\RouletteItem;
@@ -17,6 +18,7 @@ use App\Services\RouletteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -440,79 +442,86 @@ class RouletteController extends Controller
     ): JsonResponse {
         $data = $request->validated();
 
-        $session = GameSession::findOrFail(
-            (int) $data['session_id']
-        );
+        return DB::transaction(function () use ($request, $data): JsonResponse {
+            $session = GameSession::query()
+                ->whereKey((int) $data['session_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        Gate::authorize('play', $session);
+            Gate::authorize('play', $session);
 
-        $participation = $this->gameSessionService->participationOf(
-            $session,
-            $request->user()
-        );
+            $participation = $this->gameSessionService->participationOf(
+                $session,
+                $request->user()
+            );
 
-        abort_if($participation === null, 403);
+            abort_if($participation === null, 403);
+            $participation = Participation::query()
+                ->whereKey($participation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $session = $this->gameSessionService->closeRoundIfDue($session);
+            $session = $this->gameSessionService->closeRoundIfDue($session);
 
-        if ($session->status !== GameSession::STATUS_PLAYING) {
-            return response()->json([
-                'completed' => true,
-                'finished' => true,
+            if ($session->status !== GameSession::STATUS_PLAYING) {
+                return response()->json([
+                    'completed' => true,
+                    'finished' => true,
+                    'participation_score' => $participation->fresh()->score,
+                ]);
+            }
+
+            $pendingItemId = $this->gameSessionService->currentRouletteItemId($session);
+
+            if ($pendingItemId === null) {
+                return response()->json([
+                    'error' => 'La ronda terminó. Espera a que el profesor gire la ruleta.',
+                ], 422);
+            }
+
+            if ($pendingItemId !== (int) $data['roulette_item_id']) {
+                return response()->json([
+                    'error' => 'Responde la pregunta actual de la ruleta.',
+                ], 422);
+            }
+
+            if ($this->gameSessionService->hasAnsweredCurrentRound($session, $participation)) {
+                return response()->json([
+                    'error' => 'Ya respondiste esta pregunta.',
+                ], 422);
+            }
+
+            $roulette = $session->activity->roulette;
+
+            abort_if($roulette === null, 404);
+
+            $result = $this->rouletteService->checkAnswer(
+                $roulette,
+                $participation,
+                (int) $data['roulette_item_id'],
+                (string) $data['response'],
+                autoFinish: false
+            );
+
+            if ($result['error'] !== null) {
+                return response()->json($result, 422);
+            }
+
+            $this->gameSessionService->notifyScore(
+                $session,
+                $participation->fresh()
+            );
+
+            $session = $this->gameSessionService->closeRoundIfDue($session->fresh());
+            $finished = $session->status === GameSession::STATUS_FINISHED;
+
+            return response()->json(array_merge($result, [
+                'finished' => $finished,
+                'waiting_for_others' => ! $finished
+                    && $this->gameSessionService->currentRouletteItemId($session) === $pendingItemId,
                 'participation_score' => $participation->fresh()->score,
-            ]);
-        }
-
-        $pendingItemId = $this->gameSessionService->currentRouletteItemId($session);
-
-        if ($pendingItemId === null) {
-            return response()->json([
-                'error' => 'La ronda terminó. Espera a que el profesor gire la ruleta.',
-            ], 422);
-        }
-
-        if ($pendingItemId !== (int) $data['roulette_item_id']) {
-            return response()->json([
-                'error' => 'Responde la pregunta actual de la ruleta.',
-            ], 422);
-        }
-
-        if ($this->gameSessionService->hasAnsweredCurrentRound($session, $participation)) {
-            return response()->json([
-                'error' => 'Ya respondiste esta pregunta.',
-            ], 422);
-        }
-
-        $roulette = $session->activity->roulette;
-
-        abort_if($roulette === null, 404);
-
-        $result = $this->rouletteService->checkAnswer(
-            $roulette,
-            $participation,
-            (int) $data['roulette_item_id'],
-            (string) $data['response'],
-            autoFinish: false
-        );
-
-        if ($result['error'] !== null) {
-            return response()->json($result, 422);
-        }
-
-        $this->gameSessionService->notifyScore(
-            $session,
-            $participation->fresh()
-        );
-
-        $session = $this->gameSessionService->closeRoundIfDue($session->fresh());
-        $finished = $session->status === GameSession::STATUS_FINISHED;
-
-        return response()->json(array_merge($result, [
-            'finished' => $finished,
-            'waiting_for_others' => ! $finished
-                && $this->gameSessionService->currentRouletteItemId($session) === $pendingItemId,
-            'participation_score' => $participation->fresh()->score,
-            'session_status' => $finished ? 'finished' : $session->status,
-        ]));
+                'session_status' => $finished ? 'finished' : $session->status,
+            ]));
+        });
     }
 }

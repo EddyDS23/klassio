@@ -10,6 +10,7 @@ use App\Models\CrosswordWord;
 use App\Models\GameSession;
 use App\Models\Participation;
 use App\Services\CrosswordService;
+use App\Services\GameSessionAnswerService;
 use App\Services\GameSessionService;
 use App\Services\ParticipationService;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,8 @@ class CrosswordController extends Controller
     public function __construct(
         private CrosswordService $crosswordService,
         private ParticipationService $participationService,
-        private GameSessionService $gameSessionService
+        private GameSessionService $gameSessionService,
+        private GameSessionAnswerService $gameSessionAnswerService,
     ) {}
 
     /**
@@ -224,6 +226,12 @@ class CrosswordController extends Controller
                 'integer',
                 'exists:participations,id',
             ],
+            'session_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                'exists:game_sessions,id',
+            ],
             'crossword_word_id' => [
                 'required',
                 'integer',
@@ -236,96 +244,65 @@ class CrosswordController extends Controller
             ],
         ]);
 
-        $participation = Participation::findOrFail(
-            $validated['participation_id']
-        );
-
-        Gate::authorize('answer', $participation);
-
         $crosswordWord = CrosswordWord::findOrFail(
             $validated['crossword_word_id']
         );
 
-        // Verificar que la palabra pertenece a la actividad
-        abort_if(
-            $crosswordWord->crossword->activity_id !==
-                $participation->activity_id,
-            403
+        $activity = $crosswordWord->crossword->activity;
+
+        $result = $this->gameSessionAnswerService->answer(
+            $activity,
+            (int) $validated['participation_id'],
+            isset($validated['session_id']) ? (int) $validated['session_id'] : null,
+            function (Participation $participation) use ($crosswordWord, $validated): array {
+                abort_if($crosswordWord->crossword->activity_id !== $participation->activity_id, 403);
+
+                $alreadyAnswered = CrosswordAnswer::query()
+                    ->where('participation_id', $participation->id)
+                    ->where('crossword_word_id', $crosswordWord->id)
+                    ->exists();
+
+                if ($alreadyAnswered) {
+                    return ['error' => 'Esta palabra ya fue respondida.'];
+                }
+
+                $isCorrect = $this->crosswordService->validateAnswer(
+                    $crosswordWord,
+                    $validated['response']
+                );
+                $score = $isCorrect ? $crosswordWord->score : 0;
+
+                CrosswordAnswer::create([
+                    'participation_id' => $participation->id,
+                    'crossword_word_id' => $crosswordWord->id,
+                    'response' => $validated['response'],
+                    'is_correct' => $isCorrect,
+                    'score' => $score,
+                ]);
+
+                $this->participationService->syncScore($participation);
+
+                $totalWords = $crosswordWord->crossword->words()->count();
+                $answeredWords = CrosswordAnswer::where('participation_id', $participation->id)->count();
+                $completed = $totalWords > 0 && $answeredWords >= $totalWords;
+
+                if ($completed) {
+                    $this->participationService->finish($participation->fresh());
+                }
+
+                return [
+                    'is_correct' => $isCorrect,
+                    'score' => $score,
+                    'correct_word' => $isCorrect ? null : $crosswordWord->word,
+                    'completed' => $completed,
+                ];
+            },
         );
 
-        // Verificar que no haya sido respondida anteriormente
-        $alreadyAnswered = CrosswordAnswer::where(
-            'participation_id',
-            $participation->id
-        )
-            ->where(
-                'crossword_word_id',
-                $crosswordWord->id
-            )
-            ->exists();
-
-        if ($alreadyAnswered) {
-            return response()->json([
-                'error' => 'Esta palabra ya fue respondida.',
-            ], 409);
+        if (isset($result['error'])) {
+            return response()->json($result, 409);
         }
 
-        // Validar respuesta
-        $isCorrect = $this->crosswordService->validateAnswer(
-            $crosswordWord,
-            $validated['response']
-        );
-
-        $score = $isCorrect
-            ? $crosswordWord->score
-            : 0;
-
-        // Guardar respuesta
-        CrosswordAnswer::create([
-            'participation_id' => $participation->id,
-            'crossword_word_id' => $crosswordWord->id,
-            'response' => $validated['response'],
-            'is_correct' => $isCorrect,
-            'score' => $score,
-        ]);
-
-        // Actualizar score
-        $this->participationService->syncScore($participation);
-
-        /*
-     * Comprobar si ya se respondieron
-     * todas las palabras.
-     */
-        $totalWords = $crosswordWord
-            ->crossword
-            ->words()
-            ->count();
-
-        $answeredWords = CrosswordAnswer::where(
-            'participation_id',
-            $participation->id
-        )->count();
-
-        $completed =
-            $totalWords > 0 &&
-            $answeredWords >= $totalWords;
-
-        /*
-     * Finalizar Participation.
-     */
-        if ($completed) {
-            $this->participationService->finish(
-                $participation->fresh()
-            );
-        }
-
-        return response()->json([
-            'is_correct' => $isCorrect,
-            'score' => $score,
-            'correct_word' => $isCorrect
-                ? null
-                : $crosswordWord->word,
-            'completed' => $completed,
-        ]);
+        return response()->json($result);
     }
 }

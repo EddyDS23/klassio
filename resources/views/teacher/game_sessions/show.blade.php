@@ -64,7 +64,7 @@
                             class="list-group-item d-flex align-items-center justify-content-between"
                             data-participation-id="{{ $p->id }}"
                         >
-                            <span>{{ $p->student?->name }}</span>
+                            <span>{{ $p->team?->name ?? $p->student?->name }}</span>
                             <span class="text-success small">Conectado</span>
                         </li>
                     @endforeach
@@ -238,12 +238,21 @@
             answeredEl.textContent = answered;
 
             if (roundOpen && state.current_item) {
-                const opts = state.current_item.options
-                    .map((o, i) => '<li><strong>' + (o.key ? o.key.toUpperCase() : i + 1) + '.</strong> ' + o.text + '</li>')
-                    .join('');
-                questionEl.innerHTML =
-                    '<p class="fw-semibold mb-2">' + state.current_item.question + '</p>' +
-                    '<ul class="mb-0">' + opts + '</ul>';
+                const question = document.createElement('p');
+                question.className = 'fw-semibold mb-2';
+                question.textContent = state.current_item.question;
+
+                const options = document.createElement('ul');
+                options.className = 'mb-0';
+                state.current_item.options.forEach((option, index) => {
+                    const item = document.createElement('li');
+                    const label = document.createElement('strong');
+                    label.textContent = (option.key ? option.key.toUpperCase() : index + 1) + '. ';
+                    item.append(label, document.createTextNode(option.text));
+                    options.appendChild(item);
+                });
+
+                questionEl.replaceChildren(question, options);
 
                 spinBtn.disabled = true;
                 spinBtn.textContent = 'Ronda en curso';
@@ -280,7 +289,7 @@
                     badge.textContent = 'Respondió';
                 } else {
                     badge.className = 'text-success small';
-                    badge.textContent = 'Conectado';
+                    badge.textContent = 'En la sala';
                 }
                 li.appendChild(badge);
 
@@ -296,18 +305,23 @@
 
                 const standings = document.getElementById('race-standings');
                 if (standings) {
-                    standings.innerHTML = state.players
+                    const entries = state.players
                         .filter((p) => p.status !== 'abandoned')
                         .slice()
                         .sort((a, b) => b.score - a.score)
                         .map((p) => {
                             const suffix = p.status === 'completed' ? ' ✓' : '';
-                            return '<li class="list-group-item d-flex justify-content-between align-items-center">' +
-                                '<span>' + p.name + '</span>' +
-                                '<span class="badge text-bg-light">' + p.score + ' pts' + suffix + '</span>' +
-                                '</li>';
-                        })
-                        .join('');
+                            const item = document.createElement('li');
+                            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            const name = document.createElement('span');
+                            name.textContent = p.name;
+                            const score = document.createElement('span');
+                            score.className = 'badge text-bg-light';
+                            score.textContent = p.score + ' pts' + suffix;
+                            item.append(name, score);
+                            return item;
+                        });
+                    standings.replaceChildren(...entries);
                 }
             }
 

@@ -18,6 +18,7 @@ use App\Models\Participation;
 use App\Models\Question;
 use App\Models\RouletteAnswer;
 use App\Models\RouletteItem;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -96,18 +97,41 @@ class GameSessionService
 
     public function isParticipant(GameSession $session, User $user): bool
     {
-        return $session->participations()
-            ->where('student_id', $user->id)
-            ->whereIn('status', ['waiting', 'started'])
-            ->exists();
+        $query = $session->participations()
+            ->whereIn('status', ['waiting', 'started']);
+
+        if ($session->activity->mode === 'team') {
+            $teamId = Team::query()
+                ->where('activity_id', $session->activity_id)
+                ->whereHas('members', fn ($members) => $members->where('student_id', $user->id))
+                ->value('id');
+
+            return $teamId !== null && $query->where('team_id', $teamId)->exists();
+        }
+
+        return $query->where('student_id', $user->id)->exists();
     }
 
     public function participationOf(
         GameSession $session,
         User $user
     ): ?Participation {
-        return $session->participations()
-            ->where('student_id', $user->id)
+        $query = $session->participations();
+
+        if ($session->activity->mode === 'team') {
+            $teamId = Team::query()
+                ->where('activity_id', $session->activity_id)
+                ->whereHas('members', fn ($members) => $members->where('student_id', $user->id))
+                ->value('id');
+
+            if ($teamId === null) {
+                return null;
+            }
+
+            return $query->where('team_id', $teamId)->orderBy('id')->first();
+        }
+
+        return $query->where('student_id', $user->id)
             ->orderBy('id')
             ->first();
     }
@@ -119,57 +143,75 @@ class GameSessionService
      */
     public function join(GameSession $session, User $student): Participation
     {
-        $activity = $session->activity;
+        return DB::transaction(function () use ($session, $student): Participation {
+            $session = GameSession::query()
+                ->whereKey($session->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $activity = $session->activity;
+            $team = null;
 
-        if ($activity->status !== 'published') {
-            throw new RuntimeException('La actividad no está disponible.');
-        }
+            if ($activity->status !== 'published') {
+                throw new RuntimeException('La actividad no está disponible.');
+            }
 
-        if ($activity->due_at !== null && now()->isAfter($activity->due_at)) {
-            throw new RuntimeException('La fecha límite de esta actividad ya pasó.');
-        }
+            if ($activity->due_at !== null && now()->isAfter($activity->due_at)) {
+                throw new RuntimeException('La fecha límite de esta actividad ya pasó.');
+            }
 
-        if (! in_array($session->status, [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING], true)) {
-            throw new RuntimeException('Esta sala ya no acepta jugadores.');
-        }
+            if (! in_array($session->status, [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING], true)) {
+                throw new RuntimeException('Esta sala ya no acepta jugadores.');
+            }
 
-        if ($this->isParticipant($session, $student)) {
-            throw new RuntimeException('Ya estás en esta sala.');
-        }
+            if ($this->isParticipant($session, $student)) {
+                throw new RuntimeException('Ya estás en esta sala.');
+            }
 
-        $count = $session->participations()
-            ->whereIn('status', ['waiting', 'started'])
-            ->count();
+            $count = $session->participations()
+                ->whereIn('status', ['waiting', 'started'])
+                ->count();
 
-        if ($count >= $session->max_players) {
-            throw new RuntimeException('La sala alcanzó su máximo de jugadores.');
-        }
+            if ($count >= $session->max_players) {
+                throw new RuntimeException('La sala alcanzó su máximo de jugadores.');
+            }
 
-        $enrolled = Enrollment::where('class_id', $activity->class_id)
-            ->where('student_id', $student->id)
-            ->where('status', 'active')
-            ->exists();
+            $enrolled = Enrollment::where('class_id', $activity->class_id)
+                ->where('student_id', $student->id)
+                ->where('status', 'active')
+                ->exists();
 
-        if (! $enrolled) {
-            throw new RuntimeException('No estás inscrito en la clase de esta actividad.');
-        }
+            if (! $enrolled) {
+                throw new RuntimeException('No estás inscrito en la clase de esta actividad.');
+            }
 
-        $participation = Participation::create([
-            'game_session_id' => $session->id,
-            'activity_id' => $activity->id,
-            'student_id' => $student->id,
-            'team_id' => null,
-            'attempt' => 1,
-            'status' => 'waiting',
-            'score' => 0,
-        ]);
+            if ($activity->mode === 'team') {
+                $team = Team::query()
+                    ->where('activity_id', $activity->id)
+                    ->whereHas('members', fn ($members) => $members->where('student_id', $student->id))
+                    ->first();
 
-        event(new PlayerJoined($session, [
-            'participation_id' => $participation->id,
-            'name' => $student->name,
-        ]));
+                if ($team === null) {
+                    throw new RuntimeException('No perteneces a un equipo de esta actividad.');
+                }
+            }
 
-        return $participation;
+            $participation = Participation::create([
+                'game_session_id' => $session->id,
+                'activity_id' => $activity->id,
+                'student_id' => $team === null ? $student->id : null,
+                'team_id' => $team?->id,
+                'attempt' => 1,
+                'status' => 'waiting',
+                'score' => 0,
+            ]);
+
+            DB::afterCommit(fn () => event(new PlayerJoined($session, [
+                'participation_id' => $participation->id,
+                'name' => $team?->name ?? $student->name,
+            ])));
+
+            return $participation;
+        });
     }
 
     /**
@@ -177,54 +219,66 @@ class GameSessionService
      */
     public function leave(GameSession $session, User $user): GameSession
     {
-        $participation = $this->participationOf($session, $user);
+        return DB::transaction(function () use ($session, $user): GameSession {
+            $session = GameSession::query()->whereKey($session->id)->lockForUpdate()->firstOrFail();
+            $participation = $this->participationOf($session, $user);
 
-        if ($participation === null) {
-            throw new RuntimeException('No perteneces a esta sala.');
-        }
-
-        if (in_array($session->status, [GameSession::STATUS_FINISHED, GameSession::STATUS_CANCELLED], true)) {
-            throw new RuntimeException('Esta partida ya finalizó.');
-        }
-
-        $participation->status = 'abandoned';
-        $participation->completed_at = now();
-        $participation->elapsed_seconds = $this->elapsedSeconds($session);
-        $participation->save();
-
-        $wasTurn = $session->fresh()->current_turn_participation_id === $participation->id;
-
-        if ($wasTurn) {
-            $this->nextTurn($session->fresh());
-        }
-
-        if ($session->status === GameSession::STATUS_PLAYING) {
-            $activePlayers = $session->participations()
-                ->where('status', 'started')
-                ->count();
-
-            if ($activePlayers < self::MIN_PLAYERS) {
-                return $this->finish($session->fresh());
+            if ($participation === null) {
+                throw new RuntimeException('No perteneces a esta sala.');
             }
-        }
 
-        if (
-            $session->status === GameSession::STATUS_WAITING &&
-            $session->participations()
-                ->whereIn('status', ['waiting', 'started'])
-                ->count() === 0
-        ) {
-            $session->fresh()->update([
-                'status' => GameSession::STATUS_CANCELLED,
-            ]);
-        }
+            $participation = Participation::query()
+                ->whereKey($participation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        event(new PlayerLeft($session->fresh(), [
-            'participation_id' => $participation->id,
-            'name' => $user->name,
-        ]));
+            if (in_array($session->status, [GameSession::STATUS_FINISHED, GameSession::STATUS_CANCELLED], true)) {
+                throw new RuntimeException('Esta partida ya finalizó.');
+            }
 
-        return $session->fresh();
+            if (in_array($participation->status, ['completed', 'abandoned', 'expired'], true)) {
+                return $session;
+            }
+
+            $participation->status = 'abandoned';
+            $participation->completed_at = now();
+            $participation->elapsed_seconds = $this->elapsedSeconds($session);
+            $participation->save();
+
+            $wasTurn = $session->fresh()->current_turn_participation_id === $participation->id;
+
+            if ($wasTurn) {
+                $this->nextTurn($session->fresh());
+            }
+
+            if ($session->status === GameSession::STATUS_PLAYING) {
+                $activePlayers = $session->participations()
+                    ->where('status', 'started')
+                    ->count();
+
+                if ($activePlayers < self::MIN_PLAYERS) {
+                    return $this->finish($session->fresh());
+                }
+            }
+
+            if (
+                $session->status === GameSession::STATUS_WAITING &&
+                $session->participations()
+                    ->whereIn('status', ['waiting', 'started'])
+                    ->count() === 0
+            ) {
+                $session->fresh()->update([
+                    'status' => GameSession::STATUS_CANCELLED,
+                ]);
+            }
+
+            DB::afterCommit(fn () => event(new PlayerLeft($session->fresh(), [
+                'participation_id' => $participation->id,
+                'name' => $participation->team?->name ?? $user->name,
+            ])));
+
+            return $session->fresh();
+        });
     }
 
     /**
@@ -255,35 +309,40 @@ class GameSessionService
      */
     public function start(GameSession $session): GameSession
     {
-        if (! $this->canStart($session)) {
-            throw new RuntimeException('Se necesitan al menos 2 jugadores para iniciar.');
-        }
+        return DB::transaction(function () use ($session): GameSession {
+            $session = GameSession::query()->whereKey($session->id)->lockForUpdate()->firstOrFail();
 
-        $session->update([
-            'status' => GameSession::STATUS_PLAYING,
-            'started_at' => now(),
-        ]);
+            if (! $this->canStart($session)) {
+                throw new RuntimeException('Se necesitan al menos 2 jugadores para iniciar.');
+            }
 
-        $startedAt = now();
+            $session->update([
+                'status' => GameSession::STATUS_PLAYING,
+                'started_at' => now(),
+            ]);
 
-        foreach ($this->players($session) as $participation) {
-            $participation->status = 'started';
-            $participation->started_at = $startedAt;
-            $participation->save();
-        }
+            $startedAt = now();
 
-        $first = $session->participations()
-            ->where('status', 'started')
-            ->orderBy('id')
-            ->first();
+            foreach ($this->players($session) as $participation) {
+                $participation = Participation::query()->whereKey($participation->id)->lockForUpdate()->firstOrFail();
+                $participation->status = 'started';
+                $participation->started_at = $startedAt;
+                $participation->save();
+            }
 
-        $session->update([
-            'current_turn_participation_id' => $first?->id,
-        ]);
+            $first = $session->participations()
+                ->where('status', 'started')
+                ->orderBy('id')
+                ->first();
 
-        event(new GameStarted($session->fresh()));
+            $session->update([
+                'current_turn_participation_id' => $first?->id,
+            ]);
 
-        return $session->fresh();
+            DB::afterCommit(fn () => event(new GameStarted($session->fresh())));
+
+            return $session->fresh();
+        });
     }
 
     public function currentPlayer(GameSession $session): ?Participation
@@ -338,10 +397,10 @@ class GameSessionService
             'current_turn_participation_id' => $next->id,
         ]);
 
-        event(new TurnChanged($session->fresh(), [
+        DB::afterCommit(fn () => event(new TurnChanged($session->fresh(), [
             'participation_id' => $next->id,
-            'name' => $next->student->name,
-        ]));
+            'name' => $next->team?->name ?? $next->student?->name,
+        ])));
 
         return $next->fresh();
     }
@@ -413,10 +472,10 @@ class GameSessionService
 
             $locked->update(['state' => $state]);
 
-            event(new RoundStarted($locked->fresh(), [
+            DB::afterCommit(fn () => event(new RoundStarted($locked->fresh(), [
                 'roulette_item_id' => $next->id,
                 'round_seconds' => $safeSeconds,
-            ]));
+            ])));
 
             return $locked->fresh();
         });
@@ -489,10 +548,10 @@ class GameSessionService
 
             $locked->update(['state' => $state]);
 
-            event(new RoundStarted($locked->fresh(), [
+            DB::afterCommit(fn () => event(new RoundStarted($locked->fresh(), [
                 'question_id' => $next->id,
                 'round_seconds' => $safeSeconds,
-            ]));
+            ])));
 
             return $locked->fresh();
         });
@@ -590,10 +649,10 @@ class GameSessionService
         $locked->update(['state' => $state]);
         $locked = $locked->fresh();
 
-        event(new RoundClosed($locked, [
+        DB::afterCommit(fn () => event(new RoundClosed($locked->fresh(), [
             'roulette_item_id' => $type === 'roulette' ? $itemId : null,
             'question_id' => $type === 'kahoot' ? $itemId : null,
-        ]));
+        ])));
 
         if ($this->noItemsRemain($locked)) {
             return $this->finish($locked);
@@ -828,57 +887,52 @@ class GameSessionService
      */
     public function finish(GameSession $session): GameSession
     {
-        if ($session->status === GameSession::STATUS_FINISHED) {
+        return DB::transaction(function () use ($session): GameSession {
+            $session = GameSession::query()->whereKey($session->id)->lockForUpdate()->firstOrFail();
+
+            if ($session->status === GameSession::STATUS_FINISHED) {
+                return $session;
+            }
+
+            $participations = $session->participations()
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+            $eligible = $participations->whereIn('status', ['started', 'completed', 'expired']);
+            $winner = null;
+            $resultType = GameSession::RESULT_COLLABORATIVE;
+
+            if ($eligible->isNotEmpty()) {
+                $max = $eligible->max('score');
+                $top = $eligible->filter(fn (Participation $p) => $p->score === $max);
+                $resultType = $top->count() >= 2 ? GameSession::RESULT_DRAW : GameSession::RESULT_WINNER;
+                $winner = $resultType === GameSession::RESULT_WINNER ? $top->first() : null;
+            }
+
+            $finishedAt = now();
+            foreach ($participations as $participation) {
+                if ($participation->status === 'started') {
+                    $participation->update([
+                        'status' => 'completed',
+                        'completed_at' => $finishedAt,
+                        'elapsed_seconds' => $this->elapsedSeconds($session),
+                    ]);
+                } elseif ($participation->status === 'waiting') {
+                    $participation->update(['status' => 'abandoned']);
+                }
+            }
+
+            $session->update([
+                'status' => GameSession::STATUS_FINISHED,
+                'finished_at' => $finishedAt,
+                'result_type' => $resultType,
+                'winner_participation_id' => $winner?->id,
+            ]);
+
+            DB::afterCommit(fn () => event(new GameFinished($session->fresh())));
+
             return $session->fresh();
-        }
-
-        $active = $session->participations()
-            ->whereIn('status', ['started', 'completed', 'expired'])
-            ->get();
-
-        $winner = null;
-        $resultType = GameSession::RESULT_COLLABORATIVE;
-
-        if ($active->isNotEmpty()) {
-            $max = $active->max('score');
-
-            $top = $active->filter(
-                fn (Participation $p) => $p->score === $max
-            );
-
-            $resultType = $top->count() >= 2
-                ? GameSession::RESULT_DRAW
-                : GameSession::RESULT_WINNER;
-
-            if ($resultType === GameSession::RESULT_WINNER) {
-                $winner = $top->first();
-            }
-        }
-
-        $finishedAt = now();
-
-        foreach ($session->participations as $participation) {
-            if ($participation->status === 'started') {
-                $participation->status = 'completed';
-                $participation->completed_at = $finishedAt;
-                $participation->elapsed_seconds = $this->elapsedSeconds($session);
-                $participation->save();
-            } elseif ($participation->status === 'waiting') {
-                $participation->status = 'abandoned';
-                $participation->save();
-            }
-        }
-
-        $session->update([
-            'status' => GameSession::STATUS_FINISHED,
-            'finished_at' => $finishedAt,
-            'result_type' => $resultType,
-            'winner_participation_id' => $winner?->id,
-        ]);
-
-        event(new GameFinished($session->fresh()));
-
-        return $session->fresh();
+        });
     }
 
     /**
@@ -886,11 +940,11 @@ class GameSessionService
      */
     public function notifyScore(GameSession $session, Participation $participation): void
     {
-        event(new ScoreUpdated($session, [
+        DB::afterCommit(fn () => event(new ScoreUpdated($session->fresh(), [
             'participation_id' => $participation->id,
-            'name' => $participation->student->name,
+            'name' => $participation->team?->name ?? $participation->student?->name,
             'score' => $participation->score,
-        ]));
+        ])));
     }
 
     /**
@@ -978,12 +1032,11 @@ class GameSessionService
                 ->get()
                 ->map(fn (Participation $p) => [
                     'participation_id' => $p->id,
-                    'name' => $p->student?->name,
+                    'name' => $p->team?->name ?? $p->student?->name,
                     'score' => $p->score,
                     'status' => $p->status,
                     'answered' => $this->answeredCount($activity, $p),
                     'answered_current' => $answeredCurrent->contains($p->id),
-                    'connected' => true,
                 ])
                 ->all(),
         ];

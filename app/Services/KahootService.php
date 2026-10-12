@@ -2,17 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\Activity;
 use App\Models\Kahoot;
 use App\Models\KahootAnswer;
 use App\Models\Option;
 use App\Models\Participation;
 use App\Models\Question;
+use Illuminate\Support\Facades\DB;
 
 class KahootService
 {
-
-    public function __construct(private ParticipationService $participationService){}
+    public function __construct(private ParticipationService $participationService) {}
     // -------------------------------------------------------------------------
     // Configuración
     // -------------------------------------------------------------------------
@@ -44,19 +43,19 @@ class KahootService
     {
         foreach ($questions as $position => $questionData) {
             $question = Question::create([
-                'kahoot_id'  => $kahoot->id,
-                'question'   => $questionData['question'],
-                'position'   => $position + 1,
+                'kahoot_id' => $kahoot->id,
+                'question' => $questionData['question'],
+                'position' => $position + 1,
                 'time_limit' => $questionData['time_limit'],
-                'score'      => $questionData['score'],
+                'score' => $questionData['score'],
             ]);
 
             foreach ($questionData['options'] as $optionPosition => $optionData) {
                 Option::create([
                     'question_id' => $question->id,
-                    'text'        => $optionData['text'],
-                    'is_correct'  => isset($optionData['is_correct']) && $optionData['is_correct'] == '1',
-                    'position'    => $optionPosition + 1,
+                    'text' => $optionData['text'],
+                    'is_correct' => isset($optionData['is_correct']) && $optionData['is_correct'] == '1',
+                    'position' => $optionPosition + 1,
                 ]);
             }
         }
@@ -83,15 +82,15 @@ class KahootService
             ->firstOrFail();
 
         $isCorrect = (bool) $option->is_correct;
-        $score     = $isCorrect ? $question->score : 0;
+        $score = $isCorrect ? $question->score : 0;
 
         $correctOption = Option::where('question_id', $question->id)
             ->where('is_correct', true)
             ->first();
 
         return [
-            'is_correct'        => $isCorrect,
-            'score'             => $score,
+            'is_correct' => $isCorrect,
+            'score' => $score,
             'correct_option_id' => $correctOption?->id,
         ];
     }
@@ -101,6 +100,21 @@ class KahootService
      * Verifica que no haya respondido ya esta pregunta.
      */
     public function submitAnswer(
+        Participation $participation,
+        Question $question,
+        int $optionId
+    ): array {
+        return DB::transaction(function () use ($participation, $question, $optionId): array {
+            $participation = Participation::query()
+                ->whereKey($participation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            return $this->submitAnswerLocked($participation, $question, $optionId);
+        });
+    }
+
+    private function submitAnswerLocked(
         Participation $participation,
         Question $question,
         int $optionId
@@ -122,10 +136,10 @@ class KahootService
 
         KahootAnswer::create([
             'participation_id' => $participation->id,
-            'question_id'      => $question->id,
-            'option_id'        => $optionId,
-            'is_correct'       => $result['is_correct'],
-            'score'            => $result['score'],
+            'question_id' => $question->id,
+            'option_id' => $optionId,
+            'is_correct' => $result['is_correct'],
+            'score' => $result['score'],
         ]);
 
         $this->participationService->syncScore($participation);
@@ -141,17 +155,17 @@ class KahootService
     {
         return $kahoot->questions()
             ->orderBy('position')
-            ->with(['options' => fn($q) => $q->orderBy('position')])
+            ->with(['options' => fn ($q) => $q->orderBy('position')])
             ->get()
-            ->map(fn($q) => [
-                'id'         => $q->id,
-                'question'   => $q->question,
-                'position'   => $q->position,
+            ->map(fn ($q) => [
+                'id' => $q->id,
+                'question' => $q->question,
+                'position' => $q->position,
                 'time_limit' => $q->time_limit,
-                'score'      => $q->score,
-                'options'    => $q->options->map(fn($o) => [
-                    'id'       => $o->id,
-                    'text'     => $o->text,
+                'score' => $q->score,
+                'options' => $q->options->map(fn ($o) => [
+                    'id' => $o->id,
+                    'text' => $o->text,
                     'position' => $o->position,
                     // is_correct NO se expone al frontend
                 ])->toArray(),

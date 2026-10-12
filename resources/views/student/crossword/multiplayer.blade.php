@@ -122,6 +122,7 @@
     <script>
         const MULTIPLAYER = true;
         const PARTICIPATION_ID = {{ $participation->id }};
+        const SESSION_ID = {{ $session->id }};
         const CSRF_TOKEN = '{{ csrf_token() }}';
         const GRID = @json($crossword->grid);
         const WORDS = @json($wordsJson);
@@ -497,6 +498,7 @@
                     },
                     body: JSON.stringify({
                         participation_id: PARTICIPATION_ID,
+                        session_id: SESSION_ID,
                         crossword_word_id: word.id,
                         response: response,
                     }),
@@ -579,12 +581,15 @@
                     remainingSeconds = state.time_remaining;
                 }
 
-                const list = state.players.map((player) => {
+                const entries = state.players.map((player) => {
                     const me = player.participation_id === myParticipationId ? ' me' : '';
-                    return `<span class="race-chip${me}">${player.name}: ${player.score}${player.status === 'completed' ? ' ✓' : ''}</span>`;
-                }).join('');
+                    const chip = document.createElement('span');
+                    chip.className = 'race-chip' + me;
+                    chip.textContent = `${player.name}: ${player.score}${player.status === 'completed' ? ' ✓' : ''}`;
+                    return chip;
+                });
 
-                document.getElementById('race-standings').innerHTML = list;
+                document.getElementById('race-standings').replaceChildren(...entries);
 
                 if (state.status === 'finished') {
                     window.location.href = sessionResultUrl;

@@ -88,14 +88,33 @@ controladas por el profesor.
 - Las páginas de juego son `student/game-sessions/{id}/{crossword,wordsearch,matching}`
   (`student.{crossword,wordsearch,matching}.play-session`).
 
-## Eventos realtime
+## Sincronización y presencia
 
-Canal privado `game-session.{id}` (solo participantes y maestro de la actividad):
+El estado de sala, los rankings y el temporizador se consultan por polling cada
+2 segundos; los relojes locales de la interfaz se actualizan cada segundo. El
+campo `connected` no representa una conexión real y no se expone como estado de
+presencia. Si alguien pierde conexión, recarga o vuelve a entrar, conserva su
+participación y el servidor sigue aplicando el tiempo límite; no hay detección
+de desconexión ni presencia en línea.
+
+Los eventos usan el canal privado `game-session.{id}` (participantes y docente
+propietario):
 
 - `PlayerJoined`, `PlayerLeft`
 - `GameStarted`, `GameFinished`
 - `TurnChanged`, `ScoreUpdated`
 - `RoundStarted` (el profesor giró), `RoundClosed` (se agotó el tiempo o todos respondieron)
 
-Los clientes usan Laravel Echo cuando Reverb está habilitado; hay polling de
-`GET /student/game-sessions/{id}/state` como respaldo si no hay servidor realtime.
+Las vistas de sala y los juegos por rondas pueden crear un cliente Laravel Echo
+cuando `broadcasting.connections.reverb.enabled` está activo. Las vistas de
+carrera libre observadas dependen del polling de
+`GET /student/game-sessions/{id}/state`; no reciben esos eventos con Echo.
+
+La configuración de ejemplo usa `BROADCAST_CONNECTION=log` y
+`REVERB_SERVER_ENABLED=false`. El servicio Reverb existe en Compose bajo el
+perfil `realtime`, y Nginx tiene proxy para `/app/`, pero la configuración por
+defecto no activa Reverb. Las clases de evento implementan `ShouldBroadcast` y
+`QUEUE_CONNECTION` usa `database`; Compose no define un worker de colas. Para
+usar eventos en producción hay que activar Reverb, ejecutar un worker de cola y
+validar el acceso WebSocket desde el navegador. El polling sigue siendo el
+comportamiento operativo disponible con la configuración de ejemplo.

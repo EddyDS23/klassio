@@ -1908,8 +1908,10 @@ esa estructura sin cambios.
 
 # 44. Tiempo real (Laravel Reverb)
 
-El multijugador transmite cambios de estado en vivo, con **degradación elegante**
-a *polling* cuando no hay servidor realtime disponible.
+Las salas usan polling de estado cada 2 segundos. Las vistas de sala y los juegos
+por rondas pueden usar eventos Reverb cuando se activa esa infraestructura; las
+carreras libres consultan el estado por polling. El ejemplo de entorno deja
+Reverb deshabilitado y no configura un worker de colas.
 
 ## 44.1 Dependencia
 
@@ -1962,6 +1964,11 @@ RoundStarted, RoundClosed
 
 - El frontend usa **Laravel Echo** cuando Reverb está habilitado.
 - Como respaldo, hay *polling* de `GET /student/game-sessions/{id}/state`.
+- El polling de estado de sala y ranking ocurre cada 2 segundos. No existe
+  detección de presencia/desconexión; `En la sala` indica participación, no
+  conexión de red.
+- Con `QUEUE_CONNECTION=database`, los eventos `ShouldBroadcast` requieren un
+  worker (`php artisan queue:work`). Los archivos Compose no incluyen uno.
 - Se corrigió la carga de Bootstrap en `resources/views/partials/assets.blade.php`
   (se retiró `defer`), para que el JavaScript de las salas funcione correctamente.
 

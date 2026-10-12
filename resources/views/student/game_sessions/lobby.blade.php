@@ -66,9 +66,9 @@
                                 @if ($myParticipation?->id === $p->id)
                                     <span class="text-muted">(tú)</span>
                                 @endif
-                                {{ $p->student?->name }}
+                                {{ $p->team?->name ?? $p->student?->name }}
                             </span>
-                            <span class="text-success small">Conectado</span>
+                            <span class="text-success small">En la sala</span>
                         </li>
                     @endforeach
                 </ul>

@@ -15,6 +15,8 @@ class AnswerWordsearchRequest extends FormRequest
     {
         return [
             'wordsearch_id' => ['required', 'integer', 'exists:worksearches,id'],
+            'participation_id' => ['sometimes', 'nullable', 'integer', 'exists:participations,id'],
+            'session_id' => ['sometimes', 'nullable', 'integer', 'exists:game_sessions,id'],
             'start_row' => ['required', 'integer'],
             'start_column' => ['required', 'integer'],
             'end_row' => ['required', 'integer'],

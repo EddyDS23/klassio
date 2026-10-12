@@ -187,6 +187,29 @@ class RouletteService
         string $response,
         bool $autoFinish = true
     ): array {
+        return DB::transaction(function () use ($roulette, $participation, $rouletteItemId, $response, $autoFinish): array {
+            $lockedParticipation = Participation::query()
+                ->whereKey($participation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            return $this->checkAnswerLocked(
+                $roulette,
+                $lockedParticipation,
+                $rouletteItemId,
+                $response,
+                $autoFinish,
+            );
+        });
+    }
+
+    private function checkAnswerLocked(
+        Roulette $roulette,
+        Participation $participation,
+        int $rouletteItemId,
+        string $response,
+        bool $autoFinish
+    ): array {
         if ($participation->status !== 'started') {
             return $this->error(
                 'La participación ya ha finalizado.'

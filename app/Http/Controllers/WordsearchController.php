@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateWordsearchRequest;
 use App\Models\Activity;
 use App\Models\GameSession;
 use App\Models\Wordsearch;
+use App\Services\GameSessionAnswerService;
 use App\Services\GameSessionService;
 use App\Services\ParticipationService;
 use App\Services\WordsearchService;
@@ -21,7 +22,8 @@ class WordsearchController extends Controller
     public function __construct(
         protected WordsearchService $wordSearchService,
         protected ParticipationService $participationService,
-        protected GameSessionService $gameSessionService
+        protected GameSessionService $gameSessionService,
+        protected GameSessionAnswerService $gameSessionAnswerService,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -230,47 +232,39 @@ class WordsearchController extends Controller
             (int) $data['wordsearch_id']
         );
 
-        $participation = $this->participationService->getActive(
-            $wordsearch->activity
+        $result = $this->gameSessionAnswerService->answer(
+            $wordsearch->activity,
+            isset($data['participation_id']) ? (int) $data['participation_id'] : null,
+            isset($data['session_id']) ? (int) $data['session_id'] : null,
+            function ($participation) use ($data, $wordsearch): array {
+                $result = $this->wordSearchService->checkAnswer(
+                    $wordsearch,
+                    $participation,
+                    (int) $data['start_row'],
+                    (int) $data['start_column'],
+                    (int) $data['end_row'],
+                    (int) $data['end_column']
+                );
+
+                $totalFound = count($this->wordSearchService->foundWords($wordsearch, $participation));
+                $totalWords = $wordsearch->words()->count();
+
+                $result['total'] = $totalFound;
+                $result['total_words'] = $totalWords;
+                $result['finished'] = false;
+
+                if ($result['correct'] && ! $result['already_found'] && $totalFound >= $totalWords) {
+                    $this->participationService->finish($participation);
+                    $result['finished'] = true;
+
+                    if ($participation->game_session_id === null) {
+                        $result['redirect'] = route('student.participation.result', $wordsearch->activity->id);
+                    }
+                }
+
+                return $result;
+            },
         );
-
-        $result = $this->wordSearchService->checkAnswer(
-            $wordsearch,
-            $participation,
-            (int) $data['start_row'],
-            (int) $data['start_column'],
-            (int) $data['end_row'],
-            (int) $data['end_column']
-        );
-
-        $foundIds = $this->wordSearchService->foundWords(
-            $wordsearch,
-            $participation
-        );
-
-        $totalFound = count($foundIds);
-        $totalWords = $wordsearch->words()->count();
-
-        $result['total'] = $totalFound;
-        $result['total_words'] = $totalWords;
-        $result['finished'] = false;
-
-        /*
-     * Si encontró todas las palabras, finalizar automáticamente
-     */
-        if (
-            $result['correct']
-            && ! $result['already_found']
-            && $totalFound >= $totalWords
-        ) {
-            $this->participationService->finish($participation);
-
-            $result['finished'] = true;
-            $result['redirect'] = route(
-                'student.participation.result',
-                $wordsearch->activity->id
-            );
-        }
 
         return response()->json($result);
     }

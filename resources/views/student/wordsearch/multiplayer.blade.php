@@ -268,6 +268,8 @@
         function fetchAnswer(startCell, endCell) {
             const body = {
                 wordsearch_id: {{ $wordsearch->id }},
+                participation_id: {{ $participation->id }},
+                session_id: {{ $session->id }},
                 start_row: parseInt(startCell.dataset.row, 10),
                 start_column: parseInt(startCell.dataset.column, 10),
                 end_row: parseInt(endCell.dataset.row, 10),
@@ -534,12 +536,15 @@
                     remainingSeconds = state.time_remaining;
                 }
 
-                const list = state.players.map((player) => {
+                const entries = state.players.map((player) => {
                     const me = player.participation_id === myParticipationId ? ' me' : '';
-                    return `<span class="race-chip${me}">${player.name}: ${player.score}${player.status === 'completed' ? ' ✓' : ''}</span>`;
-                }).join('');
+                    const chip = document.createElement('span');
+                    chip.className = 'race-chip' + me;
+                    chip.textContent = `${player.name}: ${player.score}${player.status === 'completed' ? ' ✓' : ''}`;
+                    return chip;
+                });
 
-                document.getElementById('race-standings').innerHTML = list;
+                document.getElementById('race-standings').replaceChildren(...entries);
 
                 if (state.status === 'finished') {
                     window.location.href = sessionResultUrl;

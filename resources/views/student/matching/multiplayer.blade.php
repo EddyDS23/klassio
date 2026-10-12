@@ -389,6 +389,10 @@
 
                         matching_id: {{ $matching->id }},
 
+                        participation_id: {{ $participation->id }},
+
+                        session_id: {{ $session->id }},
+
                         matching_item_id: parseInt(
                             leftCard.dataset.itemId,
                             10
@@ -399,7 +403,13 @@
                     }),
 
                 })
-                .then((response) => response.json())
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    return response.json();
+                })
 
                 .then((data) => {
 
@@ -561,12 +571,15 @@
                     remainingSeconds = state.time_remaining;
                 }
 
-                const list = state.players.map((player) => {
+                const entries = state.players.map((player) => {
                     const me = player.participation_id === myParticipationId ? ' me' : '';
-                    return `<span class="race-chip${me}">${player.name}: ${player.score}${player.status === 'completed' ? ' ✓' : ''}</span>`;
-                }).join('');
+                    const chip = document.createElement('span');
+                    chip.className = 'race-chip' + me;
+                    chip.textContent = `${player.name}: ${player.score}${player.status === 'completed' ? ' ✓' : ''}`;
+                    return chip;
+                });
 
-                document.getElementById('race-standings').innerHTML = list;
+                document.getElementById('race-standings').replaceChildren(...entries);
 
                 if (state.status === 'finished') {
                     window.location.href = sessionResultUrl;

@@ -34,7 +34,7 @@
                 @if ($winnerId)
                     @php($winner = $players->firstWhere('id', $winnerId))
                     <h2 class="mt-3 mb-0">
-                        🏆 {{ $winner?->student?->name ?? 'Jugador' }}
+                        🏆 {{ $winner?->team?->name ?? $winner?->student?->name ?? 'Jugador' }}
                     </h2>
                 @elseif ($state['result_type'] === 'draw')
                     <h2 class="mt-3 mb-0">🤝 Empate entre los mejores</h2>
@@ -60,7 +60,7 @@
                             <tr class="{{ $p->id === $winnerId ? 'table-warning' : '' }}">
                                 <td>{{ $index + 1 }}</td>
                                 <td>
-                                    {{ $p->student?->name }}
+                                    {{ $p->team?->name ?? $p->student?->name }}
                                     @if ($p->id === $winnerId && $session->result_type === 'winner')
                                         <span class="text-warning">★</span>
                                     @endif

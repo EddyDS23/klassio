@@ -8,7 +8,7 @@ use App\Http\Requests\UpdateMatchingRequest;
 use App\Models\Activity;
 use App\Models\GameSession;
 use App\Models\Matching;
-use App\Models\Participation;
+use App\Services\GameSessionAnswerService;
 use App\Services\GameSessionService;
 use App\Services\MatchingService;
 use App\Services\ParticipationService;
@@ -22,7 +22,8 @@ class MatchingController extends Controller
     public function __construct(
         protected MatchingService $matchingService,
         protected ParticipationService $participationService,
-        protected GameSessionService $gameSessionService
+        protected GameSessionService $gameSessionService,
+        protected GameSessionAnswerService $gameSessionAnswerService,
     ) {}
 
     /**
@@ -237,32 +238,16 @@ class MatchingController extends Controller
             (int) $data['matching_id']
         );
 
-        $participation = $this->resolveParticipation(
-            $matching->activity
-        );
-
-        return response()->json(
-            $this->matchingService->checkAnswer(
+        return response()->json($this->gameSessionAnswerService->answer(
+            $matching->activity,
+            isset($data['participation_id']) ? (int) $data['participation_id'] : null,
+            isset($data['session_id']) ? (int) $data['session_id'] : null,
+            fn ($participation) => $this->matchingService->checkAnswer(
                 $matching,
                 $participation,
                 (int) $data['matching_item_id'],
                 (string) $data['response']
             )
-        );
-    }
-
-    /**
-     * Obtener la participación activa del estudiante/equipo.
-     *
-     * IMPORTANTE:
-     * No crea una participación.
-     *
-     * ParticipationController::start() es el único responsable
-     * de iniciar una nueva participación.
-     */
-    protected function resolveParticipation(
-        Activity $activity
-    ): Participation {
-        return $this->participationService->getActive($activity);
+        ));
     }
 }
