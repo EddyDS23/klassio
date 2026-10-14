@@ -584,7 +584,11 @@
             }
         });
         renderConnections();
-        window.addEventListener('resize', renderConnections);
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(renderConnections, 120);
+        });
     </script>
 </body>
 

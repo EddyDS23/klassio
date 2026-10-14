@@ -21,7 +21,7 @@
     </div>
 
     <!-- Barra superior -->
-    <header class="border-b border-slate-200 bg-white/90 shadow-sm backdrop-blur">
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 shadow-sm backdrop-blur">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
 
             <a href="{{ route('teacher.activities.show', $activity->id) }}"
@@ -513,22 +513,25 @@
     <script>
         const body = document.getElementById('pairs-body');
         const mobileBody = document.getElementById('mobile-pairs');
+        const desktopQuery = window.matchMedia('(min-width: 768px)');
+
+        // La versión de escritorio y la móvil comparten los mismos datos, pero
+        // solo se envían los campos visibles para evitar claves duplicadas.
+        function syncVisibleInputs() {
+            const desktop = desktopQuery.matches;
+            body.querySelectorAll('input').forEach((input) => { input.disabled = !desktop; });
+            mobileBody.querySelectorAll('input').forEach((input) => { input.disabled = desktop; });
+        }
+
+        syncVisibleInputs();
+        if (desktopQuery.addEventListener) {
+            desktopQuery.addEventListener('change', syncVisibleInputs);
+        } else {
+            desktopQuery.addListener(syncVisibleInputs);
+        }
 
         document.getElementById('matching-form').addEventListener('submit', () => {
-            // Solo enviar los inputs visibles: en PC la tabla, en móvil las tarjetas.
-            // Si se envían ambos, PHP se queda con el último y se corrompe (ej: "Protocolo de transferenciaRAM").
-            const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-            if (isDesktop) {
-                mobileBody.querySelectorAll('input').forEach((input) => {
-                    input.disabled = true;
-                    input.removeAttribute('required');
-                });
-            } else {
-                body.querySelectorAll('input').forEach((input) => {
-                    input.disabled = true;
-                    input.removeAttribute('required');
-                });
-            }
+            syncVisibleInputs();
             const submitButton = document.querySelector('#matching-form button[type="submit"]');
             submitButton.disabled = true;
             submitButton.classList.add('cursor-wait', 'opacity-75');
@@ -684,6 +687,7 @@
 
             index++;
             reindex();
+            syncVisibleInputs();
         });
 
         function removePair(target) {
@@ -713,6 +717,7 @@
             }
 
             reindex();
+            syncVisibleInputs();
         }
 
         body.addEventListener('click', (event) => {

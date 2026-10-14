@@ -61,6 +61,12 @@
     body.student-kids #timer { font-size: 1.1rem; }
     body.student-kids .klassio-toast-msg { font-size: .95rem; }
     body.student-kids :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+    ::selection { background: rgb(99 91 255 / .25); }
+    :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 <script>
     // Aplica modo guardado antes de pintar (claro por defecto). Sin Vite, solo Bootstrap + Tailwind CDN.

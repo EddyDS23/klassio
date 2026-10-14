@@ -25,6 +25,10 @@
         <p data-toast="error" style="color: red;">{{ session('error') }}</p>
     @endif
 
+    <nav aria-label="Navegación de actividades" style="margin: 0 0 1rem;">
+        <a href="{{ route('student.activities.index', $activity->class_id) }}">← Volver a actividades</a>
+    </nav>
+
     {{-- Información general --}}
     <section>
         <h2>Información</h2>
@@ -207,12 +211,6 @@
     </section>
 
     <hr>
-
-    <nav>
-        <a href="{{ route('student.activities.index', $activity->class_id) }}">
-            Volver a actividades
-        </a>
-    </nav>
 
     <script src="/js/klassio-sounds.js"></script>
     <script>

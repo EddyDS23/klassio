@@ -15,7 +15,7 @@
 <body class="min-h-screen bg-slate-100 text-slate-800">
 
     <!-- Encabezado -->
-    <header class="border-b border-slate-200 bg-white shadow-sm">
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
 
             <a

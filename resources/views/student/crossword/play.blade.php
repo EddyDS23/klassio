@@ -16,7 +16,8 @@
         body > p { max-width: 700px; color: #475569; }
         body > section { background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin: 1.25rem 0; box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08); border: 1px solid #f0fdfa; }
         section h2 { margin-top: 0; color: #0f766e; font-weight: 800; }
-        #crossword-grid { max-width: 100%; overflow: auto; padding: 1rem; border-radius: 1.25rem; background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .25), inset 0 0 0 1px rgb(255 255 255 / .08); }
+        #crossword-grid { display: grid; width: 100%; max-width: 100%; overflow: auto; padding: 1rem; border-radius: 1.25rem; background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .25), inset 0 0 0 1px rgb(255 255 255 / .08); }
+        #crossword-grid > div { flex: none; }
         #crossword-grid input { border: 2px solid #cbd5e1; border-radius: .4rem; color: #0f172a; background: #fff; outline: none; transition: transform .15s, border-color .15s, box-shadow .15s; }
         #crossword-grid input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgb(20 184 166 / .25); transform: scale(1.08); }
         #crossword-grid input.correct { border-color: #22c55e; background: #dcfce7; color: #15803d; }
@@ -182,8 +183,22 @@
 
         updateTimer();
 
-        const ROWS = GRID.length;
-        const COLS = ROWS > 0 ? GRID[0].length : 0;
+        const gridRows = Array.isArray(GRID) ? GRID.length : 0;
+        const gridCols = Array.isArray(GRID)
+            ? GRID.reduce((max, row) => Math.max(max, Array.isArray(row) ? row.length : 0), 0)
+            : 0;
+        // Si una fila antigua no guardó el arreglo del tablero, reconstruimos
+        // sus dimensiones desde las coordenadas reales de las palabras.
+        const wordRows = WORDS.reduce((max, word) => Math.max(
+            max,
+            Number(word.row) + (word.direction === 'vertical' ? word.word.length : 1)
+        ), 0);
+        const wordCols = WORDS.reduce((max, word) => Math.max(
+            max,
+            Number(word.column) + (word.direction === 'horizontal' ? word.word.length : 1)
+        ), 0);
+        const ROWS = Math.max(gridRows, wordRows);
+        const COLS = Math.max(gridCols, wordCols);
 
         const cellMap = Array.from({
             length: ROWS
@@ -226,13 +241,22 @@
         // -------------------------------------------------------------------------
 
         const gridElement = document.getElementById('crossword-grid');
-        gridElement.style.display = 'inline-grid';
-        gridElement.style.gridTemplateColumns = `repeat(${COLS}, 36px)`;
-        gridElement.style.gridTemplateRows = `repeat(${ROWS}, 36px)`;
-        gridElement.style.gap = '2px';
+        const hasPlayableBoard = ROWS > 0 && COLS > 0 && WORDS.length > 0;
+        if (!hasPlayableBoard) {
+            gridElement.textContent = 'Este crucigrama todavía no tiene palabras disponibles.';
+            gridElement.setAttribute('role', 'status');
+            gridElement.style.display = 'block';
+        } else {
+            // Conserva todas las columnas y permite desplazamiento horizontal
+            // en móviles; no se usa content-visibility para no afectar las medidas.
+            gridElement.style.display = 'grid';
+            gridElement.style.width = '100%';
+            gridElement.style.gridTemplateColumns = `repeat(${COLS}, 36px)`;
+            gridElement.style.gridTemplateRows = `repeat(${ROWS}, 36px)`;
+            gridElement.style.gap = '2px';
 
-        for (let row = 0; row < ROWS; row++) {
-            for (let column = 0; column < COLS; column++) {
+            for (let row = 0; row < ROWS; row++) {
+                for (let column = 0; column < COLS; column++) {
 
                 const cell = document.createElement('div');
                 cell.style.width = '36px';
@@ -280,6 +304,7 @@
                 cell.appendChild(input);
                 inputRefs[`${row}-${column}`] = input;
                 gridElement.appendChild(cell);
+                }
             }
         }
 

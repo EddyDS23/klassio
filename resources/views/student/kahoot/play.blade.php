@@ -459,7 +459,7 @@
         function timeExpired() {
             answered = true;
             disableOptions();
-            showResult(false, 0, null, '⏰ Tiempo agotado');
+            showResult(false, 0, null, '⏰ ¡Se acabó el tiempo!');
         }
 
         // -------------------------------------------------------------------------
@@ -602,20 +602,20 @@
                 isCorrect ? '🎉' : '❌';
 
             document.getElementById('result-text').textContent =
-                overrideMessage ?? (isCorrect ? '¡Correcto!' : 'Incorrecto');
+                overrideMessage ?? (isCorrect ? '¡Bien! 🎉' : '¡Casi! 😅');
 
             document.getElementById('result-score').textContent =
-                isCorrect ? `+${score} puntos` : 'Sin puntos';
+                isCorrect ? `+${score} puntos ⭐` : 'Sin puntos';
 
             document.getElementById('result-correct-text').textContent =
-                `Puntaje acumulado: ${totalScore}`;
+                `Llevas: ${totalScore} ⭐`;
 
             const remaining = QUESTIONS.slice(currentIndex + 1)
                 .filter(q => !ANSWERED_IDS.includes(q.id));
 
             document.getElementById('btn-next').textContent = remaining.length > 0 ?
-                'Siguiente pregunta →' :
-                'Ver resultados';
+                'Siguiente 👉' :
+                'Ver mi puntaje ⭐';
         }
 
         // -------------------------------------------------------------------------

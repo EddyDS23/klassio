@@ -447,6 +447,8 @@
 
         let dragging = false;
         let end = null;
+        let previewQueued = false;
+        let previewPoint = null;
 
         function clearPreview() {
             cells.forEach((cell) => cell.classList.remove('selected'));
@@ -472,22 +474,38 @@
 
         document.getElementById('grid').addEventListener('pointermove', (event) => {
             if (!dragging || !start) return;
-            const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.cell');
-            if (target && target.dataset.found !== '1') {
-                end = target;
-                previewSelection(target);
-            }
+            previewPoint = { x: event.clientX, y: event.clientY };
+            if (previewQueued) return;
+            previewQueued = true;
+            requestAnimationFrame(() => {
+                previewQueued = false;
+                if (!dragging || !start || !previewPoint) return;
+                const target = document.elementFromPoint(previewPoint.x, previewPoint.y)?.closest('.cell');
+                if (target && target.dataset.found !== '1') {
+                    end = target;
+                    previewSelection(target);
+                }
+            });
         });
 
-        window.addEventListener('pointerup', () => {
+        window.addEventListener('pointerup', (event) => {
             if (!dragging) return;
             dragging = false;
+            const releasedOn = document.elementFromPoint(event.clientX, event.clientY)?.closest('.cell');
+            if (releasedOn && releasedOn.dataset.found !== '1') end = releasedOn;
             if (start && end && start !== end) {
                 fetchAnswer(start, end);
             } else {
                 clearPreview();
                 start = null;
             }
+        });
+
+        window.addEventListener('pointercancel', () => {
+            dragging = false;
+            start = null;
+            end = null;
+            clearPreview();
         });
 
         updateFound();
