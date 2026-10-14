@@ -8,98 +8,173 @@
     <title>{{ $activity->title }}</title>
     @include('partials.assets', ['theme' => 'student'])
     <style>
-        body { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem 3rem; color: #172554; }
-        body > h1 { display: inline-block; margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 800; color: #0f766e; letter-spacing: -.02em; }
-        body > h2 { margin: .5rem 0 1.5rem; color: #475569; font-size: 1.2rem; }
-        #timer { float: right; margin-top: .25rem; padding: .75rem 1rem; border-radius: 1rem; background: #fff; box-shadow: 0 .5rem 1.5rem rgb(15 23 42 / .1); font-weight: 700; color: #0f766e; }
-        #timer-value { color: #7c3aed; font-variant-numeric: tabular-nums; }
-        body > p { max-width: 700px; color: #475569; }
-        body > section { background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin: 1.25rem 0; box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08); border: 1px solid #f0fdfa; }
-        section h2 { margin-top: 0; color: #0f766e; font-weight: 800; }
-        #crossword-grid { display: grid; width: 100%; max-width: 100%; overflow: auto; padding: 1rem; border-radius: 1.25rem; background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .25), inset 0 0 0 1px rgb(255 255 255 / .08); }
-        #crossword-grid > div { flex: none; }
-        #crossword-grid input { border: 2px solid #cbd5e1; border-radius: .4rem; color: #0f172a; background: #fff; outline: none; transition: transform .15s, border-color .15s, box-shadow .15s; }
-        #crossword-grid input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgb(20 184 166 / .25); transform: scale(1.08); }
-        #crossword-grid input.correct { border-color: #22c55e; background: #dcfce7; color: #15803d; }
-        #crossword-grid input.incorrect { border-color: #ef4444; background: #fee2e2; }
-        #clues-horizontal, #clues-vertical { padding-left: 0; list-style: none; }
-        #clues-horizontal li, #clues-vertical li { margin: .6rem 0; padding: .65rem .8rem; border-radius: .75rem; background: #f0fdfa; color: #334155; border: 1px solid transparent; transition: border-color .15s, background .15s; }
-        #clues-horizontal li:hover, #clues-vertical li:hover { border-color: #99f6e4; background: #ccfbf1; }
-        #clues-horizontal li.active, #clues-vertical li.active { border-color: #14b8a6; background: #ccfbf1; color: #0f766e; font-weight: 700; }
-        #results p { padding: .75rem 1rem; border-radius: .75rem; background: #eff6ff; margin: .5rem 0; color: #1e40af; font-weight: 600; }
-        button { border: 0; border-radius: .8rem; padding: .75rem 1rem; font-weight: 700; background: #e11d48; color: #fff; cursor: pointer; }
-        button:hover { filter: brightness(1.05); }
-        nav a { display: inline-block; color: #0f766e; font-weight: 700; text-decoration: none; padding: .7rem 1rem; border-radius: .8rem; }
-        nav a:hover { background: #f0fdfa; }
-        body.student-kids #clues-horizontal li, body.student-kids #clues-vertical li { font-size: 1.05rem; }
-        @media (max-width: 600px) { #timer { float: none; display: inline-block; margin-bottom: 1rem; } body > section { padding: 1rem; } }
+        :root {
+            --cw-ink: #183b3a;
+            --cw-muted: #587371;
+            --cw-line: #d7e8e4;
+            --cw-surface: #fff;
+            --cw-soft: #f3faf7;
+            --cw-deep: #075e58;
+            --cw-lime: #c6f36a;
+        }
+        * { box-sizing: border-box; }
+        body.student-kids {
+            min-height: 100vh;
+            width: min(1240px, 100%);
+            margin: 0 auto;
+            padding: 22px 16px;
+            color: var(--cw-ink);
+            background: radial-gradient(circle at 8% 0%, #d9f3e8 0, transparent 31%), #eff6f2;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 17px;
+        }
+        .crossword-card { overflow: hidden; border: 1px solid var(--cw-line); border-radius: 26px; background: var(--cw-surface); box-shadow: 0 24px 64px rgb(23 69 60 / .12); }
+        .game-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 28px; color: #fff; background: radial-gradient(circle at 82% 0%, rgb(198 243 106 / .2), transparent 25%), linear-gradient(120deg, #123c3a, #087f75 74%, #109789); }
+        .eyebrow { margin: 0 0 5px; color: rgb(255 255 255 / .72); font-size: .72rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+        .game-header h1 { margin: 0; color: #fff; font-size: clamp(1.65rem, 4vw, 2.2rem); line-height: 1.08; letter-spacing: -.025em; }
+        .game-subtitle { margin: 7px 0 0; color: rgb(255 255 255 / .84); font-size: .95rem; }
+        #timer { flex: 0 0 auto; min-width: 145px; padding: 10px 15px; border: 1px solid rgb(255 255 255 / .25); border-radius: 15px; background: rgb(255 255 255 / .12); text-align: center; backdrop-filter: blur(8px); }
+        .timer-label { display: block; color: rgb(255 255 255 / .72); font-size: .68rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+        #timer-value { display: block; margin-top: 2px; color: var(--cw-lime); font-size: 1.35rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+        .game-content { padding: 20px 24px 22px; }
+        .game-summary { display: flex; flex-wrap: wrap; gap: 9px; margin: 0; }
+        .game-summary span { display: inline-flex; align-items: baseline; gap: 7px; padding: 8px 12px; border: 1px solid var(--cw-line); border-radius: 12px; background: var(--cw-soft); color: var(--cw-muted); }
+        #score-display { color: var(--cw-deep); font-weight: 900; }
+        .how-to { display: flex; align-items: center; gap: 10px; margin: 12px 0 16px; padding: 10px 13px; border: 1px solid #bfe8d8; border-radius: 13px; background: #effbf5; color: #20584d; font-size: .95rem; }
+        .how-to strong { flex: 0 0 auto; color: var(--cw-deep); }
+        .play-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .85fr); align-items: start; gap: 16px; }
+        .panel { min-width: 0; padding: 17px; border: 1px solid var(--cw-line); border-radius: 19px; background: #fff; }
+        .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .panel-heading h2, .clue-panel h2 { margin: 0; color: var(--cw-ink); font-size: 1.05rem; font-weight: 850; }
+        .panel-heading p { margin: 3px 0 0; color: var(--cw-muted); font-size: .82rem; }
+        .board-scroll { max-width: 100%; overflow: auto; padding: 3px 2px 10px; overscroll-behavior-inline: contain; scrollbar-color: #8ab6a4 #e6f0ec; scrollbar-width: thin; }
+        .board-scroll:focus-visible { outline: 3px solid #d97706; outline-offset: 2px; }
+        #crossword-grid { justify-content: start; min-width: max-content; width: max-content !important; max-width: none !important; padding: 12px; border: 1px solid #335b56; border-radius: 15px; background: #173c39; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .08); }
+        #crossword-grid > div { flex: none; border-radius: 4px; }
+        #crossword-grid input { border: 2px solid #cfdfda !important; border-radius: 6px !important; color: #183b3a !important; background: #fff !important; outline: none; font-weight: 850; transition: transform .12s, border-color .12s, box-shadow .12s; }
+        #crossword-grid input:focus { z-index: 2; border-color: #07877b !important; box-shadow: 0 0 0 3px rgb(20 184 166 / .28); transform: scale(1.08); }
+        #crossword-grid input.correct { border-color: #4d9c61 !important; background: #dff3e2 !important; color: #256c39 !important; }
+        #crossword-grid input.incorrect { border-color: #c74747 !important; background: #fde9e6 !important; color: #8f302c !important; }
+        .clue-panel { display: grid; gap: 16px; }
+        .clue-group { min-width: 0; }
+        .clue-group h2 { display: flex; align-items: center; gap: 8px; padding-bottom: 9px; border-bottom: 1px solid var(--cw-line); }
+        .clue-group h2 span { color: var(--cw-muted); font-size: .76rem; font-weight: 700; }
+        #clues-horizontal, #clues-vertical { display: grid; gap: 7px; max-height: 280px; overflow-y: auto; margin: 10px 0 0; padding: 0 3px 0 0; list-style: none; }
+        #clues-horizontal li, #clues-vertical li { margin: 0; padding: 9px 11px; border: 1px solid #e1ece8; border-radius: 11px; background: #f8fbf9; color: #294a45; font-size: .9rem; line-height: 1.4; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+        #clues-horizontal li:hover, #clues-vertical li:hover { border-color: #9bd2c0; background: #effbf5; }
+        #clues-horizontal li.active, #clues-vertical li.active { border-color: #14a394; background: #e2f6ef; color: #075e58; font-weight: 800; }
+        .results-panel { margin-top: 16px; }
+        #results { display: grid; gap: 7px; max-height: 220px; overflow-y: auto; margin-top: 11px; }
+        #results p { margin: 0; padding: 10px 12px; border: 1px solid #dbe9e3; border-radius: 11px; background: #f3faf7; color: #31534d; font-size: .9rem; font-weight: 650; line-height: 1.45; }
+        .game-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; }
+        .game-actions form { margin: 0 !important; text-align: left !important; }
+        .game-actions button { min-height: 42px; padding: 8px 14px; border: 1px solid #e9c7c6; border-radius: 11px; background: #fff6f4; color: #9b3a35; font: inherit; font-size: .86rem; font-weight: 750; cursor: pointer; transition: background .15s, border-color .15s; }
+        .game-actions button:hover { border-color: #d89b97; background: #ffede9; }
+        .game-actions button:focus-visible, .game-actions a:focus-visible, #crossword-grid input:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+        .game-actions nav a { display: inline-flex; align-items: center; min-height: 42px; padding: 8px 12px; border-radius: 11px; color: var(--cw-deep); font-weight: 750; text-decoration: none; }
+        .game-actions nav a:hover { background: #eff8f4; }
+        #crossword-grid.empty-board { display: block; width: auto !important; min-width: 0 !important; max-width: 100% !important; padding: 18px !important; color: #fff; font-weight: 700; }
+        @media (max-width: 820px) {
+            .play-layout { grid-template-columns: minmax(0, 1fr); }
+            .clue-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+            #clues-horizontal, #clues-vertical { max-height: 220px; }
+        }
+        @media (max-width: 600px) {
+            body.student-kids { padding: 10px; font-size: 16px; }
+            .crossword-card { border-radius: 20px; }
+            .game-header { align-items: flex-start; gap: 10px; padding: 17px 15px; }
+            .game-header h1 { font-size: clamp(1.3rem, 6vw, 1.8rem); overflow-wrap: anywhere; }
+            .game-subtitle { max-width: 220px; font-size: .84rem; }
+            #timer { min-width: 102px; padding: 8px 9px; }
+            #timer-value { font-size: 1.12rem; }
+            .game-content { padding: 13px; }
+            .game-summary { display: block; }
+            .game-summary span { padding: 7px 10px; font-size: .88rem; }
+            .panel { padding: 12px; }
+            #crossword-grid { padding: 9px; }
+            .clue-panel { grid-template-columns: minmax(0, 1fr); gap: 13px; }
+            #clues-horizontal, #clues-vertical { max-height: 190px; }
+            .how-to { align-items: flex-start; font-size: .86rem; }
+            .game-actions { align-items: stretch; flex-direction: column; }
+            .game-actions nav a { justify-content: center; width: 100%; }
+            .game-actions form button { width: 100%; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
     </style>
 </head>
 
 <body class="student-kids">
     @include('partials.toast')
+    <main class="crossword-card">
+        <header class="game-header">
+            <div>
+                <p class="eyebrow">Actividad interactiva</p>
+                <h1>🧩 {{ $activity->title }}</h1>
+                <p class="game-subtitle">¡Adivina las palabras!</p>
+            </div>
+            <div id="timer" aria-label="Tiempo restante">
+                <span class="timer-label">Tiempo restante</span>
+                <span id="timer-value">--:--</span>
+            </div>
+        </header>
 
-    <h1>🧩 {{ $activity->title }}</h1>
+        <div class="game-content">
+            <p class="game-summary" aria-label="Puntaje de la actividad">
+                <span>Puntos <strong id="score-display">0</strong></span>
+            </p>
+            <p class="how-to"><strong>Cómo jugar</strong><span>Lee una pista, selecciona su primera casilla y escribe la palabra. Usa las flechas para moverte.</span></p>
 
-    <h2>¡Adivina las palabras!</h2>
-    <div id="timer">
-        ⏱ Te queda:
-        <span id="timer-value">--:--</span>
-    </div>
+            <div class="play-layout">
+                <section class="panel board-panel" aria-label="Tablero del crucigrama">
+                    <div class="panel-heading">
+                        <div>
+                            <h2>Crucigrama</h2>
+                            <p>Completa las casillas siguiendo las pistas.</p>
+                        </div>
+                    </div>
+                    <div class="board-scroll" role="region" aria-label="Tablero; desplaza para ver todas las casillas" tabindex="0">
+                        <div id="crossword-grid"></div>
+                    </div>
+                </section>
 
-    <p>
-        Lee la pista y escribe la palabra. ✏️
-    </p>
+                <section class="panel clue-panel" aria-label="Pistas del crucigrama">
+                    <div class="clue-group">
+                        <h2>Horizontales <span>→</span></h2>
+                        <ul id="clues-horizontal"></ul>
+                    </div>
+                    <div class="clue-group">
+                        <h2>Verticales <span>↓</span></h2>
+                        <ul id="clues-vertical"></ul>
+                    </div>
+                </section>
+            </div>
 
-    <p>
-        ⭐ Puntos:
-        <strong id="score-display">0</strong>
-    </p>
+            <section class="panel results-panel" aria-label="Resultados de las respuestas">
+                <div class="panel-heading">
+                    <div>
+                        <h2>Resultados</h2>
+                        <p>Revisa aquí tus respuestas y puntos obtenidos.</p>
+                    </div>
+                </div>
+                <div id="results" aria-live="polite">
+                    <p id="results-empty">Todavía no has respondido ninguna palabra.</p>
+                </div>
+            </section>
 
-    <hr>
-
-    <section>
-        <h2>Crucigrama</h2>
-
-        <div id="crossword-grid"></div>
-    </section>
-
-    <section>
-        <h2>Horizontales</h2>
-
-        <ul id="clues-horizontal"></ul>
-
-        <h2>Verticales</h2>
-
-        <ul id="clues-vertical"></ul>
-    </section>
-
-    <section>
-        <h2>Resultados</h2>
-
-        <div id="results" aria-live="polite">
-            <p id="results-empty">Todavía no has respondido ninguna palabra.</p>
+            <div class="game-actions">
+                <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+                    onsubmit="return confirm('¿Seguro que quieres dejar el juego?');">
+                    @csrf
+                    <button type="submit">Dejar el juego 👋</button>
+                </form>
+                <nav>
+                    <a href="{{ route('student.activities.show', $activity->id) }}">Volver a la actividad</a>
+                </nav>
+            </div>
         </div>
-    </section>
-
-    <hr>
-
-    <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-        onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
-        style="margin: 1rem 0; text-align: center;">
-        @csrf
-
-        <button type="submit">
-            Dejar el juego 👋
-        </button>
-    </form>
-
-
-    <nav>
-        <a href="{{ route('student.activities.show', $activity->id) }}">
-            Volver a la actividad
-        </a>
-    </nav>
+    </main>
 
     @php
         $wordsJson = $words->map(
@@ -276,6 +351,7 @@
                 : 'Este crucigrama todavía no tiene palabras disponibles.';
             gridElement.setAttribute('role', 'status');
             gridElement.style.display = 'block';
+            gridElement.classList.add('empty-board');
         } else {
             // Conserva todas las columnas y permite desplazamiento horizontal
             // en móviles; no se usa content-visibility para no afectar las medidas.
