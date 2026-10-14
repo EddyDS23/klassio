@@ -61,10 +61,8 @@
                 <h2 class="h5 fw-bold mb-3">Jugadores</h2>
                 <ul class="list-group list-group-flush" id="players">
                     @foreach ($players as $p)
-                        <li
-                            class="list-group-item d-flex align-items-center justify-content-between"
-                            data-participation-id="{{ $p->id }}"
-                        >
+                        <li class="list-group-item d-flex align-items-center justify-content-between"
+                            data-participation-id="{{ $p->id }}">
                             <span>{{ $p->team?->name ?? $p->student?->name }}</span>
                             <span class="text-success small">En la sala</span>
                         </li>
@@ -78,19 +76,15 @@
 
         <div class="d-flex flex-wrap gap-2">
             @if ($session->status === 'waiting')
-                <form method="POST" action="{{ route('teacher.game-sessions.start', $session->id) }}" class="w-100 mb-2">
+                <form method="POST" action="{{ route('teacher.game-sessions.start', $session->id) }}"
+                    class="w-100 mb-2">
                     @csrf
-                    <button
-                        type="submit"
-                        class="btn btn-klassio w-100"
-                        id="start-btn"
-                        @disabled(! $canStart)
-                    >
+                    <button type="submit" class="btn btn-klassio w-100" id="start-btn" @disabled(!$canStart)>
                         Iniciar partida
                     </button>
                 </form>
 
-                @if (! $canStart)
+                @if (!$canStart)
                     <p class="text-muted small w-100 mb-0">
                         Se necesitan al menos 2 jugadores para iniciar la partida.
                     </p>
@@ -141,17 +135,10 @@
 
                             <div class="d-flex flex-wrap align-items-end gap-3">
                                 <div>
-                                    <label class="form-label small mb-1" for="round-seconds">Segundos para responder</label>
-                                    <input
-                                        type="number"
-                                        class="form-control"
-                                        id="round-seconds"
-                                        min="5"
-                                        max="300"
-                                        step="5"
-                                        value="30"
-                                        style="width: 8rem;"
-                                    >
+                                    <label class="form-label small mb-1" for="round-seconds">Segundos para
+                                        responder</label>
+                                    <input type="number" class="form-control" id="round-seconds" min="5"
+                                        max="300" step="5" value="30" style="width: 8rem;">
                                 </div>
                                 <div>
                                     <button type="button" class="btn btn-klassio" id="spin-btn">
@@ -159,7 +146,8 @@
                                     </button>
                                 </div>
                                 <div class="text-muted small">
-                                    Respondieron: <span id="round-answered">0</span> / <span id="round-total">{{ $players->count() }}</span>
+                                    Respondieron: <span id="round-answered">0</span> / <span
+                                        id="round-total">{{ $players->count() }}</span>
                                 </div>
                             </div>
                         </div>
@@ -190,9 +178,9 @@
         const isKahoot = @json($session->activity->type === 'kahoot');
         const isRace = @json($isRace);
         const idleButton = isKahoot ? 'Siguiente pregunta' : 'Girar la ruleta';
-        const idleHint = isKahoot
-            ? 'Avanza para mostrar la siguiente pregunta.'
-            : 'Gira la ruleta para mostrar la siguiente pregunta.';
+        const idleHint = isKahoot ?
+            'Avanza para mostrar la siguiente pregunta.' :
+            'Gira la ruleta para mostrar la siguiente pregunta.';
 
         const statusLabel = {
             waiting: 'Esperando jugadores',
@@ -227,9 +215,9 @@
             }
 
             roundOpen = state.roulette_item_id !== null || state.question_id !== null;
-            roundRemaining = typeof state.round_time_remaining === 'number'
-                ? state.round_time_remaining
-                : null;
+            roundRemaining = typeof state.round_time_remaining === 'number' ?
+                state.round_time_remaining :
+                null;
 
             totalEl.textContent = state.players.filter(
                 (p) => p.status === 'started'
@@ -299,12 +287,58 @@
                 list.appendChild(li);
             });
 
+            function setupStateSync(refreshFn) {
+                let fallbackPolling = null;
+
+                const startFallback = () => {
+                    if (fallbackPolling !== null) return;
+
+                    // Recupera el estado inmediatamente y continúa consultándolo
+                    // mientras Reverb no esté conectado.
+                    refreshFn();
+                    fallbackPolling = window.setInterval(refreshFn, 2000);
+                };
+
+                const stopFallback = () => {
+                    if (fallbackPolling === null) return;
+
+                    window.clearInterval(fallbackPolling);
+                    fallbackPolling = null;
+                };
+
+                const connection = window.Echo?.connector?.pusher?.connection;
+
+                // Sin Echo o sin conexión WebSocket, conservar el comportamiento
+                // de respaldo que ya tenía la vista.
+                if (!connection) {
+                    startFallback();
+                    return;
+                }
+
+                connection.bind('state_change', ({
+                    current
+                }) => {
+                    if (current === 'connected') {
+                        stopFallback();
+                        refreshFn();
+                    } else {
+                        startFallback();
+                    }
+                });
+
+                if (connection.state === 'connected') {
+                    refreshFn();
+                } else {
+                    startFallback();
+                }
+            }
+
             document.getElementById('empty-players').classList.toggle('d-none', state.players.length > 0);
 
             if (isRace) {
-                raceRemaining = typeof state.time_remaining === 'number'
-                    ? state.time_remaining
-                    : null;
+                raceRemaining = typeof state.time_remaining === 'number' ?
+                    state.time_remaining :
+                    null;
 
                 const standings = document.getElementById('race-standings');
                 if (standings) {
@@ -366,7 +400,9 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify({ seconds: seconds })
+                    body: JSON.stringify({
+                        seconds: seconds
+                    })
                 });
                 const data = await res.json();
                 if (!res.ok) {
@@ -386,7 +422,9 @@
         async function refresh() {
             try {
                 const res = await fetch(stateUrl, {
-                    headers: { 'Accept': 'application/json' },
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     credentials: 'same-origin'
                 });
                 if (!res.ok) return;
@@ -402,7 +440,6 @@
             }
         }
 
-        setInterval(refresh, 2000);
         setInterval(tick, 1000);
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -416,8 +453,11 @@
 
             const reverbEnabled = @json((bool) config('broadcasting.connections.reverb.enabled', false));
             if (window.Echo && reverbEnabled) {
+                setupStateSync(refresh);
                 window.Echo.private('game-session.' + sessionId)
-                    .listen('.GameFinished', (e) => { window.location.href = resultUrl; })
+                    .listen('.GameFinished', (e) => {
+                        window.location.href = resultUrl;
+                    })
                     .listen('.PlayerJoined', (e) => refresh())
                     .listen('.PlayerLeft', (e) => refresh())
                     .listen('.RoundStarted', (e) => refresh())

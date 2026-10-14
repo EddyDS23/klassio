@@ -107,6 +107,29 @@ services:
     mem_limit: 256m
     cpus: "0.25"
 
+
+  scheduler:
+      build:
+          context: .
+          dockerfile: Dockerfile
+      container_name: klassio_scheduler
+      command: ["php", "artisan", "schedule:work"]
+      restart: unless-stopped
+      env_file:
+          - .env
+      volumes:
+          - .:/var/www/html
+      networks:
+          - klassio-network
+      depends_on:
+          mariadb:
+              condition: service_healthy
+          app:
+              condition: service_started
+      mem_limit: 256m
+      cpus: "0.25"
+
+
 networks:
   klassio-network:
   proxy_network:

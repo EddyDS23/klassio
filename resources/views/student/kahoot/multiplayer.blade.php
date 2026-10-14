@@ -21,16 +21,46 @@
         </script>
     @endif
     <style>
-        .turn-badge { background: var(--klassio-primary); color: #fff; border-radius: 1rem; padding: .5rem 1rem; font-weight: 700; }
-        .opt-btn { border: 2px solid #cbd5e1; border-radius: 1rem; padding: 1rem; font-weight: 700; background: #fff; width: 100%; }
-        .opt-btn:hover { border-color: var(--klassio-primary); color: var(--klassio-primary); }
-        html[data-theme="dark"] .opt-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
-        .board {
-            border-radius: 1.25rem; padding: 2.5rem 1.5rem;
-            background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-            color: #fff; text-align: center;
+        .turn-badge {
+            background: var(--klassio-primary);
+            color: #fff;
+            border-radius: 1rem;
+            padding: .5rem 1rem;
+            font-weight: 700;
         }
-        .board-icon { font-size: 3rem; line-height: 1; }
+
+        .opt-btn {
+            border: 2px solid #cbd5e1;
+            border-radius: 1rem;
+            padding: 1rem;
+            font-weight: 700;
+            background: #fff;
+            width: 100%;
+        }
+
+        .opt-btn:hover {
+            border-color: var(--klassio-primary);
+            color: var(--klassio-primary);
+        }
+
+        html[data-theme="dark"] .opt-btn {
+            background: #0f172a;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+
+        .board {
+            border-radius: 1.25rem;
+            padding: 2.5rem 1.5rem;
+            background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+            color: #fff;
+            text-align: center;
+        }
+
+        .board-icon {
+            font-size: 3rem;
+            line-height: 1;
+        }
     </style>
 </head>
 
@@ -73,7 +103,8 @@
                                 Esperando a que el profesor lance la pregunta…
                             </div>
                             <div class="text-muted small mt-2" id="turn-hint">
-                                Cuando el profesor abra la pregunta, aparecerá en pantalla y tendrás tiempo para responder.
+                                Cuando el profesor abra la pregunta, aparecerá en pantalla y tendrás tiempo para
+                                responder.
                             </div>
                         </div>
                     </div>
@@ -89,17 +120,16 @@
                         </span>
                         <ul class="list-group list-group-flush mt-2" id="players">
                             @foreach ($state['players'] as $p)
-                                <li
-                                    class="list-group-item d-flex justify-content-between align-items-center"
-                                    data-participation-id="{{ $p['participation_id'] }}"
-                                >
+                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                    data-participation-id="{{ $p['participation_id'] }}">
                                     <span>
                                         @if ($p['participation_id'] === $participation->id)
                                             <span class="text-muted">(tú)</span>
                                         @endif
                                         {{ $p['name'] }}
                                     </span>
-                                    <span class="fw-bold" data-role="score">{{ $p['score'] }} / {{ $maxScore }}</span>
+                                    <span class="fw-bold" data-role="score">{{ $p['score'] }} /
+                                        {{ $maxScore }}</span>
                                 </li>
                             @endforeach
                         </ul>
@@ -258,9 +288,9 @@
                 return;
             }
 
-            roundRemaining = typeof state.round_time_remaining === 'number'
-                ? state.round_time_remaining
-                : null;
+            roundRemaining = typeof state.round_time_remaining === 'number' ?
+                state.round_time_remaining :
+                null;
 
             if (state.time_remaining !== null) {
                 remainingSeconds = state.time_remaining;
@@ -291,14 +321,62 @@
         async function refreshState() {
             try {
                 const res = await fetch(stateUrl, {
-                    headers: { 'Accept': 'application/json' },
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     credentials: 'same-origin'
                 });
                 if (res.ok) renderState(await res.json());
             } catch (e) {}
         }
 
-        setInterval(refreshState, 1500);
+        function setupStateSync(refreshFn) {
+            let fallbackPolling = null;
+
+            const startFallback = () => {
+                if (fallbackPolling !== null) return;
+
+                // Recupera el estado inmediatamente y continúa consultándolo
+                // mientras Reverb no esté conectado.
+                refreshFn();
+                fallbackPolling = window.setInterval(refreshFn, 2000);
+            };
+
+            const stopFallback = () => {
+                if (fallbackPolling === null) return;
+
+                window.clearInterval(fallbackPolling);
+                fallbackPolling = null;
+            };
+
+            const connection = window.Echo?.connector?.pusher?.connection;
+
+            // Sin Echo o sin conexión WebSocket, conservar el comportamiento
+            // de respaldo que ya tenía la vista.
+            if (!connection) {
+                startFallback();
+                return;
+            }
+
+            connection.bind('state_change', ({
+                current
+            }) => {
+                if (current === 'connected') {
+                    stopFallback();
+                    refreshFn();
+                } else {
+                    startFallback();
+                }
+            });
+
+            if (connection.state === 'connected') {
+                refreshFn();
+            } else {
+                startFallback();
+            }
+        }
+
+       
         setInterval(tick, 1000);
 
         async function fetchQuestion() {
@@ -313,7 +391,9 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify({ session_id: sessionId })
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
                 });
 
                 const data = await res.json();
@@ -445,7 +525,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             tick();
-            refreshState();
+          
 
             const reverbEnabled = @json((bool) config('broadcasting.connections.reverb.enabled', false));
 
@@ -455,8 +535,11 @@
                     .listen('.RoundClosed', () => refreshState())
                     .listen('.TurnChanged', () => refreshState())
                     .listen('.ScoreUpdated', () => refreshState())
-                    .listen('.GameFinished', () => { window.location.href = resultUrl; });
+                    .listen('.GameFinished', () => {
+                        window.location.href = resultUrl;
+                    });
             }
+            setupStateSync(refreshState);
         });
     </script>
 

@@ -21,28 +21,92 @@
         </script>
     @endif
     <style>
-        .wheel-wrap { display: grid; place-items: center; padding: 1rem 0; }
+        .wheel-wrap {
+            display: grid;
+            place-items: center;
+            padding: 1rem 0;
+        }
+
         .wheel {
-            width: 220px; height: 220px; border-radius: 50%;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
             background: conic-gradient(#0891b2 0 25%, #2563eb 0 50%, #7c3aed 0 75%, #f59e0b 0 100%);
-            display: grid; place-items: center; position: relative;
+            display: grid;
+            place-items: center;
+            position: relative;
             box-shadow: 0 1rem 2.5rem rgb(15 23 42 / .25);
             transition: transform 1.2s cubic-bezier(.2, .8, .3, 1);
         }
+
         .wheel::after {
-            content: ''; position: absolute; inset: 22%;
-            background: #fff; border-radius: 50%;
+            content: '';
+            position: absolute;
+            inset: 22%;
+            background: #fff;
+            border-radius: 50%;
             box-shadow: inset 0 0 0 .35rem #e2e8f0;
         }
-        .wheel-center { position: relative; z-index: 2; font-weight: 800; font-size: 1.2rem; text-align: center; color: #0f172a; }
-        .wheel.spinning { transform: rotate(1080deg); }
-        .pointer { position: relative; z-index: 3; text-align: center; font-size: 2rem; line-height: 0; margin: -.6rem 0; }
-        .turn-badge { background: var(--klassio-primary); color: #fff; border-radius: 1rem; padding: .5rem 1rem; font-weight: 700; }
-        @keyframes pulse { 50% { transform: scale(1.04); } }
-        .my-turn { animation: pulse 1.2s ease-in-out infinite; }
-        .opt-btn { border: 2px solid #cbd5e1; border-radius: 1rem; padding: 1rem; font-weight: 700; background: #fff; width: 100%; }
-        .opt-btn:hover { border-color: var(--klassio-primary); color: var(--klassio-primary); }
-        html[data-theme="dark"] .opt-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
+
+        .wheel-center {
+            position: relative;
+            z-index: 2;
+            font-weight: 800;
+            font-size: 1.2rem;
+            text-align: center;
+            color: #0f172a;
+        }
+
+        .wheel.spinning {
+            transform: rotate(1080deg);
+        }
+
+        .pointer {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            font-size: 2rem;
+            line-height: 0;
+            margin: -.6rem 0;
+        }
+
+        .turn-badge {
+            background: var(--klassio-primary);
+            color: #fff;
+            border-radius: 1rem;
+            padding: .5rem 1rem;
+            font-weight: 700;
+        }
+
+        @keyframes pulse {
+            50% {
+                transform: scale(1.04);
+            }
+        }
+
+        .my-turn {
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .opt-btn {
+            border: 2px solid #cbd5e1;
+            border-radius: 1rem;
+            padding: 1rem;
+            font-weight: 700;
+            background: #fff;
+            width: 100%;
+        }
+
+        .opt-btn:hover {
+            border-color: var(--klassio-primary);
+            color: var(--klassio-primary);
+        }
+
+        html[data-theme="dark"] .opt-btn {
+            background: #0f172a;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
     </style>
 </head>
 
@@ -106,17 +170,16 @@
                         </span>
                         <ul class="list-group list-group-flush mt-2" id="players">
                             @foreach ($state['players'] as $p)
-                                <li
-                                    class="list-group-item d-flex justify-content-between align-items-center"
-                                    data-participation-id="{{ $p['participation_id'] }}"
-                                >
+                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                    data-participation-id="{{ $p['participation_id'] }}">
                                     <span>
                                         @if ($p['participation_id'] === $participation->id)
                                             <span class="text-muted">(tú)</span>
                                         @endif
                                         {{ $p['name'] }}
                                     </span>
-                                    <span class="fw-bold" data-role="score">{{ $p['score'] }} / {{ $maxScore }}</span>
+                                    <span class="fw-bold" data-role="score">{{ $p['score'] }} /
+                                        {{ $maxScore }}</span>
                                 </li>
                             @endforeach
                         </ul>
@@ -274,9 +337,9 @@
                 return;
             }
 
-            roundRemaining = typeof state.round_time_remaining === 'number'
-                ? state.round_time_remaining
-                : null;
+            roundRemaining = typeof state.round_time_remaining === 'number' ?
+                state.round_time_remaining :
+                null;
 
             if (state.time_remaining !== null) {
                 remainingSeconds = state.time_remaining;
@@ -307,14 +370,62 @@
         async function refreshState() {
             try {
                 const res = await fetch(stateUrl, {
-                    headers: { 'Accept': 'application/json' },
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     credentials: 'same-origin'
                 });
                 if (res.ok) renderState(await res.json());
             } catch (e) {}
         }
 
-        setInterval(refreshState, 1500);
+        function setupStateSync(refreshFn) {
+            let fallbackPolling = null;
+
+            const startFallback = () => {
+                if (fallbackPolling !== null) return;
+
+                // Recupera el estado inmediatamente y continúa consultándolo
+                // mientras Reverb no esté conectado.
+                refreshFn();
+                fallbackPolling = window.setInterval(refreshFn, 2000);
+            };
+
+            const stopFallback = () => {
+                if (fallbackPolling === null) return;
+
+                window.clearInterval(fallbackPolling);
+                fallbackPolling = null;
+            };
+
+            const connection = window.Echo?.connector?.pusher?.connection;
+
+            // Sin Echo o sin conexión WebSocket, conservar el comportamiento
+            // de respaldo que ya tenía la vista.
+            if (!connection) {
+                startFallback();
+                return;
+            }
+
+            connection.bind('state_change', ({
+                current
+            }) => {
+                if (current === 'connected') {
+                    stopFallback();
+                    refreshFn();
+                } else {
+                    startFallback();
+                }
+            });
+
+            if (connection.state === 'connected') {
+                refreshFn();
+            } else {
+                startFallback();
+            }
+        }
+
+        
         setInterval(tick, 1000);
 
         async function fetchRoundItem() {
@@ -329,7 +440,9 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify({ session_id: sessionId })
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
                 });
 
                 const data = await res.json();
@@ -466,8 +579,11 @@
                     .listen('.RoundClosed', () => refreshState())
                     .listen('.TurnChanged', () => refreshState())
                     .listen('.ScoreUpdated', () => refreshState())
-                    .listen('.GameFinished', () => { window.location.href = resultUrl; });
+                    .listen('.GameFinished', () => {
+                        window.location.href = resultUrl;
+                    });
             }
+            setupStateSync(refreshState);
         });
     </script>
 

@@ -59,10 +59,8 @@
                 <h2 class="h5 fw-bold mb-3">Jugadores</h2>
                 <ul class="list-group list-group-flush" id="players">
                     @foreach ($players as $p)
-                        <li
-                            class="list-group-item d-flex align-items-center justify-content-between"
-                            data-participation-id="{{ $p->id }}"
-                        >
+                        <li class="list-group-item d-flex align-items-center justify-content-between"
+                            data-participation-id="{{ $p->id }}">
                             <span>
                                 @if ($myParticipation?->id === $p->id)
                                     <span class="text-muted">(tú)</span>
@@ -98,7 +96,7 @@
                 </a>
             @endif
 
-            @if (! in_array($session->status, ['finished', 'cancelled'], true))
+            @if (!in_array($session->status, ['finished', 'cancelled'], true))
                 <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}" class="w-100">
                     @csrf
                     <button type="submit" class="btn btn-outline-secondary w-100">Salir de la sala</button>
@@ -159,10 +157,54 @@
             document.getElementById('empty-players').classList.toggle('d-none', state.players.length > 0);
         }
 
+        function setupStateSync(refreshFn) {
+            let fallbackPolling = null;
+
+            const startFallback = () => {
+                if (fallbackPolling !== null) return;
+
+                refreshFn();
+                fallbackPolling = window.setInterval(refreshFn, 2000);
+            };
+
+            const stopFallback = () => {
+                if (fallbackPolling === null) return;
+
+                window.clearInterval(fallbackPolling);
+                fallbackPolling = null;
+            };
+
+            const connection = window.Echo?.connector?.pusher?.connection;
+
+            if (!connection) {
+                startFallback();
+                return;
+            }
+
+            connection.bind('state_change', ({
+                current
+            }) => {
+                if (current === 'connected') {
+                    stopFallback();
+                    refreshFn();
+                } else {
+                    startFallback();
+                }
+            });
+
+            if (connection.state === 'connected') {
+                refreshFn();
+            } else {
+                startFallback();
+            }
+        }
+
         async function refresh() {
             try {
                 const res = await fetch(stateUrl, {
-                    headers: { 'Accept': 'application/json' },
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     credentials: 'same-origin'
                 });
                 if (!res.ok) return;
@@ -180,17 +222,21 @@
             }
         }
 
-        setInterval(refresh, 2000);
 
         window.addEventListener('DOMContentLoaded', () => {
             const reverbEnabled = @json((bool) config('broadcasting.connections.reverb.enabled', false));
             if (window.Echo && reverbEnabled) {
                 window.Echo.private('game-session.' + sessionId)
-                    .listen('.GameStarted', (e) => { window.location.href = playUrl; })
-                    .listen('.GameFinished', (e) => { window.location.href = resultUrl; })
+                    .listen('.GameStarted', (e) => {
+                        window.location.href = playUrl;
+                    })
+                    .listen('.GameFinished', (e) => {
+                        window.location.href = resultUrl;
+                    })
                     .listen('.PlayerJoined', (e) => refresh())
                     .listen('.PlayerLeft', (e) => refresh());
             }
+            setupStateSync(refresh);
         });
     </script>
 
