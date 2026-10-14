@@ -124,7 +124,7 @@
             <p class="game-summary" aria-label="Puntaje de la actividad">
                 <span>Puntos <strong id="score-display">0</strong></span>
             </p>
-            <p class="how-to"><strong>Cómo jugar</strong><span>Lee una pista, selecciona su primera casilla y escribe la palabra. Usa las flechas para moverte.</span></p>
+            <p class="how-to"><strong>Cómo jugar</strong><span>Haz clic en una pista y escribe la respuesta desde la primera casilla. En los cruces, elige la otra pista para cambiar de dirección; las casillas compartidas siguen disponibles. Usa las flechas para moverte.</span></p>
 
             <div class="play-layout">
                 <section class="panel board-panel" aria-label="Tablero del crucigrama">
@@ -680,8 +680,15 @@
                 const input = inputRefs[`${row}-${column}`];
 
                 if (input) {
-                    input.disabled = true;
-                    input.classList.add(result.is_correct ? 'correct' : 'incorrect');
+                    const neededByAnotherWord = VALID_WORDS.some(candidate =>
+                        !candidate.answered && cellBelongsToWord(row, column, candidate)
+                    );
+
+                    input.disabled = !neededByAnotherWord;
+                    input.classList.remove('correct', 'incorrect');
+                    if (!neededByAnotherWord) {
+                        input.classList.add(result.is_correct ? 'correct' : 'incorrect');
+                    }
                     input.style.background = '';
                 }
             }
