@@ -84,11 +84,9 @@
                     </button>
                 </form>
 
-                @if (!$canStart)
-                    <p class="text-muted small w-100 mb-0">
-                        Se necesitan al menos 2 jugadores para iniciar la partida.
-                    </p>
-                @endif
+                <p id="start-hint" class="text-muted small w-100 mb-0 {{ $canStart ? 'd-none' : '' }}">
+                    Se necesitan al menos 2 jugadores para iniciar la partida.
+                </p>
             @endif
 
             @if ($session->status === 'playing')
@@ -262,6 +260,23 @@
             const countEl = document.getElementById('room-count');
             countEl.textContent = state.players.length + ' / ' + state.max_players + ' jugadores';
 
+            const startBtn = document.getElementById('start-btn');
+            const startHint = document.getElementById('start-hint');
+
+            if (startBtn && state.status === 'waiting') {
+                const activePlayers = state.players.filter(
+                    (p) => !['abandoned', 'expired'].includes(p.status)
+                ).length;
+
+                const canStart = activePlayers >= 2;
+
+                startBtn.disabled = !canStart;
+
+                if (startHint) {
+                    startHint.classList.toggle('d-none', canStart);
+                }
+            }
+
             const list = document.getElementById('players');
             list.replaceChildren();
             state.players.forEach((p) => {
@@ -286,52 +301,6 @@
 
                 list.appendChild(li);
             });
-
-            function setupStateSync(refreshFn) {
-                let fallbackPolling = null;
-
-                const startFallback = () => {
-                    if (fallbackPolling !== null) return;
-
-                    // Recupera el estado inmediatamente y continúa consultándolo
-                    // mientras Reverb no esté conectado.
-                    refreshFn();
-                    fallbackPolling = window.setInterval(refreshFn, 2000);
-                };
-
-                const stopFallback = () => {
-                    if (fallbackPolling === null) return;
-
-                    window.clearInterval(fallbackPolling);
-                    fallbackPolling = null;
-                };
-
-                const connection = window.Echo?.connector?.pusher?.connection;
-
-                // Sin Echo o sin conexión WebSocket, conservar el comportamiento
-                // de respaldo que ya tenía la vista.
-                if (!connection) {
-                    startFallback();
-                    return;
-                }
-
-                connection.bind('state_change', ({
-                    current
-                }) => {
-                    if (current === 'connected') {
-                        stopFallback();
-                        refreshFn();
-                    } else {
-                        startFallback();
-                    }
-                });
-
-                if (connection.state === 'connected') {
-                    refreshFn();
-                } else {
-                    startFallback();
-                }
-            }
 
             document.getElementById('empty-players').classList.toggle('d-none', state.players.length > 0);
 
@@ -363,6 +332,52 @@
             }
 
             renderRound(state);
+        }
+
+        function setupStateSync(refreshFn) {
+            let fallbackPolling = null;
+
+            const startFallback = () => {
+                if (fallbackPolling !== null) return;
+
+                // Recupera el estado inmediatamente y continúa consultándolo
+                // mientras Reverb no esté conectado.
+                refreshFn();
+                fallbackPolling = window.setInterval(refreshFn, 2000);
+            };
+
+            const stopFallback = () => {
+                if (fallbackPolling === null) return;
+
+                window.clearInterval(fallbackPolling);
+                fallbackPolling = null;
+            };
+
+            const connection = window.Echo?.connector?.pusher?.connection;
+
+            // Sin Echo o sin conexión WebSocket, conservar el comportamiento
+            // de respaldo que ya tenía la vista.
+            if (!connection) {
+                startFallback();
+                return;
+            }
+
+            connection.bind('state_change', ({
+                current
+            }) => {
+                if (current === 'connected') {
+                    stopFallback();
+                    refreshFn();
+                } else {
+                    startFallback();
+                }
+            });
+
+            if (connection.state === 'connected') {
+                refreshFn();
+            } else {
+                startFallback();
+            }
         }
 
         function tick() {
