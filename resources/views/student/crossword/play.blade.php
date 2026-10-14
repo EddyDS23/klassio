@@ -77,7 +77,9 @@
     <section>
         <h2>Resultados</h2>
 
-        <div id="results"></div>
+        <div id="results" aria-live="polite">
+            <p id="results-empty">Todavía no has respondido ninguna palabra.</p>
+        </div>
     </section>
 
     <hr>
@@ -130,6 +132,31 @@
         const WORDS = @json($wordsJson);
 
         let remainingSeconds = @json($remainingSeconds);
+
+        // Un dato inválido no debe impedir que se dibujen las demás palabras.
+        // Se aceptan únicamente coordenadas enteras, direcciones conocidas y
+        // respuestas no vacías; no se registran pistas ni respuestas en consola.
+        const VALID_WORDS = (Array.isArray(WORDS) ? WORDS : []).filter((word, index) => {
+            const rawRow = word?.row;
+            const rawColumn = word?.column;
+            const row = Number(word?.row);
+            const column = Number(word?.column);
+            const direction = word?.direction;
+            const answer = word?.word;
+            const valid = rawRow !== null && rawRow !== '' && Number.isInteger(row) && row >= 0 &&
+                rawColumn !== null && rawColumn !== '' && Number.isInteger(column) && column >= 0 &&
+                (direction === 'horizontal' || direction === 'vertical') &&
+                typeof answer === 'string' && answer.trim().length > 0;
+
+            if (!valid) {
+                console.warn(`Se omitió una palabra inválida del crucigrama (índice ${index}).`);
+                return false;
+            }
+
+            word.row = row;
+            word.column = column;
+            return true;
+        });
 
         const timerValue = document.getElementById('timer-value');
 
@@ -187,13 +214,14 @@
         const gridCols = Array.isArray(GRID)
             ? GRID.reduce((max, row) => Math.max(max, Array.isArray(row) ? row.length : 0), 0)
             : 0;
-        // Si una fila antigua no guardó el arreglo del tablero, reconstruimos
-        // sus dimensiones desde las coordenadas reales de las palabras.
-        const wordRows = WORDS.reduce((max, word) => Math.max(
+        // Completa o reconstruye dimensiones con los extremos de las palabras
+        // válidas. Los índices son cero-based y las intersecciones comparten
+        // la misma celda mediante inputRefs.
+        const wordRows = VALID_WORDS.reduce((max, word) => Math.max(
             max,
             Number(word.row) + (word.direction === 'vertical' ? word.word.length : 1)
         ), 0);
-        const wordCols = WORDS.reduce((max, word) => Math.max(
+        const wordCols = VALID_WORDS.reduce((max, word) => Math.max(
             max,
             Number(word.column) + (word.direction === 'horizontal' ? word.word.length : 1)
         ), 0);
@@ -218,7 +246,7 @@
         let clueNumber = 1;
         const wordClueNumbers = {};
 
-        WORDS.forEach(word => {
+        VALID_WORDS.forEach(word => {
             const length = word.word.length;
 
             for (let i = 0; i < length; i++) {
@@ -241,9 +269,11 @@
         // -------------------------------------------------------------------------
 
         const gridElement = document.getElementById('crossword-grid');
-        const hasPlayableBoard = ROWS > 0 && COLS > 0 && WORDS.length > 0;
+        const hasPlayableBoard = ROWS > 0 && COLS > 0 && VALID_WORDS.length > 0;
         if (!hasPlayableBoard) {
-            gridElement.textContent = 'Este crucigrama todavía no tiene palabras disponibles.';
+            gridElement.textContent = Array.isArray(WORDS) && WORDS.length > 0
+                ? 'No hay palabras válidas para mostrar en este crucigrama.'
+                : 'Este crucigrama todavía no tiene palabras disponibles.';
             gridElement.setAttribute('role', 'status');
             gridElement.style.display = 'block';
         } else {
@@ -315,7 +345,7 @@
         const cluesHorizontal = document.getElementById('clues-horizontal');
         const cluesVertical = document.getElementById('clues-vertical');
 
-        WORDS.forEach(word => {
+        VALID_WORDS.forEach(word => {
             const clue = document.createElement('li');
             clue.id = `clue-${word.id}`;
             clue.textContent = `${wordClueNumbers[word.id]}. ${word.clue}`;
@@ -477,7 +507,7 @@
         // -------------------------------------------------------------------------
 
         function getWordAtCell(row, column) {
-            const primary = WORDS.find(word => {
+            const primary = VALID_WORDS.find(word => {
                 if (word.answered) return false;
                 if (word.direction !== currentDirection) return false;
                 return cellBelongsToWord(row, column, word);
@@ -485,7 +515,7 @@
 
             if (primary) return primary;
 
-            return WORDS.find(word => {
+            return VALID_WORDS.find(word => {
                 if (word.answered) return false;
                 return cellBelongsToWord(row, column, word);
             });
@@ -588,6 +618,7 @@
 
             // Mostrar resultado en el panel
             const resultsElement = document.getElementById('results');
+            document.getElementById('results-empty')?.remove();
             const resultItem = document.createElement('p');
 
             resultItem.textContent = result.is_correct ?
@@ -601,6 +632,7 @@
                 } else {
                     KlassioToast.error('Incorrecto', `"${word.clue}" (era: ${result.correct_word})`);
                 }
+            }
 
             // Actualizar puntaje
             if (result.is_correct) {
