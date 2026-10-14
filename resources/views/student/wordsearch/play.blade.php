@@ -10,11 +10,15 @@
         a { text-decoration: none; }
         body {
             font-family: system-ui, sans-serif;
-            background: #0f172a;
+            background: #f0fdfa;
             margin: 0;
             padding: 2rem;
-            color: #e2e8f0;
+            color: #1e293b;
         }
+
+        body.student-kids { font-size: 18px; }
+        body.student-kids h1 { font-size: 2rem; }
+        body.student-kids .how-to { font-size: 1.05rem; }
 
         .wrap {
             max-width: 900px;
@@ -22,17 +26,22 @@
         }
 
         .card {
-            background: #1e293b;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: .75rem;
             padding: 2rem;
+            box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08);
         }
 
         h1 {
             margin: 0 0 .25rem;
+            color: #0e7490;
         }
 
+        #timer { color: #475569; font-weight: 600; }
+
         .scoreline {
-            color: #94a3b8;
+            color: #475569;
             margin-bottom: 1.5rem;
         }
 
@@ -46,7 +55,7 @@
         .grid {
             display: inline-grid;
             gap: 2px;
-            background: #334155;
+            background: #e2e8f0;
             padding: 2px;
             border-radius: .4rem;
             user-select: none;
@@ -58,7 +67,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #0f172a;
+            background: #ffffff;
+            color: #334155;
             font-weight: bold;
             cursor: pointer;
             border-radius: .15rem;
@@ -66,14 +76,14 @@
         }
 
         .cell.selected {
-            background: #38bdf8;
-            color: #0f172a;
-            box-shadow: inset 0 0 0 2px #e0f2fe;
+            background: #0891b2;
+            color: #ffffff;
+            box-shadow: inset 0 0 0 2px #a5f3fc;
         }
 
         .cell.found {
             background: #22c55e;
-            color: #052e16;
+            color: #ffffff;
             cursor: default;
         }
 
@@ -85,7 +95,9 @@
         .hint {
             padding: .55rem .75rem;
             border-radius: .45rem;
-            background: #0f172a;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
             margin-bottom: .4rem;
             display: flex;
             justify-content: space-between;
@@ -93,7 +105,7 @@
         }
 
         .hint.found {
-            color: #22c55e;
+            color: #16a34a;
             text-decoration: line-through;
         }
 
@@ -101,7 +113,9 @@
             min-width: 220px;
         }
 
-        .how-to { margin: 1rem 0; padding: .75rem 1rem; border: 1px solid #0ea5e9; border-radius: .7rem; background: #082f49; color: #bae6fd; }
+        .hints > strong { color: #0e7490 !important; }
+
+        .how-to { margin: 1rem 0; padding: .75rem 1rem; border: 1px solid #0891b2; border-radius: .7rem; background: #cffafe; color: #0e7490; }
 
         .result {
             padding: .8rem;
@@ -113,25 +127,35 @@
 
         .result.ok {
             display: block;
-            background: #052e16;
-            color: #22c55e;
+            background: #dcfce7;
+            color: #15803d;
         }
 
         .result.bad {
             display: block;
-            background: #450a0a;
-            color: #f87171;
+            background: #fee2e2;
+            color: #b91c1c;
         }
 
         .finish {
             display: none;
             padding: .8rem;
             border-radius: .45rem;
-            background: #14532d;
-            color: #bbf7d0;
+            background: #dcfce7;
+            color: #15803d;
             font-weight: 700;
             text-align: center;
             margin-top: 1rem;
+        }
+
+        form button[type="submit"] {
+            border: 0;
+            border-radius: .6rem;
+            padding: .6rem 1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            color: #475569;
+            cursor: pointer;
         }
 
         @media (max-width: 720px) {
@@ -142,12 +166,13 @@
     </style>
 </head>
 
-<body>
+<body class="student-kids">
+    @include('partials.toast')
     <div class="wrap">
         <div class="card">
-            <h1>Sopa de Letras</h1>
+            <h1>🔎 Sopa de Letras</h1>
             <div id="timer">
-                Tiempo restante:
+                ⏱ Te queda:
                 <span id="timer-value">--:--</span>
             </div>
             <p class="scoreline">
@@ -156,7 +181,7 @@
                 / {{ $maxScore }} · Palabras: <strong
                     id="words-count">{{ $foundCount }}</strong>/{{ $words->count() }}
             </p>
-            <p class="how-to">👆 <strong>Cómo jugar:</strong> mantén presionada la primera letra y arrastra hasta la última letra de cada palabra.</p>
+            <p class="how-to">👆 <strong>¿Cómo se juega?</strong> ¡Toca la primera letra y arrastra hasta la última! 🎉</p>
 
             <div id="result" class="result"></div>
 
@@ -183,14 +208,14 @@
                 </div>
             </div>
 
-            <div id="finish" class="finish">¡Completaste la sopa de letras!</div>
+            <div id="finish" class="finish">¡Lo lograste! 🎉</div>
             <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-                onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+                onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
                 style="margin-top: 1rem; text-align: center;">
                 @csrf
 
                 <button type="submit">
-                    Abandonar actividad
+                    Dejar el juego 👋
                 </button>
             </form>
         </div>
@@ -201,12 +226,15 @@
         @csrf
     </form>
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
+        window.KlassioSounds?.setup('wordsearch');
         const cells = Array.from(document.querySelectorAll('.cell'));
         const foundKey = @json($foundIds);
         const maxScore = {{ $maxScore }};
         let start = null;
         let points = {{ $earnedPoints }};
+        let expirationQueued = false;
 
         cells.forEach((cell) => {
             const key = cell.dataset.row + '-' + cell.dataset.column;
@@ -218,6 +246,11 @@
         });
 
         function showResult(message, ok) {
+            if (window.KlassioToast) {
+                if (ok) KlassioToast.success('¡Encontraste una palabra!', message);
+                else KlassioToast.error('Revisa', message);
+                return;
+            }
             const el = document.getElementById('result');
             el.textContent = message;
             el.className = 'result ' + (ok ? 'ok' : 'bad');
@@ -259,6 +292,7 @@
                      * PALABRA CORRECTA
                      */
                     if (data.correct && !data.already_found) {
+                        window.KlassioSounds?.correcto();
 
                         // Marcar las celdas encontradas
                         data.cells.forEach(([r, c]) => {
@@ -302,6 +336,7 @@
                          * SI TERMINÓ LA SOPA
                          */
                         if (data.finished) {
+                            window.KlassioSounds?.completado();
                             document.getElementById('finish').style.display = 'block';
 
                             setTimeout(() => {
@@ -325,6 +360,8 @@
                          * RESPUESTA INCORRECTA
                          */
                     } else {
+
+                        window.KlassioSounds?.error();
 
                         markWrong(
                             cellsBetween(startCell, endCell)
@@ -425,6 +462,7 @@
             cell.addEventListener('pointerdown', (event) => {
                 if (cell.dataset.found === '1') return;
                 event.preventDefault();
+                window.KlassioSounds?.click();
                 dragging = true;
                 start = cell;
                 end = cell;
@@ -474,8 +512,28 @@
                 clearInterval(timer);
 
                 timerValue.textContent = '00:00';
+                if (expirationQueued) return;
+                expirationQueued = true;
+                const grid = document.getElementById('grid');
+                if (grid) grid.style.pointerEvents = 'none';
+                document.querySelectorAll('button, input:not([type="hidden"]), select, textarea').forEach(control => {
+                    control.disabled = true;
+                });
+                document.querySelectorAll('a').forEach(link => {
+                    link.setAttribute('aria-disabled', 'true');
+                    link.tabIndex = -1;
+                    link.style.pointerEvents = 'none';
+                    link.addEventListener('click', event => event.preventDefault());
+                });
+                document.body.setAttribute('aria-busy', 'true');
+                window.KlassioSounds?.expirado();
 
-                document.getElementById('expire-form').submit();
+                const submitExpiration = () => document.getElementById('expire-form').submit();
+                if (window.KlassioSounds && !window.KlassioSounds.isMuted()) {
+                    setTimeout(submitExpiration, 900);
+                } else {
+                    submitExpiration();
+                }
 
                 return;
             }

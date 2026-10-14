@@ -16,6 +16,11 @@
             color: #1e293b;
         }
 
+        body.student-kids { font-size: 18px; }
+        body.student-kids h1 { font-size: 2rem; }
+        body.student-kids .card-item { padding: 1rem 1.1rem; }
+        body.student-kids .how-to { font-size: 1.05rem; }
+
         .wrap {
             max-width: 860px;
             margin: 0 auto;
@@ -71,11 +76,16 @@
             background: #f8fafc;
             border: 2px solid #e2e8f0;
             color: #1e293b;
-            cursor: pointer;
+            cursor: grab;
             font-weight: 600;
             text-align: center;
             transition: border-color .15s, background .15s, transform .1s;
+            user-select: none;
+            -webkit-user-select: none;
         }
+
+        .card-item.left { touch-action: none; }
+        .card-item.left:active { cursor: grabbing; }
 
         .card-item:hover {
             border-color: #0891b2;
@@ -102,6 +112,7 @@
 
         #connections { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
         .connection-line { stroke: #22c55e; stroke-width: 4; stroke-linecap: round; opacity: .9; }
+        .connection-line.drag-line { stroke-dasharray: 8 6; opacity: .55; }
         .how-to { padding: .65rem .8rem; border-radius: .6rem; background: #cffafe; color: #0e7490; margin: 0 0 1rem; }
 
         .result {
@@ -154,12 +165,13 @@
     </style>
 </head>
 
-<body>
+<body class="student-kids">
+    @include('partials.toast')
     <div class="wrap">
         <div class="card">
-            <h1>Unir Conceptos</h1>
+            <h1>✨ Unir Parejas</h1>
             <div id="timer">
-                Tiempo restante:
+                ⏱ Te queda:
                 <span id="timer-value">--:--</span>
             </div>
             <p class="scoreline">
@@ -168,7 +180,7 @@
                 / {{ $maxScore }} · Parejas: <strong
                     id="matched-count">{{ count($correctIds) }}</strong>/{{ $items->count() }}
             </p>
-            <p class="how-to">🔗 <strong>Cómo jugar:</strong> arrastra un concepto hacia su definición o selecciónalos uno después del otro.</p>
+            <p class="how-to">🔗 <strong>¿Cómo se juega?</strong> ¡Une cada cosa con su pareja! 🎉</p>
 
             <div id="result" class="result"></div>
 
@@ -194,14 +206,14 @@
                 </div>
             </div>
 
-            <div id="finish" class="finish">¡Completaste la actividad!</div>
+            <div id="finish" class="finish">¡Lo lograste! 🎉</div>
             <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-                onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+                onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
                 style="margin-top: 1rem; text-align: center;">
                 @csrf
 
                 <button type="submit">
-                    Abandonar actividad
+                    Dejar el juego 👋
                 </button>
             </form>
         </div>
@@ -212,9 +224,12 @@
         @csrf
     </form>
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
+        window.KlassioSounds?.setup('matching');
         const items = @json($items->map(fn($item) => ['id' => $item->id, 'left' => $item->left_text, 'right' => $item->right_text]));
         let remainingSeconds = @json($remainingSeconds);
+        let expirationQueued = false;
 
         const timerValue = document.getElementById('timer-value');
 
@@ -235,8 +250,28 @@
                 clearInterval(timer);
 
                 timerValue.textContent = '00:00';
+                if (expirationQueued) return;
+                expirationQueued = true;
+                const layout = document.querySelector('.layout');
+                if (layout) layout.style.pointerEvents = 'none';
+                document.querySelectorAll('button, input:not([type="hidden"]), select, textarea').forEach(control => {
+                    control.disabled = true;
+                });
+                document.querySelectorAll('a').forEach(link => {
+                    link.setAttribute('aria-disabled', 'true');
+                    link.tabIndex = -1;
+                    link.style.pointerEvents = 'none';
+                    link.addEventListener('click', event => event.preventDefault());
+                });
+                document.body.setAttribute('aria-busy', 'true');
+                window.KlassioSounds?.expirado();
 
-                document.getElementById('expire-form').submit();
+                const submitExpiration = () => document.getElementById('expire-form').submit();
+                if (window.KlassioSounds && !window.KlassioSounds.isMuted()) {
+                    setTimeout(submitExpiration, 900);
+                } else {
+                    submitExpiration();
+                }
 
                 return;
             }
@@ -274,6 +309,39 @@
             });
         }
 
+        let dragLine = null;
+        let dragQueued = false;
+        let dragPoint = null;
+
+        function clearDragLine() {
+            if (dragLine) {
+                dragLine.remove();
+                dragLine = null;
+            }
+        }
+
+        document.addEventListener('pointermove', (event) => {
+            if (!dragLeftCard) return;
+            dragPoint = { x: event.clientX, y: event.clientY };
+            if (dragQueued) return;
+            dragQueued = true;
+            requestAnimationFrame(() => {
+                dragQueued = false;
+                if (!dragLeftCard || !dragPoint) return;
+                const bounds = layout.getBoundingClientRect();
+                const from = dragLeftCard.getBoundingClientRect();
+                if (!dragLine) {
+                    dragLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    dragLine.setAttribute('class', 'connection-line drag-line');
+                    connectionLayer.appendChild(dragLine);
+                }
+                dragLine.setAttribute('x1', from.right - bounds.left);
+                dragLine.setAttribute('y1', from.top + from.height / 2 - bounds.top);
+                dragLine.setAttribute('x2', dragPoint.x - bounds.left);
+                dragLine.setAttribute('y2', dragPoint.y - bounds.top);
+            });
+        });
+
         leftCards.forEach((card) => {
             if (card.dataset.matched !== undefined) {
                 card.classList.add('matched');
@@ -282,6 +350,7 @@
                 if (card.classList.contains('matched')) {
                     return;
                 }
+                window.KlassioSounds?.click();
                 leftCards.forEach((c) => c.classList.remove('selected'));
                 card.classList.add('selected');
                 selectedLeft = parseInt(card.dataset.itemId, 10);
@@ -297,6 +366,7 @@
         rightCards.forEach((card) => {
             card.addEventListener('click', () => {
                 if (suppressRightClick) return;
+                window.KlassioSounds?.click();
                 if (!selectedLeft) {
                     showResult('Selecciona primero un concepto de la izquierda.', false);
                     return;
@@ -310,17 +380,33 @@
         });
 
         layout.addEventListener('pointerup', (event) => {
+            clearDragLine();
             if (!dragLeftCard) return;
             const rightCard = document.elementFromPoint(event.clientX, event.clientY)?.closest('.card-item.right');
             if (rightCard && !rightCard.classList.contains('matched')) {
                 suppressRightClick = true;
+                window.KlassioSounds?.click();
                 fetchAnswer(dragLeftCard, rightCard);
                 setTimeout(() => { suppressRightClick = false; }, 0);
             }
             dragLeftCard = null;
         });
 
+        document.addEventListener('pointerup', () => {
+            clearDragLine();
+            dragLeftCard = null;
+        });
+        document.addEventListener('pointercancel', () => {
+            clearDragLine();
+            dragLeftCard = null;
+        });
+
         function showResult(message, ok) {
+            if (window.KlassioToast) {
+                if (ok) KlassioToast.success('¡Correcto!', message);
+                else KlassioToast.error('Revisa', message);
+                return;
+            }
             const el = document.getElementById('result');
             el.textContent = message;
             el.className = 'result ' + (ok ? 'ok' : 'bad');
@@ -365,6 +451,7 @@
                      * RESPUESTA CORRECTA
                      */
                     if (data.correct && !data.already_answered) {
+                        window.KlassioSounds?.correcto();
 
                         leftCard.classList.remove('selected');
 
@@ -389,6 +476,7 @@
                          * TERMINÓ EL MATCHING
                          */
                         if (data.completed) {
+                            window.KlassioSounds?.completado();
 
                             // Bloquear las tarjetas
                             leftCards.forEach((card) => {
@@ -444,6 +532,7 @@
                         leftCard,
                         rightCard
                     ]);
+                    window.KlassioSounds?.error();
 
                     leftCard.classList.remove('selected');
 

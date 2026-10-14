@@ -268,16 +268,32 @@
             text-decoration: none;
             display: inline-block;
         }
+
+        .klassio-sound-btn, .klassio-sound-fab {
+            border: 1px solid #475569 !important;
+            background: #312e81 !important;
+            color: #e0e7ff !important;
+        }
+
+        body.student-kids #question-text { font-size: 25px; }
+        body.student-kids .option-btn { padding: 22px 14px; font-size: 19px; }
+        body.student-kids #btn-start, body.student-kids #btn-next, body.student-kids #btn-back {
+            padding: 16px 40px;
+            font-size: 18px;
+        }
+        body.student-kids #timer-text { font-size: 24px; }
+        body.student-kids #result-text { font-size: 27px; }
     </style>
 </head>
 
-<body>
+<body class="student-kids">
+    @include('partials.toast')
 
     {{-- Pantalla inicio --}}
     <div id="screen-start">
-        <h1>{{ $activity->title }}</h1>
-        <p>{{ count($questions) }} preguntas · Responde una a la vez</p>
-        <button id="btn-start" onclick="startGame()">Iniciar</button>
+        <h1>🎯 {{ $activity->title }}</h1>
+        <p>{{ count($questions) }} preguntas · ¡Responde rapidísimo! ⚡</p>
+        <button id="btn-start" onclick="startGame()">¡A jugar! 🎮</button>
     </div>
 
     {{-- Pantalla pregunta --}}
@@ -299,12 +315,12 @@
         <div id="error-msg"></div>
 
         <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-            onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+            onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
             style="margin-top: 1.5rem; text-align: center;">
             @csrf
 
             <button type="submit">
-                Abandonar actividad
+                Dejar el juego 👋
             </button>
         </form>
     </div>
@@ -320,15 +336,17 @@
 
     {{-- Pantalla final --}}
     <div id="screen-finish">
-        <h1>¡Kahoot completado!</h1>
+        <h1>¡Increíble! 🎉</h1>
         <div id="final-score"></div>
-        <p>Puntaje acumulado</p>
+        <p>Tus puntos ⭐</p>
         <a id="btn-back" href="{{ route('student.activities.show', $activity->id) }}">
-            Volver a la actividad
+            ¡Jugar otra vez! 🎮
         </a>
     </div>
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
+        window.KlassioSounds?.setup('kahoot');
         // -------------------------------------------------------------------------
         // Datos del servidor
         // -------------------------------------------------------------------------
@@ -356,10 +374,12 @@
         // Inicio
         // -------------------------------------------------------------------------
         function startGame() {
+            window.KlassioSounds?.click();
             if (currentIndex >= QUESTIONS.length) {
                 showFinish();
                 return;
             }
+            window.KlassioSounds?.startMusic();
             document.getElementById('screen-start').style.display = 'none';
             document.getElementById('screen-question').style.display = 'block';
             showQuestion(currentIndex);
@@ -388,7 +408,10 @@
                 btn.classList.add('option-btn');
                 btn.textContent = opt.text;
                 btn.dataset.optionId = opt.id;
-                btn.onclick = () => submitAnswer(opt.id, q.id);
+                btn.onclick = () => {
+                    window.KlassioSounds?.click();
+                    submitAnswer(opt.id, q.id);
+                };
                 grid.appendChild(btn);
             });
 
@@ -502,6 +525,8 @@
             }
 
             // Respuesta exitosa — resaltar opciones
+            window.KlassioSounds?.[result.is_correct ? 'correcto' : 'error']();
+            if (result.completed) window.KlassioSounds?.completado();
             const buttons = document.querySelectorAll('.option-btn');
             buttons.forEach(btn => {
                 const bid = parseInt(btn.dataset.optionId);
@@ -597,6 +622,7 @@
         // Siguiente pregunta
         // -------------------------------------------------------------------------
         function nextQuestion() {
+            window.KlassioSounds?.click();
             currentIndex++;
 
             while (currentIndex < QUESTIONS.length && ANSWERED_IDS.includes(QUESTIONS[currentIndex].id)) {

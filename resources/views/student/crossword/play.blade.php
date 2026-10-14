@@ -9,41 +9,49 @@
     @include('partials.assets', ['theme' => 'student'])
     <style>
         body { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem 3rem; color: #172554; }
-        body > h1 { display: inline-block; margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 800; color: #0f766e; }
+        body > h1 { display: inline-block; margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 800; color: #0f766e; letter-spacing: -.02em; }
         body > h2 { margin: .5rem 0 1.5rem; color: #475569; font-size: 1.2rem; }
         #timer { float: right; margin-top: .25rem; padding: .75rem 1rem; border-radius: 1rem; background: #fff; box-shadow: 0 .5rem 1.5rem rgb(15 23 42 / .1); font-weight: 700; color: #0f766e; }
         #timer-value { color: #7c3aed; font-variant-numeric: tabular-nums; }
         body > p { max-width: 700px; color: #475569; }
-        body > section { background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin: 1.25rem 0; box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08); }
+        body > section { background: #fff; border-radius: 1.25rem; padding: 1.5rem; margin: 1.25rem 0; box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .08); border: 1px solid #f0fdfa; }
         section h2 { margin-top: 0; color: #0f766e; font-weight: 800; }
-        #crossword-grid { max-width: 100%; overflow: auto; padding: .75rem; border-radius: 1rem; background: #0f172a; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1); }
-        #crossword-grid input { border: 2px solid #cbd5e1; border-radius: .35rem; color: #0f172a; outline: none; transition: transform .15s, border-color .15s; }
-        #crossword-grid input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgb(20 184 166 / .25); transform: scale(1.05); }
-        #clues-horizontal, #clues-vertical { padding-left: 1.25rem; }
-        #clues-horizontal li, #clues-vertical li { margin: .6rem 0; padding: .65rem .8rem; border-radius: .75rem; background: #f0fdfa; color: #334155; }
-        #results p { padding: .75rem 1rem; border-radius: .75rem; background: #eff6ff; margin: .5rem 0; }
+        #crossword-grid { max-width: 100%; overflow: auto; padding: 1rem; border-radius: 1.25rem; background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 .75rem 1.75rem rgb(15 23 42 / .25), inset 0 0 0 1px rgb(255 255 255 / .08); }
+        #crossword-grid input { border: 2px solid #cbd5e1; border-radius: .4rem; color: #0f172a; background: #fff; outline: none; transition: transform .15s, border-color .15s, box-shadow .15s; }
+        #crossword-grid input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgb(20 184 166 / .25); transform: scale(1.08); }
+        #crossword-grid input.correct { border-color: #22c55e; background: #dcfce7; color: #15803d; }
+        #crossword-grid input.incorrect { border-color: #ef4444; background: #fee2e2; }
+        #clues-horizontal, #clues-vertical { padding-left: 0; list-style: none; }
+        #clues-horizontal li, #clues-vertical li { margin: .6rem 0; padding: .65rem .8rem; border-radius: .75rem; background: #f0fdfa; color: #334155; border: 1px solid transparent; transition: border-color .15s, background .15s; }
+        #clues-horizontal li:hover, #clues-vertical li:hover { border-color: #99f6e4; background: #ccfbf1; }
+        #clues-horizontal li.active, #clues-vertical li.active { border-color: #14b8a6; background: #ccfbf1; color: #0f766e; font-weight: 700; }
+        #results p { padding: .75rem 1rem; border-radius: .75rem; background: #eff6ff; margin: .5rem 0; color: #1e40af; font-weight: 600; }
         button { border: 0; border-radius: .8rem; padding: .75rem 1rem; font-weight: 700; background: #e11d48; color: #fff; cursor: pointer; }
-        nav a { display: inline-block; color: #0f766e; font-weight: 700; text-decoration: none; padding: .7rem 1rem; }
+        button:hover { filter: brightness(1.05); }
+        nav a { display: inline-block; color: #0f766e; font-weight: 700; text-decoration: none; padding: .7rem 1rem; border-radius: .8rem; }
+        nav a:hover { background: #f0fdfa; }
+        body.student-kids #clues-horizontal li, body.student-kids #clues-vertical li { font-size: 1.05rem; }
         @media (max-width: 600px) { #timer { float: none; display: inline-block; margin-bottom: 1rem; } body > section { padding: 1rem; } }
     </style>
 </head>
 
-<body>
+<body class="student-kids">
+    @include('partials.toast')
 
-    <h1>{{ $activity->title }}</h1>
+    <h1>🧩 {{ $activity->title }}</h1>
 
-    <h2>Crucigrama</h2>
+    <h2>¡Adivina las palabras!</h2>
     <div id="timer">
-        Tiempo restante:
+        ⏱ Te queda:
         <span id="timer-value">--:--</span>
     </div>
 
     <p>
-        Completa las palabras utilizando las pistas.
+        Lee la pista y escribe la palabra. ✏️
     </p>
 
     <p>
-        Puntaje:
+        ⭐ Puntos:
         <strong id="score-display">0</strong>
     </p>
 
@@ -74,12 +82,12 @@
     <hr>
 
     <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-        onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
+        onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
         style="margin: 1rem 0; text-align: center;">
         @csrf
 
         <button type="submit">
-            Abandonar actividad
+            Dejar el juego 👋
         </button>
     </form>
 
@@ -110,7 +118,11 @@
         @csrf
     </form>
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
+        window.KlassioSounds?.setup('crossword');
+        let expirationQueued = false;
+
         const PARTICIPATION_ID = {{ $participation->id }};
         const CSRF_TOKEN = '{{ csrf_token() }}';
         const GRID = @json($crossword->grid);
@@ -137,8 +149,28 @@
                 clearInterval(timer);
 
                 timerValue.textContent = '00:00';
+                if (expirationQueued) return;
+                expirationQueued = true;
+                document.querySelectorAll('button, input:not([type="hidden"]), select, textarea').forEach(control => {
+                    control.disabled = true;
+                });
+                const grid = document.getElementById('crossword-grid');
+                if (grid) grid.style.pointerEvents = 'none';
+                document.querySelectorAll('a').forEach(link => {
+                    link.setAttribute('aria-disabled', 'true');
+                    link.tabIndex = -1;
+                    link.style.pointerEvents = 'none';
+                    link.addEventListener('click', event => event.preventDefault());
+                });
+                document.body.setAttribute('aria-busy', 'true');
+                window.KlassioSounds?.expirado();
 
-                document.getElementById('expire-form').submit();
+                const submitExpiration = () => document.getElementById('expire-form').submit();
+                if (window.KlassioSounds && !window.KlassioSounds.isMuted()) {
+                    setTimeout(submitExpiration, 900);
+                } else {
+                    submitExpiration();
+                }
 
                 return;
             }
@@ -243,6 +275,7 @@
                 input.addEventListener('input', onInput);
                 input.addEventListener('keydown', onKeyDown);
                 input.addEventListener('focus', onFocus);
+                input.addEventListener('pointerdown', () => window.KlassioSounds?.click());
 
                 cell.appendChild(input);
                 inputRefs[`${row}-${column}`] = input;
@@ -262,7 +295,10 @@
             clue.id = `clue-${word.id}`;
             clue.textContent = `${wordClueNumbers[word.id]}. ${word.clue}`;
             clue.style.cursor = 'pointer';
-            clue.addEventListener('click', () => focusWord(word));
+            clue.addEventListener('click', () => {
+                window.KlassioSounds?.click();
+                focusWord(word);
+            });
 
             if (word.direction === 'horizontal') {
                 cluesHorizontal.appendChild(clue);
@@ -505,6 +541,7 @@
 
             // Marcar palabra como respondida
             word.answered = true;
+            window.KlassioSounds?.[result.is_correct ? 'correcto' : 'error']();
 
             for (let i = 0; i < word.word.length; i++) {
                 const row = word.direction === 'horizontal' ? word.row : word.row + i;
@@ -533,6 +570,12 @@
                 `✗ "${word.clue}" — Incorrecto (la respuesta era: ${result.correct_word})`;
 
             resultsElement.appendChild(resultItem);
+            if (window.KlassioToast) {
+                if (result.is_correct) {
+                    KlassioToast.success('¡Correcto!', `"${word.clue}" (+${result.score} pts)`);
+                } else {
+                    KlassioToast.error('Incorrecto', `"${word.clue}" (era: ${result.correct_word})`);
+                }
 
             // Actualizar puntaje
             if (result.is_correct) {
@@ -544,6 +587,7 @@
             // Comprobar si se completó todo el crucigrama
             // Comprobar si se completó todo el crucigrama
             if (result.completed) {
+                window.KlassioSounds?.completado();
 
                 const completed = document.createElement('p');
 

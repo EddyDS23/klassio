@@ -52,6 +52,15 @@
     html[data-theme="dark"] .page-hero { box-shadow: 0 1rem 2.5rem rgb(0 0 0 / .4); }
     .klassio-theme-btn { border: 1px solid #cbd5e1; border-radius: .75rem; background: #fff; padding: .5rem .75rem; font-size: .85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
     html[data-theme="dark"] .klassio-theme-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
+
+    /* Ajustes de lectura para el perfil infantil, sin cambiar los demás perfiles. */
+    body.student-kids { font-size: 18px; }
+    body.student-kids .student-activity > h1 { font-size: 2.1rem; }
+    body.student-kids .student-activity a,
+    body.student-kids .student-activity button { padding: .9rem 1.25rem; font-size: 1.05rem; }
+    body.student-kids #timer { font-size: 1.1rem; }
+    body.student-kids .klassio-toast-msg { font-size: .95rem; }
+    body.student-kids :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
 </style>
 <script>
     // Aplica modo guardado antes de pintar (claro por defecto). Sin Vite, solo Bootstrap + Tailwind CDN.
