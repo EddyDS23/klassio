@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('student.layouts.session')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sala {{ $session->code }}</title>
-    @include('partials.assets', ['theme' => 'student'])
+@section('title')Sala {{ $session->code }}@endsection
+
+@section('head')
     @if ((bool) config('broadcasting.connections.reverb.enabled', false))
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
@@ -20,11 +17,10 @@
             });
         </script>
     @endif
-</head>
+@endsection
 
-<body>
-
-    <div class="page-shell">
+@section('content')
+<div class="page-shell">
 
         <div class="page-hero text-center">
             <h1 class="fw-bold mb-1">Sala de juego</h1>
@@ -111,8 +107,10 @@
         </div>
 
     </div>
+@endsection
 
-    <script>
+@push('scripts')
+<script>
         const sessionId = @json($session->id);
         const stateUrl = @json(route('student.game-sessions.state', $session->id));
         const playUrl = @json(route('student.game-sessions.play', $session->id));
@@ -239,7 +237,4 @@
             setupStateSync(refresh);
         });
     </script>
-
-</body>
-
-</html>
+@endpush

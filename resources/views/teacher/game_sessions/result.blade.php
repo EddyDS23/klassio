@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.session')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultados — Sala {{ $session->code }}</title>
-    @include('partials.assets', ['theme' => 'teacher'])
-</head>
+@section('title', 'Resultados — Sala {{ $session->code }}')
 
-<body>
-
+@section('content')
     <div class="page-shell">
 
         <div class="page-hero text-center">
@@ -85,7 +78,4 @@
         </div>
 
     </div>
-
-</body>
-
-</html>
+@endsection

@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.session')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sala {{ $session->code }} — Profesor</title>
-    @include('partials.assets', ['theme' => 'teacher'])
+@section('title', 'Sala {{ $session->code }} — Profesor')
+
+@section('head')
     @if ((bool) config('broadcasting.connections.reverb.enabled', false))
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
@@ -20,10 +17,9 @@
             });
         </script>
     @endif
-</head>
+@endsection
 
-<body>
-
+@section('content')
     @php($isRace = in_array($session->activity->type, ['crossword', 'word_search', 'matching'], true))
 
     <div class="page-shell">
@@ -482,7 +478,4 @@
             }
         });
     </script>
-
-</body>
-
-</html>
+@endsection

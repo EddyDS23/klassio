@@ -1,51 +1,15 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('title', 'Actividades')
+@section('brand-url', route('teacher.classes.index'))
+@section('brand-caption', 'Panel del maestro')
+@section('header-context')
+<span class="hidden rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
+    Actividades
+</span>
+@endsection
 
-    <title>Actividades | Klassio</title>
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-
-<body class="min-h-screen bg-slate-100 text-slate-800">
-
-    <!-- Barra superior -->
-    <header class="sticky top-0 z-30 border-b border-emerald-100 bg-white shadow-sm">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-
-            <a href="{{ route('teacher.classes.index') }}"
-               class="flex items-center gap-3">
-
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-2xl font-black text-white shadow-lg shadow-emerald-200">
-                    K
-                </div>
-
-                <div>
-                    <h1 class="text-xl font-black tracking-tight text-slate-900">
-                        Klassio
-                    </h1>
-
-                    <p class="text-xs font-bold uppercase tracking-widest text-emerald-600">
-                        Panel del maestro
-                    </p>
-                </div>
-
-            </a>
-
-            <span class="hidden rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
-                Actividades
-            </span>
-
-        </div>
-    </header>
-
-
-    <!-- Contenido principal -->
-    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-
+@section('content')
         <div class="mb-6">
             <a href="{{ route('teacher.classes.show', $class->id) }}" class="inline-flex items-center gap-2 text-sm font-black text-emerald-700 transition hover:text-emerald-900">
                 <span aria-hidden="true">←</span> Volver a la clase
@@ -545,8 +509,5 @@
         @endif
 
 
-    </main>
 
-</body>
-
-</html>
+@endsection

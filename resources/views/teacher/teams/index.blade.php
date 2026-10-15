@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.session')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('title')Equipos — {{ $activity->title }}@endsection
 
-    <title>Equipos — {{ $activity->title }}</title>
-
+@section('head')
     <style>
         * {
             box-sizing: border-box;
@@ -291,11 +287,18 @@
             }
         }
     </style>
-</head>
+@endsection
 
-<body>
+@section('content')
+<div class="container">
 
-    <div class="container">
+        @php
+            $hasParticipations = $activity->participations()->exists();
+            $canEditTeams = $activity->status === 'draft' && !$hasParticipations;
+            $assignedCount = $students->filter(fn($student) => $assignedStudentIds->contains($student->id))->count();
+            $unassignedStudents = $students->filter(fn($student) => !$assignedStudentIds->contains($student->id));
+            $unassignedCount = $unassignedStudents->count();
+        @endphp
 
         <a href="{{ route("teacher.activities.show",$activity->id) }}">
             ← Volver
@@ -308,6 +311,43 @@
                 Actividad:
                 <strong>{{ $activity->title }}</strong>
             </p>
+        </div>
+
+        <div class="panel" aria-labelledby="team-review-title">
+            <h2 id="team-review-title">Revisión de la distribución</h2>
+            <p class="small">Resumen de la composición actual. Los cambios se guardan al realizar cada acción.</p>
+
+            <div class="actions" aria-label="Resumen de equipos">
+                <span class="team-count">{{ $teams->count() }} equipos</span>
+                <span class="team-count">{{ $assignedCount }} de {{ $students->count() }} alumnos asignados</span>
+                <span class="team-count">
+                    @if ($unassignedCount === 0)
+                        Sin alumnos pendientes
+                    @else
+                        {{ $unassignedCount }} {{ $unassignedCount === 1 ? 'alumno pendiente' : 'alumnos pendientes' }}
+                    @endif
+                </span>
+            </div>
+
+            @if ($unassignedCount > 0)
+                <div class="alert alert-error" role="status" style="margin-top: 14px; margin-bottom: 0;">
+                    Revisa la lista de alumnos sin equipo antes de continuar.
+                </div>
+            @elseif ($teams->isEmpty())
+                <div class="alert alert-error" role="status" style="margin-top: 14px; margin-bottom: 0;">
+                    Todavía no hay equipos creados para esta actividad.
+                </div>
+            @else
+                <div class="alert alert-success" role="status" style="margin-top: 14px; margin-bottom: 0;">
+                    Todos los alumnos activos están asignados. Revisa también el tamaño de cada equipo.
+                </div>
+            @endif
+
+            @if (!$canEditTeams)
+                <div class="alert alert-error" role="status" style="margin-top: 14px; margin-bottom: 0;">
+                    La composición ya no se puede modificar porque la actividad no está en borrador o ya tiene participaciones.
+                </div>
+            @endif
         </div>
 
 
@@ -361,6 +401,7 @@
          ACCIONES
          ============================================================ --}}
 
+        @if ($canEditTeams)
         <div class="panel">
 
             <h2>Administrar equipos</h2>
@@ -400,6 +441,7 @@
             </div>
 
         </div>
+        @endif
 
 
         {{-- ============================================================
@@ -507,6 +549,7 @@
 
 
                                                 {{-- Quitar alumno --}}
+                                                @if ($canEditTeams)
                                                 <form method="POST"
                                                     action="{{ route('teacher.teams.members.remove', [
                                                         'id' => $activity->id,
@@ -525,6 +568,7 @@
                                                     </button>
 
                                                 </form>
+                                                @endif
 
                                             </li>
                                         @endforeach
@@ -537,6 +581,7 @@
                                  AGREGAR ALUMNO
                                  ==================================================== --}}
 
+                                @if ($canEditTeams)
                                 <form method="POST"
                                     action="{{ route('teacher.teams.members.add', [
                                         'id' => $activity->id,
@@ -571,12 +616,14 @@
                                     </button>
 
                                 </form>
+                                @endif
 
 
                                 {{-- ====================================================
                                  ELIMINAR EQUIPO
                                  ==================================================== --}}
 
+                                @if ($canEditTeams)
                                 <form method="POST"
                                     action="{{ route('teacher.teams.destroy', [
                                         'id' => $activity->id,
@@ -595,6 +642,7 @@
                                     </button>
 
                                 </form>
+                                @endif
 
                             </div>
 
@@ -614,11 +662,7 @@
 
         <div class="panel">
 
-            <h2>Alumnos sin equipo</h2>
-
-            @php
-                $unassignedStudents = $students->filter(fn($student) => !$assignedStudentIds->contains($student->id));
-            @endphp
+            <h2>Alumnos sin equipo ({{ $unassignedCount }})</h2>
 
             @if ($unassignedStudents->isEmpty())
 
@@ -647,7 +691,4 @@
         </div>
 
     </div>
-
-</body>
-
-</html>
+@endsection

@@ -1,16 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('student.layouts.session')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unirse a una sala</title>
-    @include('partials.assets', ['theme' => 'student'])
-</head>
+@section('title')Unirse a una sala@endsection
 
-<body>
-
-    <div class="page-shell">
+@section('content')
+<div class="page-shell">
 
         <div class="page-hero">
             <h1 class="fw-bold mb-1">Unirse a una sala</h1>
@@ -66,7 +59,4 @@
         </div>
 
     </div>
-
-</body>
-
-</html>
+@endsection
