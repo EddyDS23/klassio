@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Activity;
 use App\Models\Enrollment;
+use App\Models\GameSession;
 use App\Models\Participation;
 use App\Models\SchoolClass;
 use App\Models\Team;
@@ -525,6 +526,43 @@ class ResultsTest extends TestCase
         });
     }
 
+    public function test_team_result_uses_best_completed_attempt_and_ignores_game_sessions(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $class = $this->createClass($teacher);
+        $this->enroll($class, $student);
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $team = Team::create(['activity_id' => $activity->id, 'name' => 'Team Alpha']);
+        TeamMember::create(['team_id' => $team->id, 'student_id' => $student->id]);
+
+        $best = Participation::create([
+            'activity_id' => $activity->id, 'student_id' => null, 'team_id' => $team->id,
+            'attempt' => 1, 'status' => 'completed', 'score' => 90,
+            'completed_at' => now(), 'elapsed_seconds' => 60,
+        ]);
+        Participation::create([
+            'activity_id' => $activity->id, 'student_id' => null, 'team_id' => $team->id,
+            'attempt' => 2, 'status' => 'completed', 'score' => 70,
+            'completed_at' => now(), 'elapsed_seconds' => 30,
+        ]);
+        $session = GameSession::create([
+            'activity_id' => $activity->id, 'code' => 'KLS12345', 'status' => 'finished',
+            'max_players' => 4, 'created_by' => $teacher->id,
+        ]);
+        Participation::create([
+            'activity_id' => $activity->id, 'game_session_id' => $session->id,
+            'student_id' => null, 'team_id' => $team->id, 'attempt' => 3,
+            'status' => 'completed', 'score' => 100, 'completed_at' => now(),
+            'elapsed_seconds' => 10,
+        ]);
+
+        $response = $this->actingAs($student)->get(route('student.participation.result', $activity->id));
+
+        $response->assertOk();
+        $response->assertViewHas('participation', fn ($result) => $result->id === $best->id);
+    }
+
     public function test_non_member_cannot_view_team_result(): void
     {
         $teacher = $this->teacher();
@@ -815,6 +853,44 @@ class ResultsTest extends TestCase
                 && $resultTwo['participation']->id === $participation->id
                 && $resultOne['score'] === 88
                 && $resultTwo['score'] === 88;
+        });
+    }
+
+    public function test_teacher_team_results_use_best_conventional_attempt(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $class = $this->createClass($teacher);
+        $this->enroll($class, $student);
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $team = Team::create(['activity_id' => $activity->id, 'name' => 'Team Alpha']);
+        TeamMember::create(['team_id' => $team->id, 'student_id' => $student->id]);
+
+        $best = Participation::create([
+            'activity_id' => $activity->id, 'student_id' => null, 'team_id' => $team->id,
+            'attempt' => 1, 'status' => 'completed', 'score' => 90, 'elapsed_seconds' => 60,
+        ]);
+        Participation::create([
+            'activity_id' => $activity->id, 'student_id' => null, 'team_id' => $team->id,
+            'attempt' => 2, 'status' => 'completed', 'score' => 70, 'elapsed_seconds' => 30,
+        ]);
+        $session = GameSession::create([
+            'activity_id' => $activity->id, 'code' => 'KLS24680', 'status' => 'finished',
+            'max_players' => 4, 'created_by' => $teacher->id,
+        ]);
+        Participation::create([
+            'activity_id' => $activity->id, 'game_session_id' => $session->id,
+            'student_id' => null, 'team_id' => $team->id, 'attempt' => 3,
+            'status' => 'completed', 'score' => 100, 'elapsed_seconds' => 10,
+        ]);
+
+        $response = $this->actingAs($teacher)->get(route('teacher.activities.results', $activity->id));
+
+        $response->assertOk();
+        $response->assertViewHas('results', function ($results) use ($student, $best) {
+            $result = $results->firstWhere('student.id', $student->id);
+
+            return $result['participation']->id === $best->id && $result['score'] === 90;
         });
     }
 }

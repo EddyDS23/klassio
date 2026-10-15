@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Activity;
 use App\Models\Participation;
+use App\Support\TeamAttemptSelector;
 
 class ReportService
 {
@@ -15,7 +16,7 @@ class ReportService
         $participations = Participation::where(
             'activity_id',
             $activity->id
-        )->get();
+        )->whereNull('game_session_id')->get();
 
         /*
          * =========================================================
@@ -207,33 +208,8 @@ class ReportService
          */
 
         $bestByTeam = $teamParticipations
-            ->where('status', 'completed')
             ->groupBy('team_id')
-            ->map(function ($teamAttempts) {
-
-                return $teamAttempts
-                    ->filter(fn (Participation $participation) =>
-                        $participation->score !== null
-                    )
-                    ->sort(function (
-                        Participation $a,
-                        Participation $b
-                    ) {
-                        /*
-                         * Mayor puntuación primero.
-                         */
-                        if ($a->score !== $b->score) {
-                            return $b->score <=> $a->score;
-                        }
-
-                        /*
-                         * En empate, menor tiempo.
-                         */
-                        return ($a->elapsed_seconds ?? PHP_INT_MAX)
-                            <=> ($b->elapsed_seconds ?? PHP_INT_MAX);
-                    })
-                    ->first();
-            })
+            ->map(fn ($teamAttempts) => TeamAttemptSelector::bestCompleted($teamAttempts))
             ->filter();
 
         $scores = $bestByTeam

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Activity;
 use App\Models\Participation;
+use App\Support\TeamAttemptSelector;
 use Illuminate\Support\Collection;
 
 class RankingService
@@ -23,6 +24,7 @@ class RankingService
     {
         $participations = Participation::query()
             ->where('activity_id', $activity->id)
+            ->whereNull('game_session_id')
             ->where('status', 'completed')
             ->with([
                 'student:id,name,email',
@@ -92,14 +94,10 @@ class RankingService
                 $participation->team_id !== null
             )
             ->groupBy('team_id')
-            ->map(function (Collection $teamParticipations) {
-                return $teamParticipations
-                    ->sortBy([
-                        ['score', 'desc'],
-                        ['elapsed_seconds', 'asc'],
-                    ])
-                    ->first();
-            })
+            ->map(fn (Collection $teamParticipations) =>
+                TeamAttemptSelector::bestCompleted($teamParticipations)
+            )
+            ->filter()
             ->sort(function (
                 Participation $a,
                 Participation $b

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Activity;
 use App\Models\Enrollment;
+use App\Models\GameSession;
 use App\Models\Participation;
 use App\Models\SchoolClass;
 use App\Models\Team;
@@ -634,6 +635,31 @@ class RankingTest extends TestCase
                 && $ranking[0]['participation']->id !== $first->id
                 && $ranking[0]['score'] === 95;
         });
+    }
+
+    public function test_team_ranking_excludes_game_session_participations(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $class = $this->createClass($teacher);
+        $this->enroll($class, $student);
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $team = Team::create(['activity_id' => $activity->id, 'name' => 'Team Alpha']);
+        TeamMember::create(['team_id' => $team->id, 'student_id' => $student->id]);
+        $session = GameSession::create([
+            'activity_id' => $activity->id, 'code' => 'KLS56789', 'status' => 'finished',
+            'max_players' => 4, 'created_by' => $teacher->id,
+        ]);
+        Participation::create([
+            'activity_id' => $activity->id, 'game_session_id' => $session->id,
+            'student_id' => null, 'team_id' => $team->id, 'attempt' => 1,
+            'status' => 'completed', 'score' => 100, 'elapsed_seconds' => 10,
+        ]);
+
+        $response = $this->actingAs($teacher)->get(route('teacher.activities.ranking', $activity->id));
+
+        $response->assertOk();
+        $response->assertViewHas('ranking', fn ($ranking) => $ranking->isEmpty());
     }
 
     public function test_team_ranking_orders_teams_by_score(): void

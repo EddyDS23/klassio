@@ -7,6 +7,7 @@ use App\Models\Participation;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\ParticipationService;
+use App\Support\TeamAttemptSelector;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -129,12 +130,14 @@ class ParticipationController extends Controller
 
             abort_if($team === null, 404, 'No perteneces a ningún equipo en esta actividad.');
 
-            $participation = Participation::where('activity_id', $activity->id)
+            $teamAttempts = Participation::where('activity_id', $activity->id)
                 ->whereNull('game_session_id')
                 ->where('team_id', $team->id)
                 ->whereIn('status', ['completed', 'abandoned', 'expired'])
-                ->latest()
-                ->firstOrFail();
+                ->get();
+
+            $participation = TeamAttemptSelector::result($teamAttempts);
+            abort_if($participation === null, 404);
         } else {
             // Estudiante individual
             $participation = Participation::where('activity_id', $activity->id)

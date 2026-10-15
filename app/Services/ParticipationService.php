@@ -7,6 +7,7 @@ use App\Models\Enrollment;
 use App\Models\Participation;
 use App\Models\Team;
 use App\Models\User;
+use App\Support\TeamAttemptSelector;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -448,6 +449,7 @@ class ParticipationService
         if ($activity->mode === 'individual') {
 
             $participations = Participation::where('activity_id', $activity->id)
+                ->whereNull('game_session_id')
                 ->whereIn('student_id', $studentIds)
                 ->orderByDesc('attempt')
                 ->get()
@@ -513,11 +515,12 @@ class ParticipationService
      * de una sola vez.
      */
         $participations = Participation::where('activity_id', $activity->id)
+            ->whereNull('game_session_id')
             ->whereIn('team_id', $teamIds)
             ->orderByDesc('attempt')
             ->get()
             ->groupBy('team_id')
-            ->map(fn($items) => $items->first());
+            ->map(fn ($items) => TeamAttemptSelector::teacherResult($items));
 
         return $enrollments->map(function ($enrollment) use (
             $teamsByStudent,

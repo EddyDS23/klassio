@@ -33,6 +33,24 @@ rechazan por autorización o se responden sin volver a modificarla.
 
 Autoridad: el servidor valida rondas, puntaje y finalización. El frontend solo muestra.
 
+## Actividades convencionales en equipos
+
+- Todos los integrantes de un equipo comparten una sola `Participation` por
+  intento convencional; las respuestas y el puntaje pertenecen a ese intento.
+- La calificación y el ranking del equipo usan su mejor intento completado:
+  mayor puntaje primero y, en empate, menor tiempo. Si puntaje y tiempo también
+  empatan, se muestra el intento más reciente.
+- Los intentos abandonados o expirados se muestran como resultado únicamente
+  cuando el equipo no tiene ningún intento completado.
+- La tabla del profesor muestra el intento activo mientras el equipo juega;
+  después muestra el mejor intento completado (o el último intento terminal si
+  nunca completó uno).
+- Las participaciones vinculadas a `GameSession` corresponden al multijugador
+  por sala y quedan excluidas de resultados convencionales, reportes y rankings.
+- El puntaje de una actividad convencional en equipo es compartido. El modelo
+  actual no registra qué integrante aportó cada respuesta, así que no se
+  atribuyen respuestas ni calificaciones individuales a sus miembros.
+
 ## Ruleta (implementada)
 
 - Dinámica: **competitiva simultánea por rondas** (sin turnos).
