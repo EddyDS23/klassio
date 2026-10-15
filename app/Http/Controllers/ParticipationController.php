@@ -144,7 +144,8 @@ class ParticipationController extends Controller
                 ->whereNull('game_session_id')
                 ->where('student_id', $user->id)
                 ->whereIn('status', ['completed', 'abandoned', 'expired'])
-                ->latest()
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->firstOrFail();
         }
 
@@ -183,18 +184,42 @@ class ParticipationController extends Controller
     {
         $activity = Activity::findOrFail($id);
 
-        $participation = $this->participationService->getActive($activity);
+        $participation = $this->participationService->getLatest($activity);
+        abort_if($participation === null, 404);
 
-        Gate::authorize('finish', $participation);
+        Gate::authorize('result', $participation);
 
-        if (! $this->participationService->hasExpired($participation, $activity)) {
-            abort(409, 'La actividad aún no ha terminado.');
+        if ($participation->status === 'started') {
+            Gate::authorize('finish', $participation);
+
+            if (! $this->participationService->hasExpired($participation, $activity)) {
+                abort(409, 'La actividad aún no ha terminado.');
+            }
+
+            $this->participationService->expire($participation);
         }
-
-        $this->participationService->expire($participation);
 
         return redirect()
             ->route('student.participation.result', $activity->id)
             ->with('error', 'El tiempo de la actividad ha terminado.');
+    }
+
+    public function expireResult(int $id): RedirectResponse
+    {
+        $activity = Activity::findOrFail($id);
+        $participation = $this->participationService->getLatest($activity);
+        abort_if($participation === null, 404);
+
+        Gate::authorize('result', $participation);
+
+        if ($participation->status === 'started') {
+            if (! $this->participationService->hasExpired($participation, $activity)) {
+                return redirect()->route('student.activities.show', $activity->id);
+            }
+
+            $this->participationService->expire($participation);
+        }
+
+        return redirect()->route('student.participation.result', $activity->id);
     }
 }

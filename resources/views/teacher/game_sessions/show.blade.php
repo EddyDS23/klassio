@@ -187,6 +187,14 @@
         let roundRemaining = null;
         let roundOpen = false;
         let raceRemaining = null;
+        let refreshInProgress = false;
+        let navigationStarted = false;
+
+        function navigateToResultsOnce() {
+            if (navigationStarted) return;
+            navigationStarted = true;
+            window.location.href = resultUrl;
+        }
 
         function formatTime(s) {
             s = Math.max(0, s);
@@ -421,7 +429,7 @@
                 } else if (data.state) {
                     renderState(data.state);
                     if (data.finished) {
-                        window.location.href = resultUrl;
+                        navigateToResultsOnce();
                         return;
                     }
                 }
@@ -431,6 +439,9 @@
         }
 
         async function refresh() {
+            if (refreshInProgress || navigationStarted) return;
+            refreshInProgress = true;
+
             try {
                 const res = await fetch(stateUrl, {
                     headers: {
@@ -444,10 +455,12 @@
                 renderState(state);
 
                 if (state.status === 'finished') {
-                    window.location.href = resultUrl;
+                    navigateToResultsOnce();
                 }
             } catch (e) {
                 // sin red por ahora
+            } finally {
+                refreshInProgress = false;
             }
         }
 
@@ -455,7 +468,6 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             tick();
-            refresh();
 
             const spinBtn = document.getElementById('spin-btn');
             if (spinBtn) {
@@ -467,7 +479,7 @@
                 setupStateSync(refresh);
                 window.Echo.private('game-session.' + sessionId)
                     .listen('.GameFinished', (e) => {
-                        window.location.href = resultUrl;
+                        navigateToResultsOnce();
                     })
                     .listen('.PlayerJoined', (e) => refresh())
                     .listen('.PlayerLeft', (e) => refresh())
@@ -475,6 +487,8 @@
                     .listen('.RoundClosed', (e) => refresh())
                     .listen('.ScoreUpdated', (e) => refresh())
                     .listen('.TurnChanged', (e) => refresh());
+            } else {
+                setupStateSync(refresh);
             }
         });
     </script>

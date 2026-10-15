@@ -980,6 +980,52 @@ class GameSessionService
     }
 
     /**
+     * Returns the caller's team's solved items without exposing another team's
+     * answers through the shared session state endpoint.
+     *
+     * @return array{participation_id:int,status:string,score:int,completed_item_ids:list<int>,incorrect_item_ids:list<int>}
+     */
+    public function teamProgress(Participation $participation): array
+    {
+        $completedItemIds = [];
+        $incorrectItemIds = [];
+
+        if ($participation->activity->type === 'crossword') {
+            $answers = $participation->crosswordAnswers()
+                ->get(['crossword_word_id', 'is_correct']);
+
+            $completedItemIds = $answers
+                ->pluck('crossword_word_id')
+                ->map(fn ($id): int => (int) $id)
+                ->all();
+            $incorrectItemIds = $answers
+                ->where('is_correct', false)
+                ->pluck('crossword_word_id')
+                ->map(fn ($id): int => (int) $id)
+                ->all();
+        } elseif ($participation->activity->type === 'matching') {
+            $completedItemIds = $participation->matchingAnswers()
+                ->where('is_correct', true)
+                ->pluck('matching_item_id')
+                ->map(fn ($id): int => (int) $id)
+                ->all();
+        } elseif ($participation->activity->type === 'word_search') {
+            $completedItemIds = $participation->wordsearchAnswers()
+                ->pluck('word_id')
+                ->map(fn ($id): int => (int) $id)
+                ->all();
+        }
+
+        return [
+            'participation_id' => (int) $participation->id,
+            'status' => $participation->status,
+            'score' => (int) $participation->score,
+            'completed_item_ids' => $completedItemIds,
+            'incorrect_item_ids' => $incorrectItemIds,
+        ];
+    }
+
+    /**
      * Estado compartido de la partida para el frontend.
      */
     public function getState(GameSession $session): array

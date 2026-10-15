@@ -652,15 +652,19 @@ class ParticipationTest extends TestCase
             route('student.participation.expire', $activity->id)
         );
 
-        /*
-        * getActive() detecta que la participación ya expiró,
-        * la marca como expired y lanza un error HTTP 410.
-        */
-        $response->assertGone();
+        $response->assertRedirect(route('student.participation.result', $activity->id));
 
         $this->assertDatabaseHas('participations', [
             'id' => $participation->id,
             'status' => 'expired',
         ]);
+
+        $this->actingAs($student)
+            ->post(route('student.participation.expire', $activity->id))
+            ->assertRedirect(route('student.participation.result', $activity->id));
+
+        $this->actingAs($student)
+            ->get(route('student.participation.expire-result', $activity->id))
+            ->assertRedirect(route('student.participation.result', $activity->id));
     }
 }

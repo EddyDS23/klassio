@@ -116,6 +116,14 @@
         const playUrl = @json(route('student.game-sessions.play', $session->id));
         const resultUrl = @json(route('student.game-sessions.result', $session->id));
         const myParticipationId = @json($myParticipation?->id);
+        let navigationStarted = false;
+        let refreshInProgress = false;
+
+        function navigateOnce(url) {
+            if (navigationStarted) return;
+            navigationStarted = true;
+            window.location.href = url;
+        }
 
         const statusLabel = {
             waiting: 'Esperando jugadores',
@@ -198,6 +206,9 @@
         }
 
         async function refresh() {
+            if (refreshInProgress || navigationStarted) return;
+            refreshInProgress = true;
+
             try {
                 const res = await fetch(stateUrl, {
                     headers: {
@@ -211,12 +222,14 @@
                 renderState(state);
 
                 if (state.status === 'playing') {
-                    window.location.href = playUrl;
+                    navigateOnce(playUrl);
                 } else if (state.status === 'finished') {
-                    window.location.href = resultUrl;
+                    navigateOnce(resultUrl);
                 }
             } catch (e) {
                 // sin red por ahora
+            } finally {
+                refreshInProgress = false;
             }
         }
 
@@ -226,10 +239,10 @@
             if (window.Echo && reverbEnabled) {
                 window.Echo.private('game-session.' + sessionId)
                     .listen('.GameStarted', (e) => {
-                        window.location.href = playUrl;
+                        navigateOnce(playUrl);
                     })
                     .listen('.GameFinished', (e) => {
-                        window.location.href = resultUrl;
+                        navigateOnce(resultUrl);
                     })
                     .listen('.PlayerJoined', (e) => refresh())
                     .listen('.PlayerLeft', (e) => refresh());

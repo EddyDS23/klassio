@@ -11,7 +11,6 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ResultsTest extends TestCase
@@ -292,76 +291,59 @@ class ResultsTest extends TestCase
     // -------------------------------------------------------------------------
 
     public function test_student_result_returns_latest_finished_attempt(): void
-{
-    $teacher = $this->teacher();
-    $student = $this->student();
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
 
-    $class = $this->createClass($teacher);
+        $class = $this->createClass($teacher);
 
-    $this->enroll($class, $student);
+        $this->enroll($class, $student);
 
-    $activity = $this->createActivity(
-        $class,
-        $teacher,
-        [
-            'status' => 'published',
-            'type' => 'word_search',
-            'mode' => 'individual',
-            'attempts' => 2,
-        ]
-    );
+        $activity = $this->createActivity(
+            $class,
+            $teacher,
+            [
+                'status' => 'published',
+                'type' => 'word_search',
+                'mode' => 'individual',
+                'attempts' => 2,
+            ]
+        );
 
-    $first = $this->createParticipation(
-        $activity,
-        $student,
-        [
-            'attempt' => 1,
-            'status' => 'completed',
-            'score' => 50,
-        ]
-    );
+        $first = $this->createParticipation(
+            $activity,
+            $student,
+            [
+                'attempt' => 1,
+                'status' => 'completed',
+                'score' => 50,
+            ]
+        );
 
-    $second = $this->createParticipation(
-        $activity,
-        $student,
-        [
-            'attempt' => 2,
-            'status' => 'completed',
-            'score' => 90,
-        ]
-    );
+        $second = $this->createParticipation(
+            $activity,
+            $student,
+            [
+                'attempt' => 2,
+                'status' => 'completed',
+                'score' => 90,
+            ]
+        );
 
-    $response = $this->actingAs($student)->get(
-        route('student.participation.result', $activity->id)
-    );
+        $response = $this->actingAs($student)->get(
+            route('student.participation.result', $activity->id)
+        );
 
-    $response->assertStatus(200);
+        $response->assertStatus(200);
 
-    $response->assertViewHas('participation', function ($result) use ($first, $second) {
-        dump([
-            'expected_first' => [
-                'id' => $first->id,
-                'attempt' => $first->attempt,
-                'score' => $first->score,
-                'created_at' => $first->created_at?->toDateTimeString(),
-            ],
-            'expected_second' => [
-                'id' => $second->id,
-                'attempt' => $second->attempt,
-                'score' => $second->score,
-                'created_at' => $second->created_at?->toDateTimeString(),
-            ],
-            'returned' => [
-                'id' => $result->id,
-                'attempt' => $result->attempt,
-                'score' => $result->score,
-                'created_at' => $result->created_at?->toDateTimeString(),
-            ],
-        ]);
+        $response->assertViewHas('participation', function ($result) use ($second) {
+            $this->assertSame($second->id, $result->id);
+            $this->assertSame($second->attempt, $result->attempt);
+            $this->assertSame($second->score, $result->score);
 
-        return true;
-    });
-}
+            return true;
+        });
+    }
 
     // -------------------------------------------------------------------------
     // STUDENT - SCORE / TIME

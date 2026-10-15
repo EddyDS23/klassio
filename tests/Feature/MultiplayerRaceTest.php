@@ -653,18 +653,22 @@ class MultiplayerRaceTest extends TestCase
         $teacher = $this->teacher();
         $student1 = $this->student('member1@example.com');
         $student2 = $this->student('member2@example.com');
+        $student3 = $this->student('member3@example.com');
         $class = $this->createClass($teacher);
         $this->enroll($class, $student1);
         $this->enroll($class, $student2);
+        $this->enroll($class, $student3);
         $activity = $this->createActivity($class, $teacher, 'matching');
         $activity->update(['mode' => 'team']);
         $matching = app(MatchingService::class)->buildMatching($activity, [
             ['left' => 'HTTP', 'right' => 'Protocolo de transferencia', 'score' => 10],
+            ['left' => 'DNS', 'right' => 'Sistema de nombres', 'score' => 10],
         ]);
 
         $team1 = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Uno']);
         $team2 = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Dos']);
         TeamMember::create(['team_id' => $team1->id, 'student_id' => $student1->id]);
+        TeamMember::create(['team_id' => $team1->id, 'student_id' => $student3->id]);
         TeamMember::create(['team_id' => $team2->id, 'student_id' => $student2->id]);
 
         $this->actingAs($teacher)->post(route('teacher.game-sessions.store'), [
@@ -681,7 +685,7 @@ class MultiplayerRaceTest extends TestCase
         $participation = Participation::where('game_session_id', $session->id)
             ->where('team_id', $team1->id)
             ->firstOrFail();
-        $item = $matching->items()->firstOrFail();
+        $item = $matching->items()->where('left_text', 'HTTP')->firstOrFail();
 
         $this->assertNull($participation->student_id);
         $this->actingAs($student1)->postJson(route('student.matching.answer'), [
@@ -692,8 +696,14 @@ class MultiplayerRaceTest extends TestCase
             'response' => $item->right_text,
         ])->assertOk()->assertJsonPath('correct', true);
 
-        $this->assertSame(100, (int) $participation->fresh()->score);
-        $this->assertSame('Equipo Uno', $this->state($session, $student1)['players'][0]['name']);
+        $this->assertSame(50, (int) $participation->fresh()->score);
+
+        $teammateState = $this->state($session, $student3);
+        $this->assertSame('Equipo Uno', $teammateState['players'][0]['name']);
+        $this->assertSame([$item->id], $teammateState['team_progress']['completed_item_ids']);
+
+        $opponentState = $this->state($session, $student2);
+        $this->assertSame([], $opponentState['team_progress']['completed_item_ids']);
     }
 
     public function test_session_answer_after_time_limit_finishes_session_without_saving(): void
@@ -842,6 +852,39 @@ class MultiplayerRaceTest extends TestCase
         $this->assertSame('playing', $state['status']);
         $this->assertCount(2, $state['players']);
         $this->assertContains($state['time_remaining'], [89, 90]);
+    }
+
+    public function test_race_results_show_game_progress_and_each_participation_time(): void
+    {
+        ['teacher' => $teacher, 's1' => $student1, 's2' => $student2, 'activity' => $activity, 'session' => $session] = $this->setupRace('matching');
+
+        $item = $activity->matching->items()->firstOrFail();
+        $this->answerMatching($activity->matching, $item, $student1)->assertOk();
+
+        $participation1 = $this->participationOf($session, $student1);
+        $participation2 = $this->participationOf($session, $student2);
+        $participation1->update(['status' => 'completed', 'elapsed_seconds' => 61]);
+        $participation2->update(['status' => 'completed', 'elapsed_seconds' => 91]);
+        $session->update([
+            'status' => GameSession::STATUS_FINISHED,
+            'result_type' => GameSession::RESULT_DRAW,
+        ]);
+
+        $this->actingAs($student1)
+            ->get(route('student.game-sessions.result', $session->id))
+            ->assertOk()
+            ->assertSee('Progreso')
+            ->assertSee('Tiempo')
+            ->assertSee('1 / 2')
+            ->assertSee('01:01')
+            ->assertSee('01:31');
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.result', $session->id))
+            ->assertOk()
+            ->assertSee('1 / 2')
+            ->assertSee('01:01')
+            ->assertSee('01:31');
     }
 
     // -------------------------------------------------------------------------

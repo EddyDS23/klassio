@@ -25,7 +25,9 @@
                 <span class="badge text-bg-warning text-uppercase">{{ $resultLabel }}</span>
 
                 @if ($winnerId)
-                    @php($winner = $players->firstWhere('id', $winnerId))
+                    @php
+                        $winner = $players->firstWhere('id', $winnerId);
+                    @endphp
                     <h2 class="mt-3 mb-0">
                         🏆 {{ $winner?->team?->name ?? $winner?->student?->name ?? 'Jugador' }}
                     </h2>
@@ -44,12 +46,37 @@
                             <th>#</th>
                             <th>Jugador</th>
                             <th>Puntaje</th>
-                            <th>Respondidas</th>
+                            <th>Progreso</th>
+                            <th>Tiempo</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($players as $index => $p)
+                            @php
+                                [$answeredCount, $itemCount] = match ($session->activity->type) {
+                                    'crossword' => [
+                                        $p->crosswordAnswers()->count(),
+                                        $session->activity->crossword?->words()->count() ?? 0,
+                                    ],
+                                    'word_search' => [
+                                        $p->wordsearchAnswers()->count(),
+                                        $session->activity->wordsearch?->words()->count() ?? 0,
+                                    ],
+                                    'matching' => [
+                                        $p->matchingAnswers()->where('is_correct', true)->distinct('matching_item_id')->count('matching_item_id'),
+                                        $session->activity->matching?->items()->count() ?? 0,
+                                    ],
+                                    'kahoot' => [
+                                        $p->kahootAnswers()->count(),
+                                        $session->activity->kahoot?->questions()->count() ?? 0,
+                                    ],
+                                    default => [
+                                        $p->rouletteAnswers()->count(),
+                                        $session->activity->roulette?->items()->count() ?? 0,
+                                    ],
+                                };
+                            @endphp
                             <tr class="{{ $p->id === $winnerId ? 'table-warning' : '' }}">
                                 <td>{{ $index + 1 }}</td>
                                 <td>
@@ -59,7 +86,8 @@
                                     @endif
                                 </td>
                                 <td>{{ $p->score }} / {{ $session->activity->max_score }}</td>
-                                <td>{{ $p->rouletteAnswers()->count() }}</td>
+                                <td>{{ $answeredCount }} / {{ $itemCount }}</td>
+                                <td>{{ $p->elapsed_seconds !== null ? sprintf('%02d:%02d', intdiv((int) $p->elapsed_seconds, 60), (int) $p->elapsed_seconds % 60) : '—' }}</td>
                                 <td>{{ ucfirst($p->status) }}</td>
                             </tr>
                         @endforeach

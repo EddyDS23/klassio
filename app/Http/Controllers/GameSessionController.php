@@ -121,6 +121,10 @@ class GameSessionController extends Controller
         $state['answered_current'] = $participation !== null
             && $this->gameSessionService->hasAnsweredCurrentRound($session, $participation);
 
+        if ($participation?->team_id !== null) {
+            $state['team_progress'] = $this->gameSessionService->teamProgress($participation);
+        }
+
         return response()->json($state);
     }
 

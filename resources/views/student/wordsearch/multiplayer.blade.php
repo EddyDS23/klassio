@@ -235,14 +235,26 @@
         @csrf
     </form>
 
+    @php
+        $wordPositions = $words->map(fn ($word) => [
+            'id' => (int) $word->id,
+            'row' => (int) $word->row,
+            'column' => (int) $word->column,
+            'direction' => $word->direction,
+            'length' => mb_strlen($word->word),
+        ])->values();
+    @endphp
+
     <script>
         const MULTIPLAYER = true;
         const stateUrl = @json(route('student.game-sessions.state', $session->id));
         const sessionResultUrl = @json(route('student.game-sessions.result', $session->id));
         const myParticipationId = {{ $participation->id }};
+        let navigationStarted = false;
+        const wordPositions = @json($wordPositions);
 
         const cells = Array.from(document.querySelectorAll('.cell'));
-        const foundKey = @json($foundIds);
+        const foundKey = new Set(@json($foundIds).map(Number));
         const maxScore = {{ $maxScore }};
         let start = null;
         let points = {{ $earnedPoints }};
@@ -449,6 +461,59 @@
             }
         }
 
+        function syncTeamProgress(progress) {
+            if (!progress || progress.participation_id !== myParticipationId) return;
+
+            points = Number(progress.score) || 0;
+            document.getElementById('points').textContent = points;
+
+            const directions = {
+                horizontal: [0, 1],
+                vertical: [1, 0],
+                diagonal: [1, 1],
+                horizontal_reverse: [0, -1],
+                vertical_reverse: [-1, 0],
+                diagonal_reverse: [-1, -1],
+                diagonal_alt: [1, -1],
+                diagonal_alt_reverse: [-1, 1],
+            };
+
+            progress.completed_item_ids.forEach((wordId) => {
+                const normalizedId = Number(wordId);
+                if (foundKey.has(normalizedId)) return;
+
+                const word = wordPositions.find((candidate) => candidate.id === normalizedId);
+                const [rowStep, columnStep] = directions[word?.direction] || [];
+                if (!word || rowStep === undefined || columnStep === undefined) return;
+
+                for (let offset = 0; offset < word.length; offset++) {
+                    const cell = document.getElementById(
+                        `cell-${word.row + rowStep * offset}-${word.column + columnStep * offset}`
+                    );
+
+                    if (cell) {
+                        cell.classList.add('found');
+                        cell.dataset.found = '1';
+                    }
+                }
+
+                document.querySelector(`.hint[data-word-id="${normalizedId}"]`)
+                    ?.classList.add('found');
+                foundKey.add(normalizedId);
+            });
+
+            updateFound(foundKey.size);
+
+            if (progress.status === 'completed') {
+                const finish = document.getElementById('finish');
+                finish.textContent = 'Tu equipo completó la actividad. Esperando a los demás equipos...';
+                finish.style.display = 'block';
+                cells.forEach((cell) => {
+                    cell.dataset.found = '1';
+                });
+            }
+        }
+
         let dragging = false;
         let end = null;
 
@@ -526,11 +591,18 @@
 
         updateTimer();
 
+        let pollStateInProgress = false;
+
         async function pollState() {
+            if (pollStateInProgress) return;
+            pollStateInProgress = true;
+
             try {
                 const state = await fetch(stateUrl, {
                     headers: { 'Accept': 'application/json' }
                 }).then((response) => response.json());
+
+                syncTeamProgress(state.team_progress);
 
                 if (state.time_remaining !== null) {
                     remainingSeconds = state.time_remaining;
@@ -547,10 +619,15 @@
                 document.getElementById('race-standings').replaceChildren(...entries);
 
                 if (state.status === 'finished') {
-                    window.location.href = sessionResultUrl;
+                    if (!navigationStarted) {
+                        navigationStarted = true;
+                        window.location.href = sessionResultUrl;
+                    }
                 }
             } catch (error) {
                 console.error('Error al consultar el estado:', error);
+            } finally {
+                pollStateInProgress = false;
             }
         }
 

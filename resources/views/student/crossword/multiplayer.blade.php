@@ -129,6 +129,7 @@
         const stateUrl = @json(route('student.game-sessions.state', $session->id));
         const sessionResultUrl = @json(route('student.game-sessions.result', $session->id));
         const myParticipationId = {{ $participation->id }};
+        let navigationStarted = false;
 
         let remainingSeconds = @json($remainingSeconds);
 
@@ -175,6 +176,7 @@
 
         let currentDirection = 'horizontal';
         let totalScore = 0;
+        let teamFinishedMessageShown = false;
 
         // -------------------------------------------------------------------------
         // Construir mapa de celdas y números de pista
@@ -571,11 +573,69 @@
             }
         }
 
+        function syncTeamProgress(progress) {
+            if (!progress || progress.participation_id !== PARTICIPATION_ID) return;
+
+            totalScore = Number(progress.score) || 0;
+            document.getElementById('score-display').textContent = totalScore;
+
+            const completedIds = new Set(progress.completed_item_ids.map(Number));
+            const incorrectIds = new Set(progress.incorrect_item_ids.map(Number));
+
+            WORDS.forEach((word) => {
+                if (!completedIds.has(Number(word.id)) || word.answered) return;
+
+                word.answered = true;
+                const isCorrect = !incorrectIds.has(Number(word.id));
+
+                for (let offset = 0; offset < word.word.length; offset++) {
+                    const row = word.direction === 'horizontal' ? word.row : word.row + offset;
+                    const column = word.direction === 'horizontal' ? word.column + offset : word.column;
+                    const input = inputRefs[`${row}-${column}`];
+
+                    if (!input) continue;
+
+                    if (isCorrect) {
+                        input.value = word.word[offset].toUpperCase();
+                    }
+
+                    input.disabled = true;
+                    input.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    input.style.background = '';
+                }
+
+                const clueElement = document.getElementById(`clue-${word.id}`);
+                if (clueElement) {
+                    clueElement.style.textDecoration = 'line-through';
+                }
+            });
+
+            if (progress.status === 'completed') {
+                Object.values(inputRefs).forEach((input) => {
+                    input.disabled = true;
+                });
+
+                if (!teamFinishedMessageShown) {
+                    const completed = document.createElement('p');
+                    completed.textContent = 'Tu equipo completó el crucigrama. Esperando a los demás equipos...';
+                    document.getElementById('results').appendChild(completed);
+                    teamFinishedMessageShown = true;
+                }
+            }
+        }
+
+        let pollStateInProgress = false;
+
         async function pollState() {
+            if (pollStateInProgress) return;
+            pollStateInProgress = true;
+
             try {
                 const state = await fetch(stateUrl, {
                     headers: { 'Accept': 'application/json' }
                 }).then((response) => response.json());
+
+                syncTeamProgress(state.team_progress);
 
                 if (state.time_remaining !== null) {
                     remainingSeconds = state.time_remaining;
@@ -592,10 +652,15 @@
                 document.getElementById('race-standings').replaceChildren(...entries);
 
                 if (state.status === 'finished') {
-                    window.location.href = sessionResultUrl;
+                    if (!navigationStarted) {
+                        navigationStarted = true;
+                        window.location.href = sessionResultUrl;
+                    }
                 }
             } catch (error) {
                 console.error('Error al consultar el estado:', error);
+            } finally {
+                pollStateInProgress = false;
             }
         }
 

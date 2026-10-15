@@ -147,6 +147,7 @@ Route::prefix('student')->name('student.')->middleware(['auth', 'active', 'role:
     Route::post('/activities/{id}/abandon', [ParticipationController::class, 'abandon'])->where(['id' => '[1-9][0-9]*'])->name('participation.abandon');
     Route::get('/activities/{id}/result', [ParticipationController::class, 'result'])->where(['id' => '[1-9][0-9]*'])->name('participation.result');
     Route::post('/activities/{id}/expire', [ParticipationController::class, 'expire'])->where(['id' => '[1-9][0-9]*'])->name('participation.expire');
+    Route::get('/activities/{id}/expire', [ParticipationController::class, 'expireResult'])->where(['id' => '[1-9][0-9]*'])->name('participation.expire-result');
 
     Route::prefix('game-sessions')->name('game-sessions.')->group(function () {
         Route::get('/join', [GameSessionController::class, 'joinPage'])->name('join-page');

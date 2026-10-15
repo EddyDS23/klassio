@@ -93,13 +93,17 @@ Estos tres juegos se juegan en **carrera libre con tiempo**, no por rondas
 controladas por el profesor.
 
 - Dinámica: **competitiva simultánea sin rondas**. El profesor solo **inicia** la
-  partida (y fija `Activity.time_limit`); cada jugador resuelve todo el juego a su
-  ritmo y gana quien más puntaje obtiene.
+  partida (y fija `Activity.time_limit`); cada participación (jugador o equipo)
+  resuelve el juego a su ritmo y gana quien más puntaje obtiene.
 - **Solo hay un botón de inicio**: `POST /teacher/game-sessions/{id}/spin` se rechaza
   para estos tipos con `422` ("Este juego se juega en carrera libre: no hay rondas
   que avanzar.").
-- **Cada jugador resuelve el mismo contenido de forma independiente**; no ven la
-  pantalla de los demás, solo las posiciones en vivo.
+- Cada participante representa a un jugador individual o a un equipo. Los integrantes
+  del mismo equipo comparten respuestas, puntaje y progreso; los equipos rivales
+  solo ven las posiciones en vivo, nunca las respuestas de otro equipo.
+- Para equipos, el endpoint de estado entrega al integrante autenticado el
+  progreso de su propia participación en Crucigrama, Sopa de letras y Matching.
+  Los IDs de respuestas de los demás equipos no se incluyen.
 - **Se reutilizan los endpoints de un jugador** para responder:
   - Crucigrama: `POST /crossword/answer` (`participation_id` de la sala).
   - Sopa de letras: `POST /wordsearch/answer`.
@@ -116,6 +120,9 @@ controladas por el profesor.
   cuando todos completan (o quedan <2 activos).
 - Resultado general: `winner` (máximo puntaje único) o `draw` (empate). El ranking
   considera participaciones `started`, `completed` y `expired`.
+- Las clasificaciones finales muestran puntaje, progreso por juego, estado y
+  duración guardada en `Participation.elapsed_seconds`. La regla actual sigue
+  declarando empate cuando dos o más participantes obtienen el mismo puntaje.
 - El profesor ve un panel de **carrera en curso** con posiciones en vivo y el tiempo
   restante (`teacher/game-sessions/{id}`), sin control de rondas.
 - Las páginas de juego son `student/game-sessions/{id}/{crossword,wordsearch,matching}`
@@ -141,8 +148,9 @@ sesión concreta y reconoce miembros del equipo asociado a la actividad:
 
 Las vistas de sala y los juegos por rondas pueden crear un cliente Laravel Echo
 cuando `broadcasting.connections.reverb.enabled` está activo. Las vistas de
-carrera libre observadas dependen del polling de
-`GET /student/game-sessions/{id}/state`; no reciben esos eventos con Echo.
+carrera libre dependen del polling de
+`GET /student/game-sessions/{id}/state`; el estado incluye el progreso detallado
+solo de la participación del equipo del solicitante y no recibe esos eventos con Echo.
 
 La configuración de ejemplo usa `BROADCAST_CONNECTION=log` y
 `REVERB_SERVER_ENABLED=false`. Compose declara un servicio Reverb bajo el perfil

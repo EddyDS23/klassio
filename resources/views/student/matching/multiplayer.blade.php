@@ -255,6 +255,7 @@
 
         const stateUrl = @json($multiplayer ? route('student.game-sessions.state', $session->id) : null);
         const sessionResultUrl = @json($multiplayer ? route('student.game-sessions.result', $session->id) : null);
+        let navigationStarted = false;
 
         const timerValue = document.getElementById('timer-value');
 
@@ -295,6 +296,7 @@
         const layout = document.querySelector('.layout');
         const connectionLayer = document.getElementById('connections');
         const connections = [];
+        const connectedItemIds = new Set();
         let selectedLeft = null;
         let dragLeftCard = null;
         let suppressRightClick = false;
@@ -554,18 +556,73 @@
             if (left && right) {
                 right.classList.add('matched');
                 connections.push({ left, right });
+                connectedItemIds.add(item.id);
             }
         });
         renderConnections();
         window.addEventListener('resize', renderConnections);
 
+        function syncTeamProgress(progress) {
+            if (!progress || progress.participation_id !== myParticipationId) return;
+
+            points = Number(progress.score) || 0;
+            document.getElementById('points').textContent = points;
+
+            progress.completed_item_ids.forEach((itemId) => {
+                const normalizedId = Number(itemId);
+                if (connectedItemIds.has(normalizedId)) return;
+
+                const item = items.find((candidate) => candidate.id === normalizedId);
+                const leftCard = leftCards.find((card) =>
+                    Number(card.dataset.itemId) === normalizedId
+                );
+                const rightCard = item && rightCards.find((card) =>
+                    card.dataset.text === item.right
+                );
+
+                if (!leftCard || !rightCard) return;
+
+                leftCard.classList.remove('selected');
+                leftCard.classList.add('matched');
+                rightCard.classList.add('matched');
+                connections.push({ left: leftCard, right: rightCard });
+                connectedItemIds.add(normalizedId);
+
+                if (selectedLeft === normalizedId) {
+                    selectedLeft = null;
+                }
+
+                if (dragLeftCard === leftCard) {
+                    dragLeftCard = null;
+                }
+            });
+
+            updateMatched();
+            renderConnections();
+
+            if (progress.status === 'completed') {
+                const finish = document.getElementById('finish');
+                finish.textContent = 'Tu equipo completó la actividad. Esperando a los demás equipos...';
+                finish.style.display = 'block';
+                leftCards.concat(rightCards).forEach((card) => {
+                    card.style.pointerEvents = 'none';
+                });
+            }
+        }
+
+        let pollStateInProgress = false;
+
         async function pollState() {
             if (!MULTIPLAYER) return;
+            if (pollStateInProgress) return;
+            pollStateInProgress = true;
 
             try {
                 const state = await fetch(stateUrl, {
                     headers: { 'Accept': 'application/json' }
                 }).then((response) => response.json());
+
+                syncTeamProgress(state.team_progress);
 
                 if (state.time_remaining !== null) {
                     remainingSeconds = state.time_remaining;
@@ -582,10 +639,15 @@
                 document.getElementById('race-standings').replaceChildren(...entries);
 
                 if (state.status === 'finished') {
-                    window.location.href = sessionResultUrl;
+                    if (!navigationStarted) {
+                        navigationStarted = true;
+                        window.location.href = sessionResultUrl;
+                    }
                 }
             } catch (error) {
                 console.error('Error al consultar el estado:', error);
+            } finally {
+                pollStateInProgress = false;
             }
         }
 

@@ -111,7 +111,7 @@ class ParticipationService
     {
         // Buscar el equipo del estudiante para esta actividad
         $team = Team::where('activity_id', $activity->id)
-            ->whereHas('members', fn($q) => $q->where('student_id', $student->id))
+            ->whereHas('members', fn ($q) => $q->where('student_id', $student->id))
             ->first();
 
         if ($team === null) {
@@ -176,7 +176,7 @@ class ParticipationService
 
         if ($activity->mode === 'team') {
             $team = Team::where('activity_id', $activity->id)
-                ->whereHas('members', fn($q) => $q->where('student_id', $student->id))
+                ->whereHas('members', fn ($q) => $q->where('student_id', $student->id))
                 ->first();
 
             if ($team === null) {
@@ -323,13 +323,14 @@ class ParticipationService
 
         $query = Participation::where('activity_id', $activity->id)
             ->whereNull('game_session_id')
-            ->latest();
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         if ($activity->mode === 'team') {
             $team = Team::where('activity_id', $activity->id)
                 ->whereHas(
                     'members',
-                    fn($q) => $q->where('student_id', $student->id)
+                    fn ($q) => $q->where('student_id', $student->id)
                 )
                 ->first();
 
@@ -454,7 +455,7 @@ class ParticipationService
                 ->orderByDesc('attempt')
                 ->get()
                 ->groupBy('student_id')
-                ->map(fn($items) => $items->first());
+                ->map(fn ($items) => $items->first());
 
             return $enrollments->map(function ($enrollment) use ($participations) {
 
@@ -559,7 +560,7 @@ class ParticipationService
         return $participation->crosswordAnswers()
             ->with('crosswordWord')
             ->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'clue' => $a->crosswordWord->clue,
                 'response' => $a->response,
                 'correct' => $a->crosswordWord->word,
@@ -574,7 +575,7 @@ class ParticipationService
         return $participation->kahootAnswers()
             ->with(['question', 'option'])
             ->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'question' => $a->question->question,
                 'response' => $a->option?->text ?? 'Sin respuesta',
                 'is_correct' => $a->is_correct,
@@ -588,7 +589,7 @@ class ParticipationService
         return $participation->wordsearchAnswers()
             ->with('word')
             ->get()
-            ->map(fn($answer) => [
+            ->map(fn ($answer) => [
                 'word' => $answer->word->word,
                 'score' => $answer->score,
                 'is_correct' => true,
@@ -601,7 +602,7 @@ class ParticipationService
         return $participation->matchingAnswers()
             ->with('matchingItem')
             ->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'left' => $a->matchingItem->left_text,
                 'right' => $a->matchingItem->right_text,
                 'response' => $a->response,
@@ -616,10 +617,10 @@ class ParticipationService
         return $participation->rouletteAnswers()
             ->with('rouletteItem')
             ->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'question' => $a->rouletteItem->question,
                 'response' => $a->response,
-                'correct' => (string) $a->rouletteItem->{'option_' . $a->rouletteItem->correct_option},
+                'correct' => (string) $a->rouletteItem->{'option_'.$a->rouletteItem->correct_option},
                 'is_correct' => $a->is_correct,
                 'score' => $a->score,
             ])
