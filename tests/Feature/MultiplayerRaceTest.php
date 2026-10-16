@@ -885,7 +885,7 @@ class MultiplayerRaceTest extends TestCase
         $this->actingAs($student1)
             ->get(route('student.game-sessions.result', $session->id))
             ->assertOk()
-            ->assertSee('Progreso')
+            ->assertSee('Parejas')
             ->assertSee('Tiempo')
             ->assertSee('1 / 2')
             ->assertSee('01:01')

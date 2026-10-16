@@ -108,6 +108,7 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
         Route::post('/', [TeacherGameSessionController::class, 'store'])->name('store');
         Route::get('/{id}', [TeacherGameSessionController::class, 'show'])->where(['id' => '[1-9][0-9]*'])->name('show');
         Route::post('/{id}/start', [TeacherGameSessionController::class, 'start'])->where(['id' => '[1-9][0-9]*'])->name('start');
+        Route::post('/{id}/cancel', [TeacherGameSessionController::class, 'cancel'])->where(['id' => '[1-9][0-9]*'])->name('cancel');
         Route::post('/{id}/spin', [TeacherGameSessionController::class, 'spin'])->where(['id' => '[1-9][0-9]*'])->name('spin');
         Route::get('/{id}/state', [GameSessionController::class, 'state'])->where(['id' => '[1-9][0-9]*'])->name('state');
         Route::get('/{id}/result', [TeacherGameSessionController::class, 'result'])->where(['id' => '[1-9][0-9]*'])->name('result');

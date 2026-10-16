@@ -99,6 +99,22 @@ class GameSessionTest extends TestCase
         return GameSession::where('activity_id', $activity->id)->first();
     }
 
+    private function createSessionRecord(
+        User $teacher,
+        Activity $activity,
+        string $code,
+        string $status
+    ): GameSession {
+        return GameSession::create([
+            'activity_id' => $activity->id,
+            'code' => $code,
+            'status' => $status,
+            'max_players' => 4,
+            'created_by' => $teacher->id,
+            'state' => [],
+        ]);
+    }
+
     private function setupRoom()
     {
         $teacher = $this->teacher();
@@ -113,6 +129,118 @@ class GameSessionTest extends TestCase
         $session = $this->createRoom($teacher, $activity);
 
         return compact('teacher', 's1', 's2', 'class', 'activity', 'session');
+    }
+
+    public function test_teacher_dashboard_lists_only_the_teachers_active_game_sessions(): void
+    {
+        $teacher = $this->teacher();
+        $class = $this->createClass($teacher);
+        $waitingActivity = $this->createActivity($class, $teacher, ['title' => 'Sala en espera']);
+        $playingActivity = $this->createActivity($class, $teacher, [
+            'title' => 'Sala en juego',
+            'type' => 'crossword',
+        ]);
+        $finishedActivity = $this->createActivity($class, $teacher, [
+            'title' => 'Sala terminada',
+            'type' => 'matching',
+        ]);
+        $cancelledActivity = $this->createActivity($class, $teacher, [
+            'title' => 'Sala cancelada',
+            'type' => 'kahoot',
+        ]);
+
+        $waitingSession = $this->createSessionRecord($teacher, $waitingActivity, 'KLS101', 'waiting');
+        $playingSession = $this->createSessionRecord($teacher, $playingActivity, 'KLS102', 'playing');
+        $this->createSessionRecord($teacher, $finishedActivity, 'KLS103', 'finished');
+        $this->createSessionRecord($teacher, $cancelledActivity, 'KLS104', 'cancelled');
+
+        $otherTeacher = $this->teacher('other-teacher@example.com');
+        $otherClass = $this->createClass($otherTeacher);
+        $otherActivity = $this->createActivity($otherClass, $otherTeacher, ['title' => 'Sala ajena']);
+        $this->createSessionRecord($otherTeacher, $otherActivity, 'KLS105', 'waiting');
+
+        $response = $this->actingAs($teacher)->get(route('teacher.dashboard'));
+
+        $response->assertOk()
+            ->assertViewIs('teacher.dashboard')
+            ->assertViewHas('activeGameSessions', function ($sessions) use ($waitingSession, $playingSession): bool {
+                return $sessions->count() === 2
+                    && $sessions->contains('id', $waitingSession->id)
+                    && $sessions->contains('id', $playingSession->id);
+            })
+            ->assertSee('Sala en espera')
+            ->assertSee('Sala en juego')
+            ->assertSee(route('teacher.game-sessions.show', $waitingSession->id), false)
+            ->assertSee(route('teacher.game-sessions.show', $playingSession->id), false)
+            ->assertDontSee('Sala terminada')
+            ->assertDontSee('Sala cancelada')
+            ->assertDontSee('Sala ajena');
+    }
+
+    public function test_teacher_can_close_a_waiting_room_that_no_student_joined(): void
+    {
+        ['teacher' => $teacher, 'activity' => $activity, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.show', $session->id))
+            ->assertOk()
+            ->assertSee('Cerrar sala sin iniciar');
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.cancel', $session->id))
+            ->assertRedirect(route('teacher.dashboard'))
+            ->assertSessionHas('success', 'La sala se cerró y ya no aparece entre las partidas activas.');
+
+        $this->assertDatabaseHas('game_sessions', [
+            'id' => $session->id,
+            'status' => GameSession::STATUS_CANCELLED,
+        ]);
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.dashboard'))
+            ->assertOk()
+            ->assertDontSee($activity->title);
+    }
+
+    public function test_teacher_cannot_close_a_waiting_room_after_a_student_joined(): void
+    {
+        ['teacher' => $teacher, 's1' => $student, 'activity' => $activity, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($student)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id));
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.cancel', $session->id))
+            ->assertSessionHas('error', 'No se puede cerrar la sala porque ya tuvo participantes.');
+
+        $this->assertDatabaseHas('game_sessions', [
+            'id' => $session->id,
+            'status' => GameSession::STATUS_WAITING,
+        ]);
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.show', $session->id))
+            ->assertOk()
+            ->assertDontSee('Cerrar sala sin iniciar')
+            ->assertSee($activity->title);
+    }
+
+    public function test_only_owner_teacher_can_close_a_waiting_room(): void
+    {
+        ['teacher' => $teacher, 'activity' => $activity, 'session' => $session] = $this->setupRoom();
+        $otherTeacher = $this->teacher('other-teacher@example.com');
+
+        $this->actingAs($otherTeacher)
+            ->post(route('teacher.game-sessions.cancel', $session->id))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('game_sessions', [
+            'id' => $session->id,
+            'activity_id' => $activity->id,
+            'created_by' => $teacher->id,
+            'status' => GameSession::STATUS_WAITING,
+        ]);
     }
 
     // -------------------------------------------------------------------------

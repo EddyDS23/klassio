@@ -111,6 +111,28 @@ class TeacherGameSessionController extends Controller
     }
 
     /**
+     * Cierra una sala que el profesor creó pero ningún estudiante utilizó.
+     */
+    public function cancel(int $id): RedirectResponse
+    {
+        $session = GameSession::findOrFail($id);
+
+        Gate::authorize('cancel', $session);
+
+        try {
+            $this->gameSessionService->cancelWaitingSession($session);
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->back()
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('teacher.dashboard')
+            ->with('success', 'La sala se cerró y ya no aparece entre las partidas activas.');
+    }
+
+    /**
      * El profesor avanza la partida: gira la ruleta o abre la siguiente
      * pregunta del kahoot, según el tipo de actividad.
      */

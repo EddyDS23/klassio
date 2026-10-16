@@ -3,6 +3,25 @@
 @section('title', 'Sala {{ $session->code }} — Profesor')
 
 @section('head')
+    <style>
+        .teacher-session { max-width: 1120px; margin-inline: auto; }
+        .teacher-session .page-hero { margin-bottom: 1.4rem; }
+        .teacher-room, .teacher-roster, .teacher-control { overflow: hidden; border: 1px solid #d7e8e4; border-radius: 20px; box-shadow: 0 14px 38px rgb(23 69 60 / .08); }
+        .room-code { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+        .room-code-value { color: #075e58; font-size: clamp(1.55rem, 5vw, 2.1rem); letter-spacing: .22em !important; }
+        .copy-room-code { min-height: 40px; border-radius: 10px; font-weight: 700; }
+        .room-code-feedback { min-height: 1.25rem; color: #287243; font-size: .82rem; }
+        .session-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; }
+        .room-status { padding: .5rem .7rem; border-radius: 999px; background: #e6f5eb; color: #287243; font-weight: 750; }
+        .room-count { color: #45635d; font-weight: 750; }
+        .roster-list .player-row { min-height: 54px; padding-block: .8rem; }
+        .control-intro { padding: .9rem 1rem; border: 1px solid #c9e8d9; border-radius: 13px; background: #effbf5; color: #365f54; }
+        .control-actions { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; }
+        .round-seconds-input { min-height: 44px; border-radius: 10px; }
+        .race-list { max-height: 360px; overflow-y: auto; }
+        .race-list .player-row { padding-block: .8rem; }
+        @media (max-width: 575px) { .teacher-session .page-hero { text-align: left !important; } .room-layout { align-items: flex-start !important; } .room-code { align-items: flex-start; flex-direction: column; } }
+    </style>
     @if ((bool) config('broadcasting.connections.reverb.enabled', false))
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
@@ -22,124 +41,142 @@
 @section('content')
     @php($isRace = in_array($session->activity->type, ['crossword', 'word_search', 'matching'], true))
 
-    <div class="page-shell">
+    <div class="page-shell teacher-session">
 
-        <div class="page-hero text-center">
-            <h1 class="fw-bold mb-1">Sala de juego</h1>
+        <div class="page-hero">
+            <p class="text-sm uppercase font-bold mb-2">{{ $session->status === 'waiting' ? 'Preparación de partida' : 'Sesión multijugador' }}</p>
+            <h1 class="font-bold mb-1">{{ $session->status === 'waiting' ? 'Tu sala está lista' : 'Panel de la partida' }}</h1>
             <p class="mb-0 opacity-75">{{ $session->activity->title }}</p>
         </div>
 
         @if (session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
+            <div class="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">{{ session('error') }}</div>
         @endif
 
-        <div class="card surface-card mb-4">
-            <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="surface-card teacher-room mb-4">
+            <div class="room-layout flex flex-wrap items-center justify-between gap-3 p-6">
                 <div>
-                    <div class="text-muted small">Código de la sala — compártelo con tus alumnos</div>
-                    <div class="fw-bold" style="font-size: 2rem; letter-spacing: .35em;" id="room-code">
+                    <div class="text-slate-500 text-sm">Código de la sala — compártelo con tus alumnos</div>
+                    <div class="room-code">
+                    <div class="font-bold room-code-value" id="room-code">
                         {{ $session->code }}
                     </div>
+                    @if ($session->status === 'waiting')
+                        <button type="button" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 copy-room-code" id="copy-room-code">Copiar código</button>
+                    @endif
+                    </div>
+                    <div id="room-code-feedback" class="room-code-feedback" role="status" aria-live="polite"></div>
                 </div>
-                <div>
-                    <span class="badge text-bg-secondary text-uppercase" id="room-status">
+                <div class="session-meta">
+                    <span class="room-status rounded-full px-3 py-1 text-xs font-bold uppercase" id="room-status">
                         {{ $session->status }}
                     </span>
-                    <div class="text-muted small mt-1" id="room-count">
+                    <div class="room-count" id="room-count">
                         {{ $players->count() }} / {{ $session->max_players }} jugadores
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card surface-card mb-4">
-            <div class="card-body p-4">
-                <h2 class="h5 fw-bold mb-3">Jugadores</h2>
-                <ul class="list-group list-group-flush" id="players">
+        <div class="surface-card teacher-roster mb-4">
+            <div class="p-6">
+                <h2 class="text-lg font-bold mb-1">Participantes</h2>
+                <p class="text-slate-500 mb-3">La lista se actualiza automáticamente cuando alguien entra o sale.</p>
+                <ul class="divide-y divide-slate-100 roster-list" id="players">
                     @foreach ($players as $p)
-                        <li class="list-group-item d-flex align-items-center justify-content-between"
+                        <li class="player-row flex items-center justify-between border-b border-slate-100 last:border-0"
                             data-participation-id="{{ $p->id }}">
                             <span>{{ $p->team?->name ?? $p->student?->name }}</span>
-                            <span class="text-success small">En la sala</span>
+                            <span class="text-emerald-700 text-sm">En la sala</span>
                         </li>
                     @endforeach
                 </ul>
-                <div id="empty-players" class="text-muted {{ $players->isEmpty() ? '' : 'd-none' }}">
-                    Aún no hay jugadores en la sala.
+                <div id="empty-players" class="rounded-xl bg-slate-50 p-3 text-slate-500 {{ $players->isEmpty() ? '' : 'hidden' }}" role="status">
+                    Comparte el código de sala para que tus estudiantes puedan unirse.
                 </div>
             </div>
         </div>
 
-        <div class="d-flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2">
             @if ($session->status === 'waiting')
                 <form method="POST" action="{{ route('teacher.game-sessions.start', $session->id) }}"
-                    class="w-100 mb-2">
+                    class="w-full mb-2">
                     @csrf
-                    <button type="submit" class="btn btn-klassio w-100" id="start-btn" @disabled(!$canStart)>
-                        Iniciar partida
+                            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-violet-600 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700 disabled:cursor-not-allowed disabled:opacity-50" id="start-btn" @disabled(!$canStart)>
+                        Comenzar partida
                     </button>
                 </form>
 
-                <p id="start-hint" class="text-muted small w-100 mb-0 {{ $canStart ? 'd-none' : '' }}">
-                    Se necesitan al menos 2 jugadores para iniciar la partida.
+                <p id="start-hint" class="text-slate-500 text-sm w-full mb-0 {{ $canStart ? 'hidden' : '' }}">
+                    Se necesitan al menos 2 participantes activos para comenzar.
                 </p>
+
+                @if ($players->isEmpty())
+                    <form method="POST" action="{{ route('teacher.game-sessions.cancel', $session->id) }}"
+                        class="w-full" onsubmit="return confirm('¿Cerrar esta sala sin iniciar? Ya no aparecerá entre las partidas activas.');">
+                        @csrf
+                        <p class="mb-2 text-sm text-slate-500">Si no vas a usar esta sala, ciérrala para quitarla de tus partidas activas.</p>
+                        <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-rose-300 bg-white px-5 py-3 font-bold text-rose-700 transition hover:bg-rose-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-700">
+                            Cerrar sala sin iniciar
+                        </button>
+                    </form>
+                @endif
             @endif
 
             @if ($session->status === 'playing')
                 @php($isKahoot = $session->activity->type === 'kahoot')
 
                 @if ($isRace)
-                    <div class="card surface-card w-100 mb-2" id="race-panel">
-                        <div class="card-body p-4">
-                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                                <h2 class="h5 fw-bold mb-0">Carrera libre en curso</h2>
-                                <span class="badge text-bg-light">
+                    <div class="surface-card teacher-control w-full mb-2" id="race-panel">
+                        <div class="p-6">
+                            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                    <h2 class="text-lg font-bold mb-0">Progreso de la partida</h2>
+                                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700">
                                     Tiempo: <span id="race-timer">--</span>
                                 </span>
                             </div>
 
-                            <p class="text-muted">
-                                Cada jugador resuelve el juego a su ritmo. La partida termina cuando
-                                todos terminan o se agota el tiempo de la actividad.
+                                <p class="control-intro">
+                                Cada participante avanza a su ritmo. Aquí puedes seguir posiciones y tiempo restante; la sesión termina cuando todos completan o se agota el tiempo.
                             </p>
 
-                            <h3 class="h6 fw-bold">Posiciones</h3>
-                            <ul class="list-group list-group-flush" id="race-standings"></ul>
+                            <h3 class="text-base font-bold">Posiciones</h3>
+                            <ul class="divide-y divide-slate-100 race-list" id="race-standings"></ul>
                         </div>
                     </div>
                 @else
-                    <div class="card surface-card w-100 mb-2" id="round-panel">
-                        <div class="card-body p-4">
-                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                                <h2 class="h5 fw-bold mb-0">
+                    <div class="surface-card teacher-control w-full mb-2" id="round-panel">
+                        <div class="p-6">
+                            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                <h2 class="text-lg font-bold mb-0">
                                     {{ $isKahoot ? 'Control del kahoot' : 'Control de la ruleta' }}
                                 </h2>
-                                <span class="badge text-bg-light">
+                                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700">
                                     Tiempo: <span id="round-timer">--</span>
                                 </span>
                             </div>
 
                             <div id="round-question" class="mb-3">
-                                <p class="text-muted mb-0">
+                                <p class="text-slate-500 mb-0">
                                     {{ $isKahoot
                                         ? 'Avanza para mostrar la siguiente pregunta.'
                                         : 'Gira la ruleta para mostrar la siguiente pregunta.' }}
                                 </p>
                             </div>
 
-                            <div class="d-flex flex-wrap align-items-end gap-3">
+                            <div class="control-actions">
                                 <div>
-                                    <label class="form-label small mb-1" for="round-seconds">Segundos para
+                                    <label class="mb-1 block text-sm" for="round-seconds">Segundos para
                                         responder</label>
-                                    <input type="number" class="form-control" id="round-seconds" min="5"
+                                    <input type="number" class="round-seconds-input w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-100" id="round-seconds" min="5"
                                         max="300" step="5" value="30" style="width: 8rem;">
                                 </div>
                                 <div>
-                                    <button type="button" class="btn btn-klassio" id="spin-btn">
+                                    <button type="button" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-cyan-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 disabled:cursor-not-allowed disabled:opacity-50" id="spin-btn">
                                         {{ $isKahoot ? 'Siguiente pregunta' : 'Girar la ruleta' }}
                                     </button>
                                 </div>
-                                <div class="text-muted small">
+                                <div class="text-slate-500 text-sm">
                                     Respondieron: <span id="round-answered">0</span> / <span
                                         id="round-total">{{ $players->count() }}</span>
                                 </div>
@@ -150,14 +187,14 @@
             @endif
 
             @if ($session->status === 'finished')
-                <a href="{{ route('teacher.game-sessions.result', $session->id) }}" class="btn btn-klassio w-100">
+                <a href="{{ route('teacher.game-sessions.result', $session->id) }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-cyan-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 disabled:cursor-not-allowed disabled:opacity-50">
                     Ver resultados
                 </a>
             @endif
         </div>
 
         <div class="mt-4">
-            <a href="{{ route('teacher.dashboard') }}" class="btn btn-outline-secondary">Volver al panel</a>
+            <a href="{{ route('teacher.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">Volver al panel</a>
         </div>
 
     </div>
@@ -168,6 +205,19 @@
         const resultUrl = @json(route('teacher.game-sessions.result', $session->id));
         const spinUrl = @json(route('teacher.game-sessions.spin', $session->id));
         const csrfToken = @json(csrf_token());
+
+        const copyRoomCodeButton = document.getElementById('copy-room-code');
+        if (copyRoomCodeButton) {
+            copyRoomCodeButton.addEventListener('click', async () => {
+                const feedback = document.getElementById('room-code-feedback');
+                try {
+                    await navigator.clipboard.writeText(document.getElementById('room-code').textContent.trim());
+                    feedback.textContent = 'Código copiado. Ya puedes compartirlo con el grupo.';
+                } catch (error) {
+                    feedback.textContent = 'No se pudo copiar automáticamente. Selecciona el código para compartirlo.';
+                }
+            });
+        }
 
         const isKahoot = @json($session->activity->type === 'kahoot');
         const isRace = @json($isRace);
@@ -230,7 +280,7 @@
 
             if (roundOpen && state.current_item) {
                 const question = document.createElement('p');
-                question.className = 'fw-semibold mb-2';
+                question.className = 'font-semibold mb-2';
                 question.textContent = state.current_item.question;
 
                 const options = document.createElement('ul');
@@ -249,7 +299,7 @@
                 spinBtn.textContent = 'Ronda en curso';
             } else {
                 const hint = document.createElement('p');
-                hint.className = 'text-muted mb-0';
+                hint.className = 'text-slate-500 mb-0';
                 hint.textContent = idleHint;
                 questionEl.replaceChildren(hint);
                 spinBtn.disabled = false;
@@ -277,7 +327,7 @@
                 startBtn.disabled = !canStart;
 
                 if (startHint) {
-                    startHint.classList.toggle('d-none', canStart);
+                    startHint.classList.toggle('hidden', canStart);
                 }
             }
 
@@ -287,7 +337,7 @@
                 if (p.status === 'abandoned' || p.status === 'expired') return;
 
                 const li = document.createElement('li');
-                li.className = 'list-group-item d-flex align-items-center justify-content-between';
+                li.className = 'player-row flex items-center justify-between';
 
                 const name = document.createElement('span');
                 name.textContent = p.name + (p.score ? ' — ' + p.score + ' pts' : '');
@@ -295,10 +345,10 @@
 
                 const badge = document.createElement('span');
                 if ((state.roulette_item_id || state.question_id) && p.answered_current) {
-                    badge.className = 'badge text-bg-success';
+                    badge.className = 'rounded-full bg-emerald-100 px-2 py-1 text-sm font-semibold text-emerald-800';
                     badge.textContent = 'Respondió';
                 } else {
-                    badge.className = 'text-success small';
+                    badge.className = 'text-emerald-700 text-sm';
                     badge.textContent = 'En la sala';
                 }
                 li.appendChild(badge);
@@ -306,7 +356,7 @@
                 list.appendChild(li);
             });
 
-            document.getElementById('empty-players').classList.toggle('d-none', state.players.length > 0);
+            document.getElementById('empty-players').classList.toggle('hidden', state.players.length > 0);
 
             if (isRace) {
                 raceRemaining = typeof state.time_remaining === 'number' ?
@@ -322,11 +372,11 @@
                         .map((p) => {
                             const suffix = p.status === 'completed' ? ' ✓' : '';
                             const item = document.createElement('li');
-                            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            item.className = 'player-row flex justify-between items-center';
                             const name = document.createElement('span');
                             name.textContent = p.name;
                             const score = document.createElement('span');
-                            score.className = 'badge text-bg-light';
+                            score.className = 'rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-700';
                             score.textContent = p.score + ' pts' + suffix;
                             item.append(name, score);
                             return item;
@@ -425,7 +475,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    alert(data.error || 'No se pudo girar la ruleta.');
+                    window.alert(data.error || 'No se pudo girar la ruleta.');
                 } else if (data.state) {
                     renderState(data.state);
                     if (data.finished) {
@@ -434,7 +484,7 @@
                     }
                 }
             } catch (e) {
-                alert('Error de conexión.');
+                window.alert('Error de conexión.');
             }
         }
 

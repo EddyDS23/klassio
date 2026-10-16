@@ -71,6 +71,16 @@ class GameSessionPolicy
     }
 
     /**
+     * Solo el profesor dueño puede cerrar una sala que sigue en espera.
+     */
+    public function cancel(User $user, GameSession $session): bool
+    {
+        return $user->role === 'teacher'
+            && $session->status === GameSession::STATUS_WAITING
+            && $session->activity->teacher_id === $user->id;
+    }
+
+    /**
      * Solo el profesor dueño de la actividad puede girar la ruleta.
      */
     public function spin(User $user, GameSession $session): bool

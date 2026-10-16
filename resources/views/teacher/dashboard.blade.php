@@ -89,6 +89,68 @@
         </section>
 
 
+        <!-- Salas que se pueden recuperar -->
+        <section class="mb-8 rounded-3xl border border-cyan-200 bg-white p-6 shadow-lg shadow-slate-200/60 sm:p-8" aria-labelledby="active-rooms-heading">
+            <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Partidas en curso</p>
+                    <h2 id="active-rooms-heading" class="mt-1 text-2xl font-black text-slate-900">Salas activas</h2>
+                    <p class="mt-2 text-sm text-slate-600">Vuelve a la sala si cerraste la pestaña o perdiste la conexión.</p>
+                </div>
+
+                <a href="{{ route('teacher.game-sessions.create') }}"
+                   class="inline-flex min-h-11 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">
+                    Crear sala
+                </a>
+            </div>
+
+            @forelse ($activeGameSessions as $activeSession)
+                @php
+                    $gameNames = [
+                        'word_search' => 'Sopa de letras',
+                        'crossword' => 'Crucigrama',
+                        'matching' => 'Relacionar',
+                        'kahoot' => 'Kahoot',
+                        'roulette' => 'Ruleta',
+                    ];
+                    $sessionStatusNames = [
+                        'waiting' => 'En espera',
+                        'starting' => 'Preparando',
+                        'playing' => 'En juego',
+                    ];
+                @endphp
+
+                <article class="mb-3 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 last:mb-0 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h3 class="break-words text-base font-black text-slate-900">{{ $activeSession->activity->title }}</h3>
+                            <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-900">
+                                {{ $sessionStatusNames[$activeSession->status] ?? $activeSession->status }}
+                            </span>
+                        </div>
+                        <p class="mt-1 text-sm text-slate-600">
+                            {{ $gameNames[$activeSession->activity->type] ?? ucfirst($activeSession->activity->type) }}
+                            <span aria-hidden="true">·</span>
+                            Código <span class="font-bold tracking-wider text-slate-800">{{ $activeSession->code }}</span>
+                            <span aria-hidden="true">·</span>
+                            {{ $activeSession->joined_participations_count }} / {{ $activeSession->max_players }} participantes
+                        </p>
+                    </div>
+
+                    <a href="{{ route('teacher.game-sessions.show', $activeSession->id) }}"
+                       class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-cyan-700 bg-white px-5 py-3 text-sm font-bold text-cyan-800 transition hover:bg-cyan-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">
+                        Reabrir sala
+                    </a>
+                </article>
+            @empty
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center" role="status">
+                    <p class="font-bold text-slate-800">No tienes salas activas</p>
+                    <p class="mt-1 text-sm text-slate-600">Cuando crees una partida, podrás volver a ella desde aquí.</p>
+                </div>
+            @endforelse
+        </section>
+
+
         <!-- Mensaje de éxito -->
         @if(session('success'))
             <div class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">

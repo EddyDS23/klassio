@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Sala multijugador')</title>
-    @include('partials.assets', ['theme' => 'teacher'])
+    @include('partials.assets', ['theme' => 'teacher', 'includeBootstrap' => !request()->routeIs('teacher.game-sessions.*')])
     @yield('head')
 </head>
 

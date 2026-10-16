@@ -94,6 +94,31 @@ class GameSessionService
         ]);
     }
 
+    /**
+     * Cierra una sala que sigue esperando y nunca ha tenido participantes.
+     */
+    public function cancelWaitingSession(GameSession $session): GameSession
+    {
+        return DB::transaction(function () use ($session): GameSession {
+            $session = GameSession::query()
+                ->whereKey($session->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($session->status !== GameSession::STATUS_WAITING) {
+                throw new RuntimeException('Solo se pueden cerrar salas que siguen en espera.');
+            }
+
+            if ($session->participations()->exists()) {
+                throw new RuntimeException('No se puede cerrar la sala porque ya tuvo participantes.');
+            }
+
+            $session->update(['status' => GameSession::STATUS_CANCELLED]);
+
+            return $session->fresh();
+        });
+    }
+
     public function findByCode(string $code): ?GameSession
     {
         return GameSession::where('code', mb_strtoupper(trim($code)))
