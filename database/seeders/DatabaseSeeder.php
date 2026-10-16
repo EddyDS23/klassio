@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             StudentSeeder::class,
             ClassSeeder::class,
             ActivitySeeder::class,
+            GameTestingActivitySeeder::class,
         ]);
     }
 }

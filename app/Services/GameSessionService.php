@@ -11,10 +11,12 @@ use App\Events\RoundStarted;
 use App\Events\ScoreUpdated;
 use App\Events\TurnChanged;
 use App\Models\Activity;
+use App\Models\CrosswordAnswer;
 use App\Models\Enrollment;
 use App\Models\GameSession;
 use App\Models\GameSessionPresence;
 use App\Models\KahootAnswer;
+use App\Models\MatchingAnswer;
 use App\Models\Participation;
 use App\Models\Question;
 use App\Models\RouletteAnswer;
@@ -22,6 +24,7 @@ use App\Models\RouletteItem;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
+use App\Models\WordsearchAnswer;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -133,6 +136,53 @@ class GameSessionService
         return $query->where('student_id', $user->id)
             ->orderBy('id')
             ->first();
+    }
+
+    public function canAnswerCurrentRound(
+        GameSession $session,
+        Participation $participation,
+        User $user
+    ): bool {
+        if ($session->activity?->mode !== 'team') {
+            return true;
+        }
+
+        return $this->currentRoundResponderId($session, $participation) === $user->id
+            && GameSessionPresence::query()
+                ->where('game_session_id', $session->id)
+                ->where('participation_id', $participation->id)
+                ->where('student_id', $user->id)
+                ->where('status', GameSessionPresence::STATUS_ACTIVE)
+                ->exists();
+    }
+
+    public function currentRoundResponderId(
+        GameSession $session,
+        Participation $participation
+    ): ?int {
+        if ($this->currentRoundItemId($session) === null) {
+            return null;
+        }
+
+        $responders = $session->state['current_round_responders'] ?? [];
+        $responderId = $responders[(string) $participation->id]
+            ?? $responders[$participation->id]
+            ?? null;
+
+        return $responderId === null ? null : (int) $responderId;
+    }
+
+    public function currentRoundResponderName(
+        GameSession $session,
+        Participation $participation
+    ): ?string {
+        $responderId = $this->currentRoundResponderId($session, $participation);
+
+        if ($responderId === null) {
+            return null;
+        }
+
+        return User::query()->whereKey($responderId)->value('name');
     }
 
     /**
@@ -267,6 +317,8 @@ class GameSessionService
                     ]);
                 }
 
+                $this->assignResponderAfterJoin($session, $teamParticipation, $student->id);
+
                 return $teamParticipation;
             }
 
@@ -358,6 +410,8 @@ class GameSessionService
                     'left_at' => now(),
                 ]);
 
+                $this->reassignResponderAfterLeave($session, $participation, $user->id);
+
                 if ($participation->status === 'completed') {
                     return $session->fresh();
                 }
@@ -426,6 +480,152 @@ class GameSessionService
         if ($count >= $session->max_players) {
             throw new RuntimeException('La sala alcanzó su máximo de jugadores.');
         }
+    }
+
+    private function assignTeamRespondersForNewRound(GameSession $session, array &$state): void
+    {
+        if ($session->activity?->mode !== 'team') {
+            unset($state['current_round_responders']);
+
+            return;
+        }
+
+        $lastResponders = $state['last_round_responders'] ?? [];
+        $currentResponders = [];
+        $participations = $session->participations()
+            ->where('status', 'started')
+            ->whereNotNull('team_id')
+            ->orderBy('id')
+            ->get(['id']);
+
+        foreach ($participations as $participation) {
+            $activeStudentIds = $this->activeTeamPresenceStudentIds($session, $participation);
+            $lastResponderId = $lastResponders[(string) $participation->id]
+                ?? $lastResponders[$participation->id]
+                ?? null;
+            $nextResponderId = $this->nextStudentId($activeStudentIds, $lastResponderId);
+
+            if ($nextResponderId === null) {
+                continue;
+            }
+
+            $currentResponders[(string) $participation->id] = $nextResponderId;
+            $lastResponders[(string) $participation->id] = $nextResponderId;
+        }
+
+        $state['current_round_responders'] = $currentResponders;
+        $state['last_round_responders'] = $lastResponders;
+    }
+
+    private function assignResponderAfterJoin(
+        GameSession $session,
+        Participation $participation,
+        int $studentId
+    ): void {
+        if (
+            $session->activity?->mode !== 'team'
+            || $participation->status !== 'started'
+            || $this->currentRoundItemId($session) === null
+        ) {
+            return;
+        }
+
+        $state = $session->state ?? [];
+        $currentResponders = $state['current_round_responders'] ?? [];
+        $participationId = (string) $participation->id;
+
+        if (isset($currentResponders[$participationId])) {
+            return;
+        }
+
+        $currentResponders[$participationId] = $studentId;
+        $state['current_round_responders'] = $currentResponders;
+        $state['last_round_responders'][$participationId] = $studentId;
+        $session->update(['state' => $state]);
+
+        DB::afterCommit(fn () => event(new TurnChanged($session->fresh(), [
+            'participation_id' => $participation->id,
+            'responder_id' => $studentId,
+        ])));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function activeTeamPresenceStudentIds(
+        GameSession $session,
+        Participation $participation
+    ): array {
+        return GameSessionPresence::query()
+            ->where('game_session_id', $session->id)
+            ->where('participation_id', $participation->id)
+            ->where('status', GameSessionPresence::STATUS_ACTIVE)
+            ->orderBy('joined_at')
+            ->orderBy('student_id')
+            ->pluck('student_id')
+            ->map(static fn (int|string $studentId): int => (int) $studentId)
+            ->all();
+    }
+
+    /**
+     * @param  list<int>  $studentIds
+     */
+    private function nextStudentId(array $studentIds, int|string|null $lastStudentId): ?int
+    {
+        if ($studentIds === []) {
+            return null;
+        }
+
+        if ($lastStudentId === null) {
+            return $studentIds[0];
+        }
+
+        $lastIndex = array_search((int) $lastStudentId, $studentIds, true);
+
+        if ($lastIndex === false) {
+            return $studentIds[0];
+        }
+
+        return $studentIds[($lastIndex + 1) % count($studentIds)];
+    }
+
+    private function reassignResponderAfterLeave(
+        GameSession $session,
+        Participation $participation,
+        int $studentId
+    ): void {
+        if (
+            $session->activity?->mode !== 'team'
+            || $this->currentRoundItemId($session) === null
+        ) {
+            return;
+        }
+
+        $state = $session->state ?? [];
+        $currentResponders = $state['current_round_responders'] ?? [];
+        $participationId = (string) $participation->id;
+
+        if ((int) ($currentResponders[$participationId] ?? 0) !== $studentId) {
+            return;
+        }
+
+        $activeStudentIds = $this->activeTeamPresenceStudentIds($session, $participation);
+        $nextResponderId = $this->nextStudentId($activeStudentIds, $studentId);
+
+        if ($nextResponderId === null) {
+            unset($currentResponders[$participationId]);
+        } else {
+            $currentResponders[$participationId] = $nextResponderId;
+            $state['last_round_responders'][$participationId] = $nextResponderId;
+        }
+
+        $state['current_round_responders'] = $currentResponders;
+        $session->update(['state' => $state]);
+
+        DB::afterCommit(fn () => event(new TurnChanged($session->fresh(), [
+            'participation_id' => $participation->id,
+            'responder_id' => $nextResponderId,
+        ])));
     }
 
     /**
@@ -596,6 +796,7 @@ class GameSessionService
 
             $state = $locked->state ?? [];
             $used = $state['round_item_ids'] ?? [];
+            unset($state['last_closed_round_item_id']);
 
             $candidates = $roulette->items()
                 ->when($used, fn ($query) => $query->whereNotIn('id', $used))
@@ -616,6 +817,7 @@ class GameSessionService
             $state['round_started_at'] = now()->toIso8601String();
             $state['round_seconds'] = $safeSeconds;
             $state['round_item_ids'] = array_merge($used, [$next->id]);
+            $this->assignTeamRespondersForNewRound($locked, $state);
 
             $locked->update(['state' => $state]);
 
@@ -672,6 +874,7 @@ class GameSessionService
 
             $state = $locked->state ?? [];
             $used = $state['round_question_ids'] ?? [];
+            unset($state['last_closed_round_item_id']);
 
             $candidates = $kahoot->questions()
                 ->when($used, fn ($query) => $query->whereNotIn('id', $used))
@@ -692,6 +895,7 @@ class GameSessionService
             $state['round_started_at'] = now()->toIso8601String();
             $state['round_seconds'] = $safeSeconds;
             $state['round_question_ids'] = array_merge($used, [$next->id]);
+            $this->assignTeamRespondersForNewRound($locked, $state);
 
             $locked->update(['state' => $state]);
 
@@ -784,12 +988,15 @@ class GameSessionService
         $this->recordMisses($locked, $itemId);
 
         $state = $locked->state ?? [];
+        $state['last_closed_round_item_id'] = $itemId;
 
         if ($type === 'kahoot') {
             unset($state['kahoot_question_id'], $state['round_seconds']);
         } else {
             unset($state['roulette_item_id'], $state['round_seconds']);
         }
+
+        unset($state['current_round_responders']);
 
         $state['round_started_at'] = null;
 
@@ -1045,6 +1252,23 @@ class GameSessionService
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
+            $finishedAt = now();
+            foreach ($participations as $participation) {
+                if ($participation->status === 'started') {
+                    $elapsedSeconds = $session->activity->mode === 'individual'
+                        ? $this->individualAnswerElapsedSeconds($session, $participation)
+                        : null;
+
+                    $participation->update([
+                        'status' => 'completed',
+                        'completed_at' => $finishedAt,
+                        'elapsed_seconds' => $elapsedSeconds ?? $this->elapsedSeconds($session),
+                    ]);
+                } elseif ($participation->status === 'waiting') {
+                    $participation->update(['status' => 'abandoned']);
+                }
+            }
+
             $eligible = $participations->whereIn('status', ['started', 'completed', 'expired']);
             $winner = null;
             $resultType = GameSession::RESULT_COLLABORATIVE;
@@ -1052,20 +1276,25 @@ class GameSessionService
             if ($eligible->isNotEmpty()) {
                 $max = $eligible->max('score');
                 $top = $eligible->filter(fn (Participation $p) => $p->score === $max);
-                $resultType = $top->count() >= 2 ? GameSession::RESULT_DRAW : GameSession::RESULT_WINNER;
-                $winner = $resultType === GameSession::RESULT_WINNER ? $top->first() : null;
-            }
 
-            $finishedAt = now();
-            foreach ($participations as $participation) {
-                if ($participation->status === 'started') {
-                    $participation->update([
-                        'status' => 'completed',
-                        'completed_at' => $finishedAt,
-                        'elapsed_seconds' => $this->elapsedSeconds($session),
-                    ]);
-                } elseif ($participation->status === 'waiting') {
-                    $participation->update(['status' => 'abandoned']);
+                if ($top->count() === 1) {
+                    $winner = $top->first();
+                    $resultType = GameSession::RESULT_WINNER;
+                } elseif ($session->activity->mode === 'individual'
+                    && $top->every(fn (Participation $p) => $p->elapsed_seconds !== null)) {
+                    $fastestTime = $top->min('elapsed_seconds');
+                    $fastest = $top->filter(
+                        fn (Participation $p) => (int) $p->elapsed_seconds === (int) $fastestTime
+                    );
+
+                    if ($fastest->count() === 1) {
+                        $winner = $fastest->first();
+                        $resultType = GameSession::RESULT_WINNER;
+                    } else {
+                        $resultType = GameSession::RESULT_DRAW;
+                    }
+                } else {
+                    $resultType = GameSession::RESULT_DRAW;
                 }
             }
 
@@ -1080,6 +1309,40 @@ class GameSessionService
 
             return $session->fresh();
         });
+    }
+
+    private function individualAnswerElapsedSeconds(
+        GameSession $session,
+        Participation $participation
+    ): ?int {
+        if ($session->started_at === null) {
+            return null;
+        }
+
+        $lastAnswerAt = match ($session->activity?->type) {
+            'kahoot' => KahootAnswer::query()
+                ->where('participation_id', $participation->id)
+                ->max('answered_at'),
+            'roulette' => RouletteAnswer::query()
+                ->where('participation_id', $participation->id)
+                ->max('answered_at'),
+            'crossword' => CrosswordAnswer::query()
+                ->where('participation_id', $participation->id)
+                ->max('created_at'),
+            'word_search' => WordsearchAnswer::query()
+                ->where('participation_id', $participation->id)
+                ->max('found_at'),
+            'matching' => MatchingAnswer::query()
+                ->where('participation_id', $participation->id)
+                ->max('answered_at'),
+            default => null,
+        };
+
+        if ($lastAnswerAt === null) {
+            return null;
+        }
+
+        return max(0, Carbon::parse($lastAnswerAt)->timestamp - $session->started_at->timestamp);
     }
 
     /**
@@ -1173,7 +1436,7 @@ class GameSessionService
     /**
      * Estado compartido de la partida para el frontend.
      */
-    public function getState(GameSession $session): array
+    public function getState(GameSession $session, ?Participation $viewer = null): array
     {
         $activity = $session->activity;
 
@@ -1182,18 +1445,48 @@ class GameSessionService
         $currentRouletteItemId = $isKahoot ? null : $this->currentRouletteItemId($session);
         $currentQuestionId = $isKahoot ? $this->currentKahootQuestionId($session) : null;
         $currentItemId = $isKahoot ? $currentQuestionId : $currentRouletteItemId;
+        $currentAnswers = collect();
+        $storedLastClosedItemId = $currentItemId === null
+            ? ($session->state['last_closed_round_item_id'] ?? null)
+            : null;
+        $lastClosedItemId = $storedLastClosedItemId === null
+            ? null
+            : (int) $storedLastClosedItemId;
+        $lastRoundAnswers = collect();
 
-        if ($isKahoot) {
-            $answeredCurrent = $currentQuestionId === null
-                ? collect()
-                : KahootAnswer::where('question_id', $currentQuestionId)
-                    ->pluck('participation_id');
-        } else {
-            $answeredCurrent = $currentRouletteItemId === null
-                ? collect()
-                : RouletteAnswer::where('roulette_item_id', $currentRouletteItemId)
-                    ->pluck('participation_id');
+        if ($currentItemId !== null) {
+            $currentAnswers = $isKahoot
+                ? KahootAnswer::query()
+                    ->where('question_id', $currentItemId)
+                    ->get(['participation_id', 'is_correct'])
+                    ->keyBy('participation_id')
+                : RouletteAnswer::query()
+                    ->where('roulette_item_id', $currentItemId)
+                    ->get(['participation_id', 'is_correct'])
+                    ->keyBy('participation_id');
+        } elseif ($lastClosedItemId !== null) {
+            $lastRoundAnswers = $isKahoot
+                ? KahootAnswer::query()
+                    ->where('question_id', $lastClosedItemId)
+                    ->get(['participation_id', 'is_correct'])
+                    ->keyBy('participation_id')
+                : RouletteAnswer::query()
+                    ->where('roulette_item_id', $lastClosedItemId)
+                    ->get(['participation_id', 'is_correct'])
+                    ->keyBy('participation_id');
         }
+
+        $currentResponders = $session->state['current_round_responders'] ?? [];
+        $responderIds = array_values(array_unique(array_map('intval', $currentResponders)));
+        $responderNames = $responderIds === []
+            ? collect()
+            : User::query()->whereIn('id', $responderIds)->pluck('name', 'id');
+
+        $players = $session->participations()
+            ->with('student', 'team')
+            ->whereIn('status', ['waiting', 'started', 'completed'])
+            ->orderBy('id')
+            ->get();
 
         return [
             'session_id' => $session->id,
@@ -1216,21 +1509,39 @@ class GameSessionService
             'round_time_remaining' => $this->roundTimeRemaining($session),
             'round_seconds' => $session->state['round_seconds'] ?? self::ROULETTE_ROUND_SECONDS,
             'current_item' => $isKahoot
-                ? $this->currentKahootQuestion($session, $currentQuestionId)
+                ? $this->currentKahootQuestion($session, $currentItemId)
                 : $this->currentRoundItem($session, $currentItemId),
-            'players' => $session->participations()
-                ->with('student')
-                ->whereIn('status', ['waiting', 'started', 'completed'])
-                ->orderBy('id')
-                ->get()
-                ->map(fn (Participation $p) => [
-                    'participation_id' => $p->id,
-                    'name' => $p->team?->name ?? $p->student?->name,
-                    'score' => $p->score,
-                    'status' => $p->status,
-                    'answered' => $this->answeredCount($activity, $p),
-                    'answered_current' => $answeredCurrent->contains($p->id),
-                ])
+            'last_round_item' => $isKahoot
+                ? $this->currentKahootQuestion($session, $lastClosedItemId)
+                : $this->currentRoundItem($session, $lastClosedItemId),
+            'players' => $players
+                ->map(function (Participation $p) use ($activity, $currentAnswers, $lastRoundAnswers, $currentResponders, $responderNames, $viewer): array {
+                    $responderId = $currentResponders[(string) $p->id]
+                        ?? $currentResponders[$p->id]
+                        ?? null;
+                    $answer = $currentAnswers->get($p->id);
+                    $lastRoundAnswer = $lastRoundAnswers->get($p->id);
+
+                    return [
+                        'participation_id' => $p->id,
+                        'name' => $p->team?->name ?? $p->student?->name,
+                        'score' => $p->score,
+                        'status' => $p->status,
+                        'answered' => $this->answeredCount($activity, $p),
+                        'answered_current' => $answer !== null,
+                        'answer_correct_current' => $p->id !== $viewer?->id || $answer === null
+                            ? null
+                            : (bool) $answer->is_correct,
+                        'last_round_answered' => $lastRoundAnswer !== null,
+                        'last_round_answer_correct' => $p->id !== $viewer?->id || $lastRoundAnswer === null
+                            ? null
+                            : (bool) $lastRoundAnswer->is_correct,
+                        'current_responder_id' => $responderId === null ? null : (int) $responderId,
+                        'current_responder_name' => $responderId === null
+                            ? null
+                            : $responderNames->get((int) $responderId),
+                    ];
+                })
                 ->all(),
         ];
     }

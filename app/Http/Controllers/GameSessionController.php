@@ -111,15 +111,30 @@ class GameSessionController extends Controller
 
         $session = $this->gameSessionService->closeRoundIfDue($session);
 
-        $state = $this->gameSessionService->getState($session);
-
         $participation = $this->gameSessionService->participationOf(
             $session,
             Auth::user()
         );
 
+        $state = $this->gameSessionService->getState($session, $participation);
+
+        $state['can_answer_current'] = $participation !== null
+            && $this->gameSessionService->canAnswerCurrentRound(
+                $session,
+                $participation,
+                Auth::user()
+            );
+
+        $myPlayerState = collect($state['players'])->firstWhere(
+            'participation_id',
+            $participation?->id
+        );
         $state['answered_current'] = $participation !== null
             && $this->gameSessionService->hasAnsweredCurrentRound($session, $participation);
+        $state['last_round_answered'] = $myPlayerState['last_round_answered'] ?? false;
+        $state['last_round_answer_correct'] = $myPlayerState['last_round_answer_correct'] ?? null;
+        $state['current_responder_name'] = $myPlayerState['current_responder_name'] ?? null;
+        $state['answer_correct_current'] = $myPlayerState['answer_correct_current'] ?? null;
 
         if ($participation?->team_id !== null) {
             $state['team_progress'] = $this->gameSessionService->teamProgress($participation);
@@ -167,12 +182,27 @@ class GameSessionController extends Controller
             ? $this->participationService->getResult($myParticipation)
             : null;
 
+        $players = $session->participations()
+            ->with('student', 'team')
+            ->orderByDesc('score')
+            ->get();
+
+        if ($session->activity->mode === 'individual') {
+            $players = $players->sort(function ($first, $second): int {
+                $scoreComparison = ($second->score ?? 0) <=> ($first->score ?? 0);
+
+                if ($scoreComparison !== 0) {
+                    return $scoreComparison;
+                }
+
+                return ($first->elapsed_seconds ?? PHP_INT_MAX)
+                    <=> ($second->elapsed_seconds ?? PHP_INT_MAX);
+            })->values();
+        }
+
         return view('student.game_sessions.result', [
             'session' => $session,
-            'players' => $session->participations()
-                ->with('student')
-                ->orderByDesc('score')
-                ->get(),
+            'players' => $players,
             'state' => $this->gameSessionService->getState($session),
             'myResult' => $myResult,
         ]);

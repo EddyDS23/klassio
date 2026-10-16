@@ -34,6 +34,9 @@
                 @elseif ($state['result_type'] === 'draw')
                     <h2 class="mt-3 mb-0">🤝 Empate entre los mejores</h2>
                 @endif
+                @if ($session->activity->mode === 'individual')
+                    <p class="text-muted mt-3 mb-0">En caso de igual puntaje, gana quien completó la partida en menos tiempo. Si también empatan en tiempo, se comparte el empate.</p>
+                @endif
             </div>
         </div>
 

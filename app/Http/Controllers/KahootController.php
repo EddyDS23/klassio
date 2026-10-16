@@ -389,6 +389,15 @@ class KahootController extends Controller
             'completed' => false,
             'finished' => false,
             'item' => $state['current_item'],
+            'can_answer' => $this->gameSessionService->canAnswerCurrentRound(
+                $session,
+                $participation,
+                $request->user()
+            ),
+            'current_responder_name' => $this->gameSessionService->currentRoundResponderName(
+                $session,
+                $participation
+            ),
             'answered' => $participation->kahootAnswers()->count(),
             'total' => $session->activity->kahoot->questions()->count(),
             'participation_score' => $participation->fresh()->score,
@@ -467,6 +476,17 @@ class KahootController extends Controller
             if ($this->gameSessionService->hasAnsweredCurrentRound($session, $participation)) {
                 return response()->json([
                     'error' => 'Ya respondiste esta pregunta.',
+                ], 422);
+            }
+
+            if (! $this->gameSessionService->canAnswerCurrentRound($session, $participation, $request->user())) {
+                return response()->json([
+                    'error' => 'Espera tu turno para responder.',
+                    'not_your_turn' => true,
+                    'current_responder_name' => $this->gameSessionService->currentRoundResponderName(
+                        $session,
+                        $participation
+                    ),
                 ], 422);
             }
 

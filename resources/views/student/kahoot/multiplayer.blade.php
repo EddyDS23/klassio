@@ -21,6 +21,29 @@
         </script>
     @endif
     <style>
+        :root { --kh-ink: #183b3a; --kh-muted: #587371; --kh-line: #d7e8e4; --kh-deep: #075e58; }
+        body.student-kids { min-height: 100vh; color: var(--kh-ink); background: radial-gradient(circle at 8% 0%, #d9f3e8 0, transparent 31%), #eff6f2; }
+        .page-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 22px 0 38px; }
+        .kahoot-header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+        .kahoot-title { min-width:0; }
+        .kahoot-title h1 { margin:0; color:var(--kh-ink); font-size:clamp(1.3rem, 3vw, 1.9rem); font-weight:900; overflow-wrap:anywhere; }
+        .kahoot-title p { margin:.25rem 0 0; color:var(--kh-muted); }
+        .session-pill { flex:none; padding:8px 12px; border:1px solid var(--kh-line); border-radius:12px; background:#fff; color:var(--kh-deep); font-weight:850; }
+        .session-meta { display:flex; flex:none; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
+        .session-meta span { padding:7px 10px; border:1px solid var(--kh-line); border-radius:11px; background:#fff; color:var(--kh-deep); font-size:.82rem; font-weight:800; }
+        .kahoot-layout { display:grid; grid-template-columns:minmax(0, 1fr) 300px; gap:18px; align-items:start; }
+        .game-panel, .side-panel { border:1px solid var(--kh-line); border-radius:20px; background:#fff; box-shadow:0 18px 45px rgb(23 69 60 / .09); }
+        .game-panel { min-height:440px; padding:clamp(16px, 3vw, 28px); }
+        .side-panel { padding:20px; }
+        .game-topline { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+        .turn-badge { display:inline-flex; align-items:center; max-width:100%; background:#e4f4eb; color:var(--kh-deep); border:1px solid #cce7d8; border-radius:999px; padding:.5rem .9rem; font-weight:850; }
+        .round-clock { flex:none; padding:7px 11px; border-radius:11px; background:#f4f8f6; color:var(--kh-deep); font-weight:900; font-variant-numeric:tabular-nums; }
+        .round-clock.is-urgent { background:#fff0ed; color:#a5362f; }
+        .question-progress { height:8px; margin:14px 0 8px; overflow:hidden; border-radius:999px; background:#e4efeb; }
+        .question-progress > span { display:block; width:0; height:100%; border-radius:inherit; background:#07877b; transition:width .3s ease; }
+        .question-count { margin:0 0 12px; color:var(--kh-muted); font-size:.84rem; font-weight:800; }
+        .question-card { display:flex; min-height:126px; align-items:center; justify-content:center; margin-bottom:16px; padding:clamp(18px, 4vw, 30px); border:1px solid #d8e9e1; border-radius:17px; background:linear-gradient(140deg,#f0faf5,#e7f4ed); color:var(--kh-ink); font-size:clamp(1.2rem, 3vw, 1.65rem); font-weight:850; line-height:1.35; text-align:center; overflow-wrap:anywhere; }
+        .answer-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
         .turn-badge {
             background: var(--klassio-primary);
             color: #fff;
@@ -29,141 +52,109 @@
             font-weight: 700;
         }
 
-        .opt-btn {
-            border: 2px solid #cbd5e1;
-            border-radius: 1rem;
-            padding: 1rem;
-            font-weight: 700;
-            background: #fff;
-            width: 100%;
+        .opt-btn { display:flex; min-height:76px; align-items:center; justify-content:center; width:100%; padding:14px; border:2px solid transparent; border-radius:14px; color:#fff; font:inherit; font-size:1rem; font-weight:800; line-height:1.3; text-align:center; overflow-wrap:anywhere; transition:transform .12s, box-shadow .15s, opacity .2s; }
+        .opt-btn:nth-child(1) { background:#b83c37; }
+        .opt-btn:nth-child(2) { background:#2865a4; }
+        .opt-btn:nth-child(3) { background:#98700a; }
+        .opt-btn:nth-child(4) { background:#247346; }
+        .opt-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 18px rgb(24 59 58 / .16); }
+        .opt-btn:focus-visible, .leave-button:focus-visible { outline:3px solid #f59e0b; outline-offset:3px; }
+
+        .opt-btn:disabled {
+            cursor: not-allowed;
+            opacity: .72;
         }
 
-        .opt-btn:hover {
-            border-color: var(--klassio-primary);
-            color: var(--klassio-primary);
-        }
-
-        html[data-theme="dark"] .opt-btn {
-            background: #0f172a;
-            color: #f1f5f9;
-            border-color: #475569;
-        }
-
-        .board {
-            border-radius: 1.25rem;
-            padding: 2.5rem 1.5rem;
-            background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-            color: #fff;
-            text-align: center;
-        }
-
-        .board-icon {
-            font-size: 3rem;
-            line-height: 1;
-        }
+        #round-answer-feedback { margin-top:14px; }
+        #round-question-note { min-height:1.4em; color:var(--kh-muted); }
+        .wait-state { display:flex; min-height:340px; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; }
+        .wait-icon { display:grid; width:66px; height:66px; place-items:center; margin-bottom:14px; border-radius:20px; background:#e4f4eb; color:var(--kh-deep); font-size:2rem; font-weight:900; }
+        .wait-state h2 { margin:0 0 7px; font-size:1.3rem; font-weight:900; }
+        .wait-state p { max-width:440px; margin:0; color:var(--kh-muted); }
+        .side-panel h2 { margin:0 0 12px; color:var(--kh-ink); font-size:1.05rem; font-weight:900; }
+        .score-summary { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; color:var(--kh-muted); font-size:.86rem; }
+        #players .list-group-item { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:11px 0; border-color:#edf3f0; background:transparent; color:var(--kh-ink); }
+        #players { max-height:300px; overflow-y:auto; scrollbar-gutter:stable; }
+        #players [data-role="score"] { flex:none; color:var(--kh-deep); font-variant-numeric:tabular-nums; }
+        .leave-button { min-height:44px; border:1px solid #e9c7c6; border-radius:11px; background:#fff6f4; color:#9b3a35; font:inherit; font-weight:750; }
+        html[data-theme="dark"] body.student-kids { --kh-ink:#e6f1ee; --kh-muted:#a4bab4; --kh-line:#334a45; color:var(--kh-ink); background:radial-gradient(circle at 8% 0%,#193d35 0,transparent 34%),#101d1a; }
+        html[data-theme="dark"] .game-panel, html[data-theme="dark"] .side-panel, html[data-theme="dark"] .session-pill, html[data-theme="dark"] .session-meta span { background:#172622; border-color:var(--kh-line); color:var(--kh-ink); }
+        html[data-theme="dark"] .kahoot-title h1, html[data-theme="dark"] .side-panel h2 { color:var(--kh-ink); }
+        html[data-theme="dark"] .question-card { background:linear-gradient(140deg,#203b34,#1b302b); border-color:#38564d; color:var(--kh-ink); }
+        html[data-theme="dark"] .round-clock { background:#223630; color:#c4f2d9; }
+        html[data-theme="dark"] .round-clock.is-urgent { background:#482b29; color:#ffc2b9; }
+        html[data-theme="dark"] #players .list-group-item { color:var(--kh-ink); }
+        html[data-theme="dark"] .leave-button { background:#382321; border-color:#69413c; color:#ffc2b9; }
+        [hidden] { display:none !important; }
+        @media (max-width:800px) { .kahoot-layout { grid-template-columns:minmax(0,1fr); } .game-panel { min-height:0; } }
+        @media (max-width:560px) { .page-shell { width:calc(100% - 20px); padding-top:12px; } .kahoot-header { align-items:flex-start; flex-wrap:wrap; } .session-meta { width:100%; justify-content:flex-start; } .session-pill { padding:7px 9px; font-size:.82rem; } .game-panel,.side-panel { border-radius:16px; } .game-topline { align-items:flex-start; flex-direction:column; } .answer-grid { grid-template-columns:minmax(0,1fr); gap:8px; } .opt-btn { min-height:58px; padding:12px; } .question-card { min-height:96px; } }
+        @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; } }
     </style>
 </head>
 
-<body>
+<body class="student-kids">
 
     <div class="page-shell">
 
-        <div class="page-hero text-center">
-            <h1 class="fw-bold mb-1">Kahoot multijugador</h1>
-            <p class="mb-0 opacity-75">
-                {{ $activity->title }} — Sala <strong>{{ $session->code }}</strong>
-            </p>
-        </div>
-
-        <div class="text-center my-2">
-            <span class="turn-badge" id="turn-badge">Preparando...</span>
-            <span class="badge text-bg-light ms-2">
-                Tiempo pregunta: <span id="round-timer">--</span>
-            </span>
-            <span class="badge text-bg-light ms-2">
-                Tiempo: <span id="timer">--:--</span>
-            </span>
-        </div>
-
-        <div class="row g-4">
-
-            <div class="col-lg-7">
-                <div class="card surface-card">
-                    <div class="card-body p-4">
-                        <div class="board">
-                            <div class="board-icon mb-2">?</div>
-                            <div class="fw-bold" style="font-size: 1.35rem;">Pregunta en vivo</div>
-                            <div class="opacity-75 mt-1" id="board-hint">
-                                Esperando a que el profesor abra la siguiente pregunta…
-                            </div>
-                        </div>
-
-                        <div class="mt-3">
-                            <div class="alert alert-info mb-0" id="wait-msg">
-                                Esperando a que el profesor lance la pregunta…
-                            </div>
-                            <div class="text-muted small mt-2" id="turn-hint">
-                                Cuando el profesor abra la pregunta, aparecerá en pantalla y tendrás tiempo para
-                                responder.
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <header class="kahoot-header">
+            <div class="kahoot-title">
+                <h1>{{ $activity->title }}</h1>
+                <p>Kahoot multijugador · Código de sala {{ $session->code }}</p>
             </div>
-
-            <div class="col-lg-5">
-                <div class="card surface-card">
-                    <div class="card-body p-4">
-                        <h2 class="h5 fw-bold mb-3">Marcador</h2>
-                        <span class="text-muted small">
-                            Respondidas: <span id="answered-count">{{ $answeredCount }}</span> / {{ $totalItems }}
-                        </span>
-                        <ul class="list-group list-group-flush mt-2" id="players">
-                            @foreach ($state['players'] as $p)
-                                <li class="list-group-item d-flex justify-content-between align-items-center"
-                                    data-participation-id="{{ $p['participation_id'] }}">
-                                    <span>
-                                        @if ($p['participation_id'] === $participation->id)
-                                            <span class="text-muted">(tú)</span>
-                                        @endif
-                                        {{ $p['name'] }}
-                                    </span>
-                                    <span class="fw-bold" data-role="score">{{ $p['score'] }} /
-                                        {{ $maxScore }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="card surface-card mt-4">
-                    <div class="card-body p-4">
-                        <h2 class="h5 fw-bold mb-3">Acciones</h2>
-                        <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-secondary w-100">Abandonar partida</button>
-                        </form>
-                    </div>
-                </div>
+            <div class="session-meta">
+                <span>Sala {{ $session->code }}</span>
+                <span>{{ count($state['players']) }} participantes</span>
             </div>
+        </header>
 
+        <div class="kahoot-layout">
+            <main class="game-panel" aria-live="polite">
+                <section id="question-stage" hidden>
+                    <div class="game-topline">
+                        <span class="turn-badge" id="turn-badge">Preparando...</span>
+                        <span class="round-clock" id="round-clock">Pregunta: <span id="round-timer">--</span></span>
+                    </div>
+                    <div class="question-progress" role="progressbar" aria-label="Preguntas respondidas"
+                        aria-valuemin="0" aria-valuemax="{{ $totalItems }}" aria-valuenow="{{ $answeredCount }}">
+                        <span id="question-progress-fill"></span>
+                    </div>
+                    <p class="question-count"><span id="answered-count">{{ $answeredCount }}</span> de {{ $totalItems }} preguntas respondidas · Tiempo de partida: <span id="timer">--:--</span></p>
+                    <div class="question-card" id="q-text"></div>
+                    <div class="answer-grid" id="q-options"></div>
+                    <div id="round-answer-feedback" aria-live="assertive"></div>
+                    <p class="text-center mt-3 mb-0" id="round-question-note"></p>
+                </section>
+                <section class="wait-state" id="wait-state" aria-live="polite">
+                    <div class="wait-icon" aria-hidden="true">?</div>
+                    <h2 id="wait-title">Preparados para jugar</h2>
+                    <p id="wait-msg">Esperando a que el profesor lance la primera pregunta…</p>
+                    <p class="mt-2" id="turn-hint">Cuando empiece la ronda, la pregunta aparecerá aquí.</p>
+                </section>
+            </main>
+
+            <aside>
+                <section class="side-panel">
+                    <h2>Marcador</h2>
+                    <div class="score-summary"><span>Progreso</span><strong><span id="answered-count-side">{{ $answeredCount }}</span> / {{ $totalItems }}</strong></div>
+                    <ul class="list-group list-group-flush" id="players">
+                        @foreach ($state['players'] as $p)
+                            <li class="list-group-item" data-participation-id="{{ $p['participation_id'] }}">
+                                <span>@if ($p['participation_id'] === $participation->id)<strong>{{ $p['name'] }}</strong> <span class="text-muted">(tú)</span>@else{{ $p['name'] }}@endif</span>
+                                <span data-role="score">{{ $p['score'] }} / {{ $maxScore }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+                <section class="side-panel mt-3">
+                    <h2>Salir de la partida</h2>
+                    <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}">
+                        @csrf
+                        <button type="submit" class="leave-button w-100">Abandonar partida</button>
+                    </form>
+                </section>
+            </aside>
         </div>
 
-    </div>
-
-    {{-- Modal de pregunta --}}
-    <div class="modal fade" id="questionModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Pregunta</h5>
-                </div>
-                <div class="modal-body">
-                    <p class="fw-semibold fs-5" id="q-text"></p>
-                    <div class="d-grid gap-2" id="q-options"></div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -172,6 +163,7 @@
         const csrfToken = @json(csrf_token());
         const totalItems = @json($totalItems);
         const maxScore = @json($maxScore);
+        const sharedTeamMode = @json($activity->mode === 'team');
 
         const stateUrl = @json(route('student.game-sessions.state', $session->id));
         const questionUrl = @json(route('student.kahoot.question-session'));
@@ -186,12 +178,28 @@
         let answering = false;
         let fetching = false;
         let answeredThisRound = false;
+        let resultDisplayedForItemId = null;
+        let finishRedirectQueued = false;
 
         const turnBadge = document.getElementById('turn-badge');
         const turnHint = document.getElementById('turn-hint');
         const waitMsg = document.getElementById('wait-msg');
-        const boardHint = document.getElementById('board-hint');
-        const questionModal = new bootstrap.Modal(document.getElementById('questionModal'));
+        const questionStage = document.getElementById('question-stage');
+        const waitState = document.getElementById('wait-state');
+        const waitTitle = document.getElementById('wait-title');
+
+        function setQuestionVisible(isVisible) {
+            questionStage.hidden = !isVisible;
+            waitState.hidden = isVisible;
+        }
+
+        function redirectAfterFinalResult(delay = 0) {
+            if (finishRedirectQueued) return;
+            finishRedirectQueued = true;
+            window.setTimeout(() => {
+                window.location.href = resultUrl;
+            }, delay);
+        }
 
         function formatTime(s) {
             s = Math.max(0, s);
@@ -211,10 +219,13 @@
             }
 
             const rt = document.getElementById('round-timer');
+            const roundClock = document.getElementById('round-clock');
             if (roundRemaining === null) {
                 rt.textContent = '--';
+                roundClock.classList.remove('is-urgent');
             } else {
                 rt.textContent = Math.max(0, roundRemaining) + 's';
+                roundClock.classList.toggle('is-urgent', roundRemaining <= 5);
                 if (roundRemaining > 0) roundRemaining--;
             }
         }
@@ -223,36 +234,39 @@
             if (state.status !== 'playing') return;
 
             if (state.question_id && state.answered_current) {
-                turnBadge.textContent = 'Esperando a los demás...';
-                turnHint.textContent = 'Ya respondiste esta pregunta. Espera a que el profesor avance.';
-                waitMsg.classList.remove('d-none');
-                waitMsg.textContent = 'Respuesta enviada. Esperando a los demás o al final del tiempo.';
-                boardHint.textContent = 'Respondiste. Esperando al resto…';
+                turnBadge.textContent = sharedTeamMode ? 'Tu equipo ya respondió' : 'Ya respondiste';
+                turnHint.textContent = 'Espera a que las demás participaciones respondan o termine el tiempo.';
+                waitMsg.textContent = sharedTeamMode
+                    ? 'Respuesta registrada para tu equipo. No necesitan responder otra vez.'
+                    : 'Respuesta registrada. No necesitas responder otra vez.';
+                turnHint.textContent = 'La ronda sigue activa para las demás participaciones.';
             } else if (state.question_id) {
-                turnBadge.textContent = '¡Responde la pregunta!';
-                turnHint.textContent = 'Tienes tiempo limitado para responder.';
-                waitMsg.classList.add('d-none');
-                boardHint.textContent = 'Pregunta activa: responde en pantalla.';
+                const canAnswer = !sharedTeamMode || state.can_answer_current === true;
+                const responderName = state.current_responder_name;
+                turnBadge.textContent = canAnswer
+                    ? '¡Te toca responder!'
+                    : responderName
+                        ? 'Turno de '+responderName
+                        : 'Esperando a un integrante del equipo';
+                turnHint.textContent = canAnswer
+                    ? 'Tu equipo puede ayudarte a elegir la respuesta.'
+                    : `Mira la pregunta y ayuda a ${responderName || 'tu equipo'} a decidir.`;
+                waitTitle.textContent = 'La pregunta está por aparecer';
             } else {
                 turnBadge.textContent = 'Esperando al profesor...';
                 turnHint.textContent = 'El profesor abrirá la siguiente pregunta.';
-                waitMsg.classList.remove('d-none');
                 waitMsg.textContent = 'Esperando a que el profesor lance la pregunta…';
-                boardHint.textContent = 'Esperando a que el profesor abra la siguiente pregunta…';
+                waitTitle.textContent = 'Preparados para jugar';
             }
         }
 
         function resetQuestion() {
-            const body = document.querySelector('#questionModal .modal-body');
-            const question = document.createElement('p');
-            question.id = 'q-text';
-            question.className = 'fw-semibold fs-5';
-            const options = document.createElement('div');
-            options.id = 'q-options';
-            options.className = 'd-grid gap-2';
-            body.replaceChildren(question, options);
+            document.getElementById('q-text').textContent = '';
+            document.getElementById('q-options').replaceChildren();
+            document.getElementById('round-answer-feedback').replaceChildren();
             currentItem = null;
             questionOpen = false;
+            setQuestionVisible(false);
         }
 
         function maybeAutoOpen(state) {
@@ -265,26 +279,38 @@
 
         function renderState(state) {
             const rows = document.querySelectorAll('#players li');
-            const map = {};
-            state.players.forEach((p) => {
-                map[p.participation_id] = p;
-            });
+            const sortedPlayers = [...state.players].sort((first, second) =>
+                (Number(second.score) || 0) - (Number(first.score) || 0)
+            );
 
-            rows.forEach((li) => {
-                const id = Number(li.dataset.participationId);
-                const p = map[id];
-                if (p) {
-                    li.querySelector('[data-role="score"]').textContent = p.score + ' / ' + maxScore;
-                }
+            sortedPlayers.forEach((player) => {
+                const li = Array.from(rows).find((row) =>
+                    Number(row.dataset.participationId) === Number(player.participation_id)
+                );
+
+                if (!li) return;
+
+                document.getElementById('players').appendChild(li);
+                li.querySelector('[data-role="score"]').textContent = player.score + ' / ' + maxScore;
             });
 
             const me = state.players.find((p) => p.participation_id === myParticipationId);
             if (me) {
                 document.getElementById('answered-count').textContent = me.answered;
+                document.getElementById('answered-count-side').textContent = me.answered;
+                document.getElementById('question-progress-fill').style.width = totalItems > 0
+                    ? Math.min(100, (me.answered / totalItems) * 100) + '%'
+                    : '0%';
+                document.querySelector('.question-progress').setAttribute('aria-valuenow', me.answered);
             }
 
             if (state.status === 'finished') {
-                window.location.href = resultUrl;
+                if (hasVisibleRoundResult(me, state)) {
+                    revealTeamResult(me, state);
+                    redirectAfterFinalResult(sharedTeamMode ? 2200 : 0);
+                } else {
+                    redirectAfterFinalResult();
+                }
                 return;
             }
 
@@ -301,8 +327,12 @@
 
             updateBadge(state);
 
+            if (questionOpen && !answering && me?.answered_current
+                && (me.answer_correct_current === null || me.answer_correct_current === undefined)) {
+                resetQuestion();
+            }
+
             if (questionOpen && !answering && currentItem && state.question_id !== currentItem.id) {
-                questionModal.hide();
                 resetQuestion();
 
                 if (!answeredThisRound) {
@@ -314,6 +344,8 @@
                     }
                 }
             }
+
+            revealTeamResult(me, state);
 
             maybeAutoOpen(state);
         }
@@ -412,7 +444,7 @@
 
                 if (data.item) {
                     currentItem = data.item;
-                    showQuestion(data.item);
+                    showQuestion(data.item, data.can_answer !== false, data.current_responder_name);
                 }
             } catch (e) {
                 // Silencioso: el polling reintenta.
@@ -421,17 +453,24 @@
             }
         }
 
-        function showQuestion(item) {
+        function showQuestion(item, canAnswer = true, responderName = null) {
             document.getElementById('q-text').textContent = item.question;
 
             const options = document.getElementById('q-options');
             options.replaceChildren();
+            document.getElementById('round-answer-feedback').replaceChildren();
+            document.getElementById('round-question-note').textContent = sharedTeamMode
+                ? canAnswer
+                    ? 'Te toca elegir la respuesta. Escucha las ideas del equipo.'
+                    : `Le toca responder a ${responderName || 'otro integrante'}. ¡Ayúdenle entre todos!`
+                : 'Tu participación cuenta con una respuesta en esta ronda.';
 
             item.options.forEach((opt) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'opt-btn';
                 btn.textContent = opt.text;
+                btn.disabled = !canAnswer;
                 btn.dataset.optionId = opt.id;
                 btn.addEventListener('click', () => answer(opt.id, btn));
                 options.appendChild(btn);
@@ -439,7 +478,89 @@
 
             answeredThisRound = false;
             questionOpen = true;
-            questionModal.show();
+            setQuestionVisible(true);
+        }
+
+        function showRoundResult(isCorrect, score, correctText = null) {
+            if (!currentItem) return;
+
+            const itemId = currentItem.id;
+            const feedback = document.getElementById('round-answer-feedback');
+            const result = document.createElement('div');
+            result.className = 'alert ' + (isCorrect ? 'alert-success' : 'alert-danger') + ' fw-bold mb-2';
+            result.textContent = isCorrect ? '¡Correcto!' : 'Respuesta incorrecta';
+            const children = [result];
+
+            if (correctText) {
+                const correct = document.createElement('p');
+                correct.className = 'small mb-2';
+                correct.textContent = 'Respuesta correcta: ' + correctText;
+                children.push(correct);
+            }
+
+            const scoreLine = document.createElement('p');
+            scoreLine.className = 'small mb-0';
+            scoreLine.textContent = (sharedTeamMode ? 'Puntaje del equipo: ' : 'Tu puntaje: ')
+                + score + ' / ' + maxScore;
+            children.push(scoreLine);
+            feedback.replaceChildren(...children);
+            document.getElementById('round-question-note').textContent = sharedTeamMode
+                ? 'La respuesta ya quedó registrada para todo el equipo.'
+                : 'Tu respuesta quedó registrada.';
+            Array.from(document.querySelectorAll('.opt-btn')).forEach((option) => {
+                option.disabled = true;
+            });
+            resultDisplayedForItemId = itemId;
+
+            window.setTimeout(() => {
+                if (currentItem?.id !== itemId) return;
+
+                answering = false;
+                refreshState();
+            }, 1800);
+        }
+
+        function revealTeamResult(playerState, gameState) {
+            const itemIsActive = gameState.question_id !== null;
+            const item = itemIsActive ? gameState.current_item : gameState.last_round_item;
+            const hasAnswered = itemIsActive
+                ? playerState?.answered_current
+                : playerState?.last_round_answered;
+            const isCorrect = itemIsActive
+                ? playerState?.answer_correct_current
+                : playerState?.last_round_answer_correct;
+
+            if (
+                answering
+                || !hasAnswered
+                || isCorrect === null
+                || isCorrect === undefined
+                || !item
+                || resultDisplayedForItemId === item.id
+            ) {
+                return;
+            }
+
+            if (!questionOpen) {
+                currentItem = item;
+                showQuestion(currentItem, false, playerState.current_responder_name);
+            }
+
+            if (currentItem?.id !== item.id) return;
+
+            showRoundResult(isCorrect, playerState.score);
+        }
+
+        function hasVisibleRoundResult(playerState, gameState) {
+            if (gameState.question_id !== null) {
+                return Boolean(playerState?.answered_current && gameState.current_item
+                    && playerState.answer_correct_current !== null
+                    && playerState.answer_correct_current !== undefined);
+            }
+
+            return Boolean(playerState?.last_round_answered && gameState.last_round_item
+                && playerState.last_round_answer_correct !== null
+                && playerState.last_round_answer_correct !== undefined);
         }
 
         async function answer(optionId, btn) {
@@ -467,6 +588,12 @@
                 const data = await res.json();
 
                 if (!res.ok) {
+                    if (data.not_your_turn || data.error === 'Ya respondiste esta pregunta.') {
+                        answering = false;
+                        refreshState();
+                        return;
+                    }
+
                     alert(data.error || 'No fue posible registrar tu respuesta.');
                     Array.from(document.querySelectorAll('.opt-btn')).forEach((b) => b.disabled = false);
                     btn.classList.remove('disabled');
@@ -481,42 +608,12 @@
                     return found ? found.text : null;
                 })();
 
-                const body = document.querySelector('#questionModal .modal-body');
-                const result = document.createElement('div');
-                result.className = 'alert ' + (data.is_correct ? 'alert-success' : 'alert-danger') + ' fw-bold';
-                result.textContent = data.is_correct ? '¡Correcto!' : 'Incorrecto';
-                const children = [result];
-
-                if (correctText) {
-                    const correct = document.createElement('p');
-                    correct.className = 'mb-1';
-                    const small = document.createElement('small');
-                    small.textContent = 'Respuesta correcta: ' + correctText;
-                    correct.appendChild(small);
-                    children.push(correct);
-                }
-
-                const score = document.createElement('p');
-                score.className = 'mb-0';
-                const scoreValue = document.createElement('strong');
-                scoreValue.textContent = data.participation_score + ' / ' + maxScore;
-                score.append(document.createTextNode('Puntaje: '), scoreValue);
-                children.push(score);
-                body.replaceChildren(...children);
-
                 answeredThisRound = true;
+                showRoundResult(data.is_correct, data.participation_score, correctText);
 
-                setTimeout(() => {
-                    questionModal.hide();
-                    resetQuestion();
-                    answering = false;
-
-                    if (data.finished) {
-                        window.location.href = resultUrl;
-                    } else {
-                        refreshState();
-                    }
-                }, 1600);
+                if (data.finished) {
+                    redirectAfterFinalResult(2200);
+                }
             } catch (e) {
                 answering = false;
                 alert('Error de conexión. Intenta de nuevo.');
@@ -536,7 +633,8 @@
                     .listen('.TurnChanged', () => refreshState())
                     .listen('.ScoreUpdated', () => refreshState())
                     .listen('.GameFinished', () => {
-                        window.location.href = resultUrl;
+                        refreshState();
+                        redirectAfterFinalResult(sharedTeamMode ? 2200 : 0);
                     });
             }
             setupStateSync(refreshState);

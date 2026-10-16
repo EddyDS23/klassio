@@ -105,9 +105,11 @@
 
         .race-banner { margin-bottom: 14px; padding: 12px 15px; border: 1px solid #bfe8d8; border-radius: 14px; background: #effbf5; color: #20584d; }
         .race-banner-title { font-weight: 850; }
-        .race-standings { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
-        .race-chip { padding: 4px 10px; border: 1px solid #cfe5dc; border-radius: 999px; background: #fff; color: #31534d; font-size: .78rem; font-weight: 700; }
+        .race-standings { display: flex; flex-wrap: wrap; gap: 7px; max-height: 86px; margin-top: 8px; overflow-y: auto; padding: 2px 3px 5px 0; scrollbar-gutter: stable; }
+        .race-chip { max-width:100%; padding: 4px 10px; border: 1px solid #cfe5dc; border-radius: 999px; background: #fff; color: #31534d; font-size: .78rem; font-weight: 700; overflow-wrap:anywhere; }
         .race-chip.me { border-color: #07877b; background: #e2f6ef; color: #075e58; }
+        .race-banner-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; }
+        .race-count { flex:none; padding:4px 10px; border:1px solid #cfe5dc; border-radius:999px; background:#fff; color:#31534d; font-size:.76rem; font-weight:800; }
     </style>
 </head>
 
@@ -128,8 +130,11 @@
 
         <div class="game-content">
             <div class="race-banner" aria-label="Estado de la sala multijugador">
-                <div class="race-banner-title">🏁 Sala {{ $session->code }} · Carrera libre</div>
-                <div id="race-standings" class="race-standings" aria-live="polite"></div>
+                <div class="race-banner-heading">
+                    <div class="race-banner-title">🏁 Sala {{ $session->code }} · {{ $activity->mode === 'team' ? 'Carrera por equipos' : 'Carrera individual' }}</div>
+                    <span class="race-count"><strong id="race-count">—</strong> participantes</span>
+                </div>
+                <div id="race-standings" class="race-standings" role="list" aria-label="Clasificación en vivo; desplazable" aria-live="polite" tabindex="0"></div>
             </div>
             <p class="game-summary" aria-label="Puntaje de la actividad">
                 <span>Puntos <strong id="score-display">0</strong></span>
@@ -808,11 +813,16 @@
                     remainingSeconds = state.time_remaining;
                 }
 
-                const entries = state.players.map((player) => {
+                const rankedPlayers = [...state.players].sort((first, second) =>
+                    (Number(second.score) || 0) - (Number(first.score) || 0)
+                );
+                document.getElementById('race-count').textContent = rankedPlayers.length;
+                const entries = rankedPlayers.map((player, index) => {
                     const me = player.participation_id === myParticipationId ? ' me' : '';
                     const chip = document.createElement('span');
                     chip.className = 'race-chip' + me;
-                    chip.textContent = `${player.name}: ${player.score}${player.status === 'completed' ? ' ✓' : ''}`;
+                    chip.setAttribute('role', 'listitem');
+                    chip.textContent = `${index + 1}. ${player.name}: ${player.score}${player.status === 'completed' ? ' ✓' : ''}`;
                     return chip;
                 });
 
