@@ -58,6 +58,11 @@ class GameSession extends Model
         return $this->hasMany(Participation::class, 'game_session_id');
     }
 
+    public function presences(): HasMany
+    {
+        return $this->hasMany(GameSessionPresence::class, 'game_session_id');
+    }
+
     public function currentTurnParticipation(): BelongsTo
     {
         return $this->belongsTo(Participation::class, 'current_turn_participation_id');

@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\GameSession;
+use App\Models\GameSessionPresence;
 use App\Models\Team;
 use App\Models\User;
 
@@ -105,7 +106,7 @@ class GameSessionPolicy
 
     public function result(User $user, GameSession $session): bool
     {
-        return $this->isParticipant($user, $session)
+        return $this->hasResultAccess($user, $session)
             || $session->activity->teacher_id === $user->id;
     }
 
@@ -117,6 +118,41 @@ class GameSessionPolicy
     {
         $query = $session->participations()
             ->whereIn('status', ['waiting', 'started', 'completed']);
+
+        if ($session->activity->mode === 'team') {
+            $teamId = Team::query()
+                ->where('activity_id', $session->activity_id)
+                ->whereHas('members', fn ($members) => $members->where('student_id', $user->id))
+                ->value('id');
+
+            if ($teamId === null) {
+                return false;
+            }
+
+            $teamParticipation = $query->where('team_id', $teamId)->first();
+
+            if ($teamParticipation === null) {
+                return false;
+            }
+
+            $hasTrackedPresence = GameSessionPresence::query()
+                ->where('participation_id', $teamParticipation->id)
+                ->exists();
+
+            return ! $hasTrackedPresence || GameSessionPresence::query()
+                ->where('participation_id', $teamParticipation->id)
+                ->where('student_id', $user->id)
+                ->where('status', GameSessionPresence::STATUS_ACTIVE)
+                ->exists();
+        }
+
+        return $query->where('student_id', $user->id)->exists();
+    }
+
+    private function hasResultAccess(User $user, GameSession $session): bool
+    {
+        $query = $session->participations()
+            ->whereIn('status', ['waiting', 'started', 'completed', 'abandoned', 'expired']);
 
         if ($session->activity->mode === 'team') {
             $teamId = Team::query()

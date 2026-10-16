@@ -242,6 +242,7 @@
             'column' => (int) $word->column,
             'direction' => $word->direction,
             'length' => mb_strlen($word->word),
+            'word' => $word->word,
         ])->values();
     @endphp
 
@@ -255,6 +256,16 @@
 
         const cells = Array.from(document.querySelectorAll('.cell'));
         const foundKey = new Set(@json($foundIds).map(Number));
+        const directions = {
+            horizontal: [0, 1],
+            vertical: [1, 0],
+            diagonal: [1, 1],
+            horizontal_reverse: [0, -1],
+            vertical_reverse: [-1, 0],
+            diagonal_reverse: [-1, -1],
+            diagonal_alt: [1, -1],
+            diagonal_alt_reverse: [-1, 1],
+        };
         const maxScore = {{ $maxScore }};
         let start = null;
         let points = {{ $earnedPoints }};
@@ -267,6 +278,42 @@
         document.querySelectorAll('.cell.found').forEach((cell) => {
             cell.dataset.found = '1';
         });
+
+        function markWordFound(wordId) {
+            const word = wordPositions.find((candidate) => candidate.id === Number(wordId));
+            const [rowStep, columnStep] = directions[word?.direction] || [];
+            if (!word || rowStep === undefined || columnStep === undefined) return false;
+
+            for (let offset = 0; offset < word.length; offset++) {
+                const cell = document.getElementById(
+                    `cell-${word.row + rowStep * offset}-${word.column + columnStep * offset}`
+                );
+
+                if (cell) {
+                    cell.classList.add('found');
+                    cell.dataset.found = '1';
+                }
+            }
+
+            document.querySelector(`.hint[data-word-id="${Number(wordId)}"]`)?.classList.add('found');
+            foundKey.add(Number(wordId));
+            return true;
+        }
+
+        function markCellsFound(coordinates) {
+            if (!Array.isArray(coordinates)) return;
+
+            coordinates.forEach((coordinate) => {
+                if (!Array.isArray(coordinate) || coordinate.length < 2) return;
+                const [row, column] = coordinate;
+                const cell = document.getElementById(`cell-${Number(row)}-${Number(column)}`);
+                if (!cell) return;
+                cell.classList.add('found');
+                cell.dataset.found = '1';
+            });
+        }
+
+        foundKey.forEach(markWordFound);
 
         function showResult(message, ok) {
             const el = document.getElementById('result');
@@ -366,8 +413,9 @@
                          * PALABRA YA ENCONTRADA
                          */
                     } else if (data.already_found) {
-
-                        markWrong(data.cells);
+                        markCellsFound(data.cells);
+                        const matchedWord = wordPositions.find((word) => word.word === data.word);
+                        if (matchedWord) markWordFound(matchedWord.id);
 
                         showResult(
                             'Esa palabra ya la encontraste.',
@@ -443,7 +491,9 @@
         }
 
         function markWrong(list) {
+            if (!Array.isArray(list)) return;
             list.forEach((cell) => {
+                if (!(cell instanceof Element)) return;
                 cell.classList.add('wrong');
                 setTimeout(() => cell.classList.remove('wrong'), 600);
             });
@@ -467,39 +517,9 @@
             points = Number(progress.score) || 0;
             document.getElementById('points').textContent = points;
 
-            const directions = {
-                horizontal: [0, 1],
-                vertical: [1, 0],
-                diagonal: [1, 1],
-                horizontal_reverse: [0, -1],
-                vertical_reverse: [-1, 0],
-                diagonal_reverse: [-1, -1],
-                diagonal_alt: [1, -1],
-                diagonal_alt_reverse: [-1, 1],
-            };
-
             progress.completed_item_ids.forEach((wordId) => {
                 const normalizedId = Number(wordId);
-                if (foundKey.has(normalizedId)) return;
-
-                const word = wordPositions.find((candidate) => candidate.id === normalizedId);
-                const [rowStep, columnStep] = directions[word?.direction] || [];
-                if (!word || rowStep === undefined || columnStep === undefined) return;
-
-                for (let offset = 0; offset < word.length; offset++) {
-                    const cell = document.getElementById(
-                        `cell-${word.row + rowStep * offset}-${word.column + columnStep * offset}`
-                    );
-
-                    if (cell) {
-                        cell.classList.add('found');
-                        cell.dataset.found = '1';
-                    }
-                }
-
-                document.querySelector(`.hint[data-word-id="${normalizedId}"]`)
-                    ?.classList.add('found');
-                foundKey.add(normalizedId);
+                markWordFound(normalizedId);
             });
 
             updateFound(foundKey.size);

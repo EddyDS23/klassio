@@ -101,6 +101,13 @@ controladas por el profesor.
 - Cada participante representa a un jugador individual o a un equipo. Los integrantes
   del mismo equipo comparten respuestas, puntaje y progreso; los equipos rivales
   solo ven las posiciones en vivo, nunca las respuestas de otro equipo.
+- En modo equipo, varios integrantes pueden unirse a la misma participación de sala.
+  La sala registra la presencia de cada integrante por separado, mientras que el
+  equipo conserva una sola participación y ocupa una plaza del cupo configurado.
+- Cuando un integrante sale, solo se retira su presencia. La participación del equipo
+  sigue activa mientras quede al menos un integrante presente; cuando sale el último,
+  se abandona la participación del equipo. Un integrante puede volver a unirse con el
+  código mientras la participación de su equipo siga activa.
 - Para equipos, el endpoint de estado entrega al integrante autenticado el
   progreso de su propia participación en Crucigrama, Sopa de letras y Matching.
   Los IDs de respuestas de los demás equipos no se incluyen.

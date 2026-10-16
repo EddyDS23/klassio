@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Models\Activity;
 use App\Models\Enrollment;
 use App\Models\GameSession;
+use App\Models\GameSessionPresence;
 use App\Models\Participation;
 use App\Models\SchoolClass;
+use App\Models\Team;
+use App\Models\TeamMember;
 use App\Models\User;
 use App\Services\GameSessionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -259,6 +262,120 @@ class GameSessionTest extends TestCase
                 'code' => $session->code,
             ])
             ->assertSessionHas('error', 'La sala alcanzó su máximo de jugadores.');
+    }
+
+    public function test_team_members_share_one_room_seat_and_one_participation(): void
+    {
+        $teacher = $this->teacher();
+        $firstMember = $this->student('team-member-1@example.com');
+        $secondMember = $this->student('team-member-2@example.com');
+        $opponent = $this->student('opponent@example.com');
+        $overflow = $this->student('overflow@example.com');
+        $class = $this->createClass($teacher);
+
+        foreach ([$firstMember, $secondMember, $opponent, $overflow] as $student) {
+            $this->enroll($class, $student);
+        }
+
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $firstTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Uno']);
+        $opponentTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Dos']);
+        $overflowTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Tres']);
+        TeamMember::create(['team_id' => $firstTeam->id, 'student_id' => $firstMember->id]);
+        TeamMember::create(['team_id' => $firstTeam->id, 'student_id' => $secondMember->id]);
+        TeamMember::create(['team_id' => $opponentTeam->id, 'student_id' => $opponent->id]);
+        TeamMember::create(['team_id' => $overflowTeam->id, 'student_id' => $overflow->id]);
+        $session = $this->createRoom($teacher, $activity, 2);
+
+        foreach ([$firstMember, $secondMember, $opponent] as $student) {
+            $this->actingAs($student)
+                ->post(route('student.game-sessions.join'), ['code' => $session->code])
+                ->assertRedirect(route('student.game-sessions.show', $session->id));
+        }
+
+        $this->assertSame(2, $session->participations()->whereIn('status', ['waiting', 'started'])->count());
+        $this->assertSame(1, $session->participations()->where('team_id', $firstTeam->id)->count());
+        $this->assertSame(2, GameSessionPresence::query()
+            ->where('game_session_id', $session->id)
+            ->where('participation_id', $session->participations()->where('team_id', $firstTeam->id)->value('id'))
+            ->where('status', GameSessionPresence::STATUS_ACTIVE)
+            ->count());
+
+        $this->actingAs($overflow)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertSessionHas('error', 'La sala alcanzó su máximo de jugadores.');
+
+        $this->actingAs($secondMember)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertSessionHas('error', 'Ya estás en esta sala.');
+    }
+
+    public function test_teammate_can_join_a_started_team_participation_and_rejoin_after_disconnect(): void
+    {
+        $teacher = $this->teacher();
+        $firstMember = $this->student('started-team-member-1@example.com');
+        $secondMember = $this->student('started-team-member-2@example.com');
+        $opponent = $this->student('started-opponent@example.com');
+        $class = $this->createClass($teacher);
+
+        foreach ([$firstMember, $secondMember, $opponent] as $student) {
+            $this->enroll($class, $student);
+        }
+
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $firstTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Uno']);
+        $opponentTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Dos']);
+        TeamMember::create(['team_id' => $firstTeam->id, 'student_id' => $firstMember->id]);
+        TeamMember::create(['team_id' => $firstTeam->id, 'student_id' => $secondMember->id]);
+        TeamMember::create(['team_id' => $opponentTeam->id, 'student_id' => $opponent->id]);
+        $session = $this->createRoom($teacher, $activity, 2);
+
+        foreach ([$firstMember, $opponent] as $student) {
+            $this->actingAs($student)
+                ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+        }
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id))
+            ->assertRedirect();
+
+        $teamParticipation = $session->participations()->where('team_id', $firstTeam->id)->firstOrFail();
+        $this->actingAs($secondMember)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id));
+
+        $presence = GameSessionPresence::query()
+            ->where('game_session_id', $session->id)
+            ->where('student_id', $secondMember->id)
+            ->firstOrFail();
+
+        $this->assertSame(1, $session->participations()->where('team_id', $firstTeam->id)->count());
+        $this->assertSame($teamParticipation->id, $presence->participation_id);
+
+        $this->actingAs($firstMember)
+            ->post(route('student.game-sessions.leave', $session->id))
+            ->assertRedirect(route('student.activities.show', $activity->id));
+
+        $this->assertSame('started', $teamParticipation->fresh()->status);
+        $this->assertSame(GameSession::STATUS_PLAYING, $session->fresh()->status);
+
+        $this->actingAs($firstMember)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id));
+
+        $this->assertSame(1, $session->participations()->where('team_id', $firstTeam->id)->count());
+        $this->assertSame(
+            GameSessionPresence::STATUS_ACTIVE,
+            $presence->fresh()->status
+        );
+
+        $this->actingAs($firstMember)
+            ->post(route('student.game-sessions.leave', $session->id));
+        $this->actingAs($secondMember)
+            ->post(route('student.game-sessions.leave', $session->id));
+
+        $this->assertSame(GameSession::STATUS_FINISHED, $session->fresh()->status);
+        $this->assertSame('abandoned', $teamParticipation->fresh()->status);
     }
 
     public function test_invalid_code_is_rejected(): void

@@ -677,7 +677,7 @@ class MultiplayerRaceTest extends TestCase
         ]);
         $session = GameSession::where('activity_id', $activity->id)->firstOrFail();
 
-        foreach ([$student1, $student2] as $student) {
+        foreach ([$student1, $student2, $student3] as $student) {
             $this->actingAs($student)->post(route('student.game-sessions.join'), ['code' => $session->code]);
         }
 
@@ -696,11 +696,23 @@ class MultiplayerRaceTest extends TestCase
             'response' => $item->right_text,
         ])->assertOk()->assertJsonPath('correct', true);
 
-        $this->assertSame(50, (int) $participation->fresh()->score);
+        $secondItem = $matching->items()->where('left_text', 'DNS')->firstOrFail();
+        $this->actingAs($student3)->postJson(route('student.matching.answer'), [
+            'matching_id' => $matching->id,
+            'participation_id' => $participation->id,
+            'session_id' => $session->id,
+            'matching_item_id' => $secondItem->id,
+            'response' => $secondItem->right_text,
+        ])->assertOk()->assertJsonPath('correct', true);
+
+        $this->assertSame(100, (int) $participation->fresh()->score);
 
         $teammateState = $this->state($session, $student3);
         $this->assertSame('Equipo Uno', $teammateState['players'][0]['name']);
-        $this->assertSame([$item->id], $teammateState['team_progress']['completed_item_ids']);
+        $this->assertEqualsCanonicalizing(
+            [$item->id, $secondItem->id],
+            $teammateState['team_progress']['completed_item_ids']
+        );
 
         $opponentState = $this->state($session, $student2);
         $this->assertSame([], $opponentState['team_progress']['completed_item_ids']);

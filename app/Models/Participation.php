@@ -34,6 +34,11 @@ class Participation extends Model
         return $this->belongsTo(GameSession::class, 'game_session_id');
     }
 
+    public function presences(): HasMany
+    {
+        return $this->hasMany(GameSessionPresence::class);
+    }
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');

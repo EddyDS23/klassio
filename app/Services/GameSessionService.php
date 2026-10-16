@@ -13,12 +13,14 @@ use App\Events\TurnChanged;
 use App\Models\Activity;
 use App\Models\Enrollment;
 use App\Models\GameSession;
+use App\Models\GameSessionPresence;
 use App\Models\KahootAnswer;
 use App\Models\Participation;
 use App\Models\Question;
 use App\Models\RouletteAnswer;
 use App\Models\RouletteItem;
 use App\Models\Team;
+use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -101,12 +103,7 @@ class GameSessionService
             ->whereIn('status', ['waiting', 'started']);
 
         if ($session->activity->mode === 'team') {
-            $teamId = Team::query()
-                ->where('activity_id', $session->activity_id)
-                ->whereHas('members', fn ($members) => $members->where('student_id', $user->id))
-                ->value('id');
-
-            return $teamId !== null && $query->where('team_id', $teamId)->exists();
+            return false;
         }
 
         return $query->where('student_id', $user->id)->exists();
@@ -161,22 +158,6 @@ class GameSessionService
                 throw new RuntimeException('La fecha límite de esta actividad ya pasó.');
             }
 
-            if (! in_array($session->status, [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING], true)) {
-                throw new RuntimeException('Esta sala ya no acepta jugadores.');
-            }
-
-            if ($this->isParticipant($session, $student)) {
-                throw new RuntimeException('Ya estás en esta sala.');
-            }
-
-            $count = $session->participations()
-                ->whereIn('status', ['waiting', 'started'])
-                ->count();
-
-            if ($count >= $session->max_players) {
-                throw new RuntimeException('La sala alcanzó su máximo de jugadores.');
-            }
-
             $enrolled = Enrollment::where('class_id', $activity->class_id)
                 ->where('student_id', $student->id)
                 ->where('status', 'active')
@@ -195,7 +176,109 @@ class GameSessionService
                 if ($team === null) {
                     throw new RuntimeException('No perteneces a un equipo de esta actividad.');
                 }
+
+                $teamParticipation = $session->participations()
+                    ->where('team_id', $team->id)
+                    ->whereIn('status', ['waiting', 'started', 'completed'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (
+                    $teamParticipation === null &&
+                    in_array($session->status, [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING], true)
+                ) {
+                    $teamParticipation = $session->participations()
+                        ->where('team_id', $team->id)
+                        ->where('status', 'abandoned')
+                        ->latest('id')
+                        ->lockForUpdate()
+                        ->first();
+                }
+
+                $presence = GameSessionPresence::query()
+                    ->where('game_session_id', $session->id)
+                    ->where('student_id', $student->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($presence?->status === GameSessionPresence::STATUS_ACTIVE) {
+                    throw new RuntimeException('Ya estás en esta sala.');
+                }
+
+                $isOpenForNewTeam = in_array(
+                    $session->status,
+                    [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING],
+                    true
+                );
+                $isOpenForExistingTeamMember = $session->status === GameSession::STATUS_PLAYING
+                    && in_array($teamParticipation?->status, ['started', 'completed'], true);
+
+                if (! $isOpenForNewTeam && ! $isOpenForExistingTeamMember) {
+                    throw new RuntimeException('Esta sala ya no acepta jugadores.');
+                }
+
+                $isNewTeamSeat = $teamParticipation === null;
+
+                if ($isNewTeamSeat) {
+                    $this->ensureSeatAvailable($session);
+
+                    $teamParticipation = Participation::create([
+                        'game_session_id' => $session->id,
+                        'activity_id' => $activity->id,
+                        'student_id' => null,
+                        'team_id' => $team->id,
+                        'attempt' => 1,
+                        'status' => 'waiting',
+                        'score' => 0,
+                    ]);
+
+                } elseif ($teamParticipation->status === 'abandoned') {
+                    $this->ensureSeatAvailable($session);
+
+                    $teamParticipation->update([
+                        'status' => 'waiting',
+                        'completed_at' => null,
+                        'elapsed_seconds' => null,
+                        'score' => 0,
+                    ]);
+                }
+
+                if ($isNewTeamSeat || $teamParticipation->wasChanged('status')) {
+                    DB::afterCommit(fn () => event(new PlayerJoined($session, [
+                        'participation_id' => $teamParticipation->id,
+                        'name' => $team->name,
+                    ])));
+                }
+
+                if ($presence === null) {
+                    GameSessionPresence::create([
+                        'game_session_id' => $session->id,
+                        'participation_id' => $teamParticipation->id,
+                        'student_id' => $student->id,
+                        'status' => GameSessionPresence::STATUS_ACTIVE,
+                        'joined_at' => now(),
+                    ]);
+                } else {
+                    $presence->update([
+                        'participation_id' => $teamParticipation->id,
+                        'status' => GameSessionPresence::STATUS_ACTIVE,
+                        'joined_at' => now(),
+                        'left_at' => null,
+                    ]);
+                }
+
+                return $teamParticipation;
             }
+
+            if (! in_array($session->status, [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING], true)) {
+                throw new RuntimeException('Esta sala ya no acepta jugadores.');
+            }
+
+            if ($this->isParticipant($session, $student)) {
+                throw new RuntimeException('Ya estás en esta sala.');
+            }
+
+            $this->ensureSeatAvailable($session);
 
             $participation = Participation::create([
                 'game_session_id' => $session->id,
@@ -236,6 +319,57 @@ class GameSessionService
 
             if (in_array($session->status, [GameSession::STATUS_FINISHED, GameSession::STATUS_CANCELLED], true)) {
                 throw new RuntimeException('Esta partida ya finalizó.');
+            }
+
+            if ($participation->team_id !== null) {
+                $hasTrackedPresence = GameSessionPresence::query()
+                    ->where('participation_id', $participation->id)
+                    ->exists();
+
+                if (! $hasTrackedPresence) {
+                    TeamMember::query()
+                        ->where('team_id', $participation->team_id)
+                        ->get()
+                        ->each(function (TeamMember $member) use ($session, $participation): void {
+                            GameSessionPresence::create([
+                                'game_session_id' => $session->id,
+                                'participation_id' => $participation->id,
+                                'student_id' => $member->student_id,
+                                'status' => GameSessionPresence::STATUS_ACTIVE,
+                                'joined_at' => now(),
+                            ]);
+                        });
+                }
+
+                $presence = GameSessionPresence::query()
+                    ->where('game_session_id', $session->id)
+                    ->where('participation_id', $participation->id)
+                    ->where('student_id', $user->id)
+                    ->where('status', GameSessionPresence::STATUS_ACTIVE)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($presence === null) {
+                    throw new RuntimeException('No tienes una presencia activa en esta sala.');
+                }
+
+                $presence->update([
+                    'status' => GameSessionPresence::STATUS_LEFT,
+                    'left_at' => now(),
+                ]);
+
+                if ($participation->status === 'completed') {
+                    return $session->fresh();
+                }
+
+                $hasActiveTeammate = GameSessionPresence::query()
+                    ->where('participation_id', $participation->id)
+                    ->where('status', GameSessionPresence::STATUS_ACTIVE)
+                    ->exists();
+
+                if ($hasActiveTeammate) {
+                    return $session->fresh();
+                }
             }
 
             if (in_array($participation->status, ['completed', 'abandoned', 'expired'], true)) {
@@ -281,6 +415,17 @@ class GameSessionService
 
             return $session->fresh();
         });
+    }
+
+    private function ensureSeatAvailable(GameSession $session): void
+    {
+        $count = $session->participations()
+            ->whereIn('status', ['waiting', 'started'])
+            ->count();
+
+        if ($count >= $session->max_players) {
+            throw new RuntimeException('La sala alcanzó su máximo de jugadores.');
+        }
     }
 
     /**

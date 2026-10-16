@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Activity;
 use App\Models\GameSession;
+use App\Models\GameSessionPresence;
 use App\Models\Participation;
 use App\Models\SchoolClass;
 use App\Models\Team;
@@ -101,18 +102,40 @@ class GameSessionChannelTest extends TestCase
         $this->assertTrue($this->authorizeChannel($student, $session->id));
     }
 
-    public function test_team_member_can_authorize_but_non_member_cannot(): void
+    public function test_team_member_must_join_before_authorizing_but_non_member_cannot(): void
     {
         $teacher = $this->user('teacher', 'teacher@example.com');
         $member = $this->user('student', 'member@example.com');
+        $teammate = $this->user('student', 'teammate@example.com');
         $outsider = $this->user('student', 'outsider@example.com');
         $activity = $this->activity($teacher, 'team');
         $session = $this->createSession($activity);
         $team = Team::create(['activity_id' => $activity->id, 'name' => 'Team One']);
         TeamMember::create(['team_id' => $team->id, 'student_id' => $member->id]);
+        TeamMember::create(['team_id' => $team->id, 'student_id' => $teammate->id]);
         $this->participation($session, $activity, team: $team);
 
+        $participation = $session->participations()->firstOrFail();
+        GameSessionPresence::create([
+            'game_session_id' => $session->id,
+            'participation_id' => $participation->id,
+            'student_id' => $member->id,
+            'status' => GameSessionPresence::STATUS_ACTIVE,
+            'joined_at' => now(),
+        ]);
+
         $this->assertTrue($this->authorizeChannel($member, $session->id));
+        $this->assertFalse($this->authorizeChannel($teammate, $session->id));
+
+        GameSessionPresence::create([
+            'game_session_id' => $session->id,
+            'participation_id' => $participation->id,
+            'student_id' => $teammate->id,
+            'status' => GameSessionPresence::STATUS_ACTIVE,
+            'joined_at' => now(),
+        ]);
+
+        $this->assertTrue($this->authorizeChannel($teammate, $session->id));
         $this->assertFalse($this->authorizeChannel($outsider, $session->id));
     }
 

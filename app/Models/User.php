@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password','role','status'])]
+#[Fillable(['name', 'email', 'password', 'role', 'status'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -32,12 +32,18 @@ class User extends Authenticatable
         ];
     }
 
-    public function classes(): HasMany{
+    public function classes(): HasMany
+    {
         return $this->hasMany(SchoolClass::class, 'teacher_id');
     }
 
-    public function enrollmentClasses(): BelongsToMany{
-        return $this->belongsToMany(SchoolClass::class,'enrollments','student_id','class_id');
+    public function enrollmentClasses(): BelongsToMany
+    {
+        return $this->belongsToMany(SchoolClass::class, 'enrollments', 'student_id', 'class_id');
     }
 
+    public function gameSessionPresences(): HasMany
+    {
+        return $this->hasMany(GameSessionPresence::class, 'student_id');
+    }
 }
