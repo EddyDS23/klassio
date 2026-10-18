@@ -6,8 +6,10 @@ use App\Http\Requests\AnswerMatchingRequest;
 use App\Http\Requests\StoreMatchingRequest;
 use App\Http\Requests\UpdateMatchingRequest;
 use App\Models\Activity;
+use App\Models\GameSession;
 use App\Models\Matching;
-use App\Models\Participation;
+use App\Services\GameSessionAnswerService;
+use App\Services\GameSessionService;
 use App\Services\MatchingService;
 use App\Services\ParticipationService;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +21,9 @@ class MatchingController extends Controller
 {
     public function __construct(
         protected MatchingService $matchingService,
-        protected ParticipationService $participationService
+        protected ParticipationService $participationService,
+        protected GameSessionService $gameSessionService,
+        protected GameSessionAnswerService $gameSessionAnswerService,
     ) {}
 
     /**
@@ -172,6 +176,57 @@ class MatchingController extends Controller
     }
 
     /**
+     * Sala multijugador de Matching (carrera libre).
+     */
+    public function playSession(int $sessionId): View|RedirectResponse
+    {
+        $session = GameSession::findOrFail($sessionId);
+
+        Gate::authorize('play', $session);
+
+        $activity = $session->activity;
+        $matching = $activity->matching;
+
+        abort_if($matching === null, 404);
+
+        $participation = $this->gameSessionService->participationOf(
+            $session,
+            request()->user()
+        );
+
+        abort_if($participation === null, 403);
+
+        $session = $this->gameSessionService->closeRoundIfDue($session);
+
+        if ($session->status !== GameSession::STATUS_PLAYING) {
+            return redirect()->route('student.game-sessions.result', $session->id);
+        }
+
+        $items = $matching->items()->get();
+
+        return view('student.matching.multiplayer', [
+            'session' => $session,
+            'activity' => $activity,
+            'matching' => $matching,
+            'participation' => $participation,
+            'items' => $items,
+            'remainingSeconds' => $this->gameSessionService->remainingSeconds($session),
+            'rightOptions' => $items->shuffle(),
+            'correctIds' => $this->matchingService->correctItemIds(
+                $matching,
+                $participation
+            ),
+            'earnedPoints' => $this->matchingService->earnedScore(
+                $matching,
+                $participation
+            ),
+            'maxScore' => $this->matchingService->maxScore(
+                $matching
+            ),
+        ]);
+    }
+
+    /**
      * Procesar una respuesta de Matching.
      */
     public function answer(
@@ -183,32 +238,16 @@ class MatchingController extends Controller
             (int) $data['matching_id']
         );
 
-        $participation = $this->resolveParticipation(
-            $matching->activity
-        );
-
-        return response()->json(
-            $this->matchingService->checkAnswer(
+        return response()->json($this->gameSessionAnswerService->answer(
+            $matching->activity,
+            isset($data['participation_id']) ? (int) $data['participation_id'] : null,
+            isset($data['session_id']) ? (int) $data['session_id'] : null,
+            fn ($participation) => $this->matchingService->checkAnswer(
                 $matching,
                 $participation,
                 (int) $data['matching_item_id'],
                 (string) $data['response']
             )
-        );
-    }
-
-    /**
-     * Obtener la participación activa del estudiante/equipo.
-     *
-     * IMPORTANTE:
-     * No crea una participación.
-     *
-     * ParticipationController::start() es el único responsable
-     * de iniciar una nueva participación.
-     */
-    protected function resolveParticipation(
-        Activity $activity
-    ): Participation {
-        return $this->participationService->getActive($activity);
+        ));
     }
 }

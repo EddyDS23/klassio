@@ -10,12 +10,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="min-h-screen bg-slate-100 text-slate-800">
+<body class="min-h-screen bg-slate-100 text-slate-800 student-kids">
 
     <div class="flex min-h-screen">
 
         <!-- SIDEBAR -->
-        <aside class="hidden w-72 flex-col bg-white shadow-xl lg:flex">
+        <aside class="hidden w-72 shrink-0 flex-col bg-white shadow-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
 
             <div class="flex items-center gap-3 border-b border-slate-200 px-6 py-6">
 
@@ -90,7 +90,7 @@
         <main class="flex-1">
 
             <!-- HEADER -->
-            <header class="border-b border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-8">
+            <header class="sticky top-4 z-20 mx-4 mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:mx-6 sm:px-8">
 
                 <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
 
@@ -129,16 +129,15 @@
 
                         <div
                             class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur">
-                            👥 Comunidad estudiantil
+                            👥 ¡Mi salón!
                         </div>
 
                         <h1 class="text-3xl font-black sm:text-4xl">
-                            Compañeros de {{ $class->name }}
+                            Mis amigos de {{ $class->name }} 🎉
                         </h1>
 
-                        <p class="mt-3 text-sm leading-6 text-indigo-100 sm:text-base">
-                            Conoce a los estudiantes que forman parte de esta clase
-                            y comparte el aprendizaje con ellos.
+                        <p class="mt-3 text-base font-medium leading-6 text-indigo-100 sm:text-lg">
+                            Mira quién juega contigo. 👋
                         </p>
 
                     </div>
@@ -163,11 +162,11 @@
 
                         <div>
                             <h2 class="text-xl font-black text-slate-900 sm:text-2xl">
-                                Lista de compañeros
+                                Mis amigos 👥
                             </h2>
 
-                            <p class="text-sm text-slate-500">
-                                Estudiantes inscritos en esta clase.
+                            <p class="text-base font-medium text-slate-500">
+                                Todos los de tu clase.
                             </p>
                         </div>
 
@@ -184,12 +183,11 @@
                             </div>
 
                             <h3 class="mt-4 text-lg font-black text-slate-800">
-                                No hay compañeros todavía
+                                ¡Todavía no hay nadie! 🎈
                             </h3>
 
-                            <p class="mt-2 text-sm text-slate-500">
-                                Cuando otros estudiantes se unan a esta clase,
-                                aparecerán aquí.
+                            <p class="mt-2 text-base font-medium text-slate-500">
+                                Cuando lleguen tus amigos, salen aquí.
                             </p>
 
                         </div>

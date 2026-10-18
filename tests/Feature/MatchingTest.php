@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Models\Activity;
@@ -879,6 +880,50 @@ class MatchingTest extends TestCase
         ]);
     }
 
+    public function test_incorrect_matching_attempts_can_repeat_but_a_correct_repeat_only_scores_once(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $class = $this->createClass($teacher);
+        $this->enroll($class, $student);
+        $activity = $this->createActivity($class, $teacher);
+        $matching = $this->createMatching($activity, [
+            ['left' => 'HTTP', 'right' => 'Protocolo HTTP', 'score' => 10],
+            ['left' => 'PHP', 'right' => 'Lenguaje PHP', 'score' => 20],
+        ]);
+        $participation = $this->createParticipation($activity, $student);
+        $item = $matching->items()->where('left_text', 'HTTP')->firstOrFail();
+        $payload = [
+            'matching_id' => $matching->id,
+            'matching_item_id' => $item->id,
+        ];
+
+        $this->actingAs($student);
+        foreach (['incorrecta 1', 'incorrecta 2'] as $wrongResponse) {
+            $this->postJson(route('student.matching.answer'), $payload + [
+                'response' => $wrongResponse,
+            ])->assertOk()->assertJsonPath('correct', false);
+        }
+
+        $this->postJson(route('student.matching.answer'), $payload + [
+            'response' => $item->right_text,
+        ])->assertOk()->assertJsonPath('score', 10);
+
+        $this->postJson(route('student.matching.answer'), $payload + [
+            'response' => $item->right_text,
+        ])->assertOk()->assertJsonPath('already_answered', true)
+            ->assertJsonPath('score', 0);
+
+        $this->assertSame(3, MatchingAnswer::where('participation_id', $participation->id)
+            ->where('matching_item_id', $item->id)
+            ->count());
+        $this->assertSame(1, MatchingAnswer::where('participation_id', $participation->id)
+            ->where('matching_item_id', $item->id)
+            ->where('is_correct', true)
+            ->count());
+        $this->assertSame(33, (int) $participation->fresh()->score);
+    }
+
     public function test_correct_answer_from_different_matching_is_rejected(): void
     {
         $teacher = $this->teacher();
@@ -1337,4 +1382,3 @@ class MatchingTest extends TestCase
         $response->assertNotFound();
     }
 }
-

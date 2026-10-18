@@ -68,4 +68,9 @@ class Activity extends Model
     {
         return $this->hasMany(Participation::class);
     }
+
+    public function gameSessions(): HasMany
+    {
+        return $this->hasMany(GameSession::class);
+    }
 }

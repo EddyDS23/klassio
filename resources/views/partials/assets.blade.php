@@ -1,8 +1,12 @@
 {{-- Recursos visuales sin Vite ni Node. --}}
 @php($theme = $theme ?? 'guest')
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+@if ($includeBootstrap ?? true)
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+@endif
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+@if ($includeBootstrap ?? true)
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+@endif
 <style>
     :root { --klassio-primary: #635bff; --klassio-accent: #f59e0b; }
     body { min-height: 100vh; background-image: radial-gradient(circle at top right, rgb(99 91 255 / .12), transparent 30rem); }
@@ -52,6 +56,21 @@
     html[data-theme="dark"] .page-hero { box-shadow: 0 1rem 2.5rem rgb(0 0 0 / .4); }
     .klassio-theme-btn { border: 1px solid #cbd5e1; border-radius: .75rem; background: #fff; padding: .5rem .75rem; font-size: .85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
     html[data-theme="dark"] .klassio-theme-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
+
+    /* Ajustes de lectura para el perfil infantil, sin cambiar los demás perfiles. */
+    body.student-kids { font-size: 18px; }
+    body.student-kids .student-activity > h1 { font-size: 2.1rem; }
+    body.student-kids .student-activity a,
+    body.student-kids .student-activity button { padding: .9rem 1.25rem; font-size: 1.05rem; }
+    body.student-kids #timer { font-size: 1.1rem; }
+    body.student-kids .klassio-toast-msg { font-size: .95rem; }
+    body.student-kids :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+    ::selection { background: rgb(99 91 255 / .25); }
+    :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 <script>
     // Aplica modo guardado antes de pintar (claro por defecto). Sin Vite, solo Bootstrap + Tailwind CDN.

@@ -10,12 +10,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="min-h-screen bg-slate-100 text-slate-800">
+<body class="min-h-screen bg-slate-100 text-slate-800 student-kids">
 
     <div class="flex min-h-screen">
 
         <!-- SIDEBAR -->
-        <aside class="hidden w-72 flex-col bg-white shadow-xl lg:flex">
+        <aside class="hidden w-72 shrink-0 flex-col bg-white shadow-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
 
             <div class="flex items-center gap-3 border-b border-slate-200 px-6 py-6">
                 <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-2xl font-black text-white shadow-lg">
@@ -85,7 +85,7 @@
         <main class="flex-1">
 
             <!-- HEADER -->
-            <header class="border-b border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-8">
+            <header class="sticky top-4 z-20 mx-4 mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:mx-6 sm:px-8">
 
                 <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
 
@@ -116,16 +116,15 @@
                     <div class="relative z-10 max-w-3xl">
 
                         <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur">
-                            📘 Aula virtual
+                            📘 ¡Mi clase!
                         </div>
 
                         <h1 class="text-3xl font-black sm:text-4xl">
-                            {{ $class->name }}
+                            {{ $class->name }} 🎉
                         </h1>
 
-                        <p class="mt-3 max-w-2xl text-sm leading-6 text-indigo-100 sm:text-base">
-                            Consulta la información de tu clase, revisa las actividades
-                            y conoce a tus compañeros.
+                        <p class="mt-3 max-w-2xl text-base font-medium leading-6 text-indigo-100 sm:text-lg">
+                            Mira tus juegos y juega con tus amigos. 🚀
                         </p>
 
                     </div>
@@ -197,7 +196,7 @@
                                     </p>
 
                                     <span class="mt-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700">
-                                        {{ $class->status }}
+                                        {{ $class->status === 'active' ? 'Clase activa' : 'Clase archivada' }}
                                     </span>
                                 </div>
 
@@ -216,17 +215,17 @@
                             </div>
 
                             <h2 class="text-xl font-black text-slate-900">
-                                Mis compañeros
+                                Mis amigos 👥
                             </h2>
 
-                            <p class="mt-2 text-sm leading-6 text-slate-500">
-                                Conoce a los estudiantes que forman parte de esta clase.
+                            <p class="mt-2 text-base font-medium leading-6 text-slate-500">
+                                Mira quién juega contigo en esta clase.
                             </p>
                         </div>
 
                         <a href="{{ route('student.class.students', $class->id) }}"
-                           class="mt-6 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-3 font-bold text-white transition hover:bg-amber-600">
-                            Ver compañeros →
+                            class="mt-6 inline-flex items-center justify-center rounded-2xl bg-amber-500 px-6 py-3.5 text-base font-black text-white shadow-md transition hover:bg-amber-600 active:scale-95">
+                            Ver amigos →
                         </a>
 
                     </div>
@@ -246,19 +245,19 @@
 
                             <div>
                                 <h2 class="text-xl font-black text-slate-900 sm:text-2xl">
-                                    Actividad reciente
+                                    ✨ Lo nuevo
                                 </h2>
 
-                                <p class="text-sm text-slate-500">
-                                    Revisa la última actividad publicada por tu maestro.
+                                <p class="text-base font-medium text-slate-500">
+                                    Lo último que dejó tu maestro.
                                 </p>
                             </div>
 
                         </div>
 
                         <a href="{{ route('student.activities.index', $class->id) }}"
-                           class="text-sm font-bold text-indigo-600 transition hover:text-indigo-800">
-                            Ver todas →
+                           class="rounded-2xl bg-indigo-50 px-5 py-3 text-base font-black text-indigo-600 transition hover:bg-indigo-100">
+                            Ver todo →
                         </a>
 
                     </div>
@@ -271,7 +270,7 @@
 
                                 <div>
                                     <span class="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-indigo-700">
-                                        {{ $activity->type }}
+                                        {{ match ($activity->type) { 'crossword' => 'Crucigrama', 'word_search' => 'Sopa de letras', 'matching' => 'Unir parejas', 'kahoot' => 'Quiz', default => $activity->type } }}
                                     </span>
 
                                     <h3 class="mt-3 text-xl font-black text-slate-900">
@@ -304,7 +303,7 @@
                                     </p>
 
                                     <p class="mt-1 font-bold text-slate-700">
-                                        {{ $activity->mode }}
+                                        {{ $activity->mode === 'team' ? 'Con amigos 👥' : 'Solo yo 🙋' }}
                                     </p>
                                 </div>
 
@@ -377,7 +376,7 @@
                         </span>
 
                         <h2 class="mt-2 text-2xl font-black text-slate-900">
-                            Juegos educativos
+                            Juegos 🎉
                         </h2>
 
                         <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">

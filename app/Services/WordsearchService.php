@@ -7,7 +7,8 @@ use App\Models\Participation;
 use App\Models\Word;
 use App\Models\Wordsearch;
 use App\Models\WordsearchAnswer;
-
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 
 class WordsearchService
 {
@@ -26,7 +27,6 @@ class WordsearchService
     public const DIRECTION_DIAGONAL_ALT = 'diagonal_alt';
 
     public const DIRECTION_DIAGONAL_ALT_REVERSE = 'diagonal_alt_reverse';
-
 
     public function __construct(
         protected ParticipationService $participationService
@@ -86,7 +86,7 @@ class WordsearchService
         $grid = array_fill(0, $rows, array_fill(0, $columns, null));
 
         $entries = array_values(array_map(
-            static fn(array $entry) => [
+            static fn (array $entry) => [
                 'word' => (string) ($entry['word'] ?? ''),
                 'score' => max(1, (int) ($entry['score'] ?? 1)),
             ],
@@ -94,7 +94,7 @@ class WordsearchService
         ));
 
         // Las palabras más largas primero para maximizar la probabilidad de colocación.
-        usort($entries, static fn(array $a, array $b) => mb_strlen($b['word']) <=> mb_strlen($a['word']));
+        usort($entries, static fn (array $a, array $b) => mb_strlen($b['word']) <=> mb_strlen($a['word']));
 
         $placements = [];
         $failed = [];
@@ -211,6 +211,73 @@ class WordsearchService
         int $endRow,
         int $endColumn
     ): array {
+        try {
+            return DB::transaction(function () use ($wordsearch, $participation, $startRow, $startColumn, $endRow, $endColumn): array {
+                $participation = Participation::query()
+                    ->whereKey($participation->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                return $this->checkAnswerLocked(
+                    $wordsearch,
+                    $participation,
+                    $startRow,
+                    $startColumn,
+                    $endRow,
+                    $endColumn,
+                );
+            });
+        } catch (QueryException $exception) {
+            if (! $this->isUniqueConstraintViolation($exception)) {
+                throw $exception;
+            }
+
+            $selected = $this->selectionCells(
+                $wordsearch->grid,
+                $startRow,
+                $startColumn,
+                $endRow,
+                $endColumn,
+            );
+
+            if ($selected === null) {
+                throw $exception;
+            }
+
+            $selectedSorted = $this->sortCells($selected);
+            foreach ($wordsearch->words as $word) {
+                if (
+                    $selectedSorted === $this->sortCells($this->wordCells($word))
+                    && WordsearchAnswer::query()
+                        ->where('participation_id', $participation->id)
+                        ->where('word_id', $word->id)
+                        ->exists()
+                ) {
+                    return [
+                        'correct' => true,
+                        'already_found' => true,
+                        'word' => $word->word,
+                        'score' => 0,
+                        'cells' => $selected,
+                        'error' => null,
+                    ];
+                }
+            }
+
+            throw $exception;
+        }
+    }
+
+    private function checkAnswerLocked(
+        Wordsearch $wordsearch,
+        Participation $participation,
+        int $startRow,
+        int $startColumn,
+        int $endRow,
+        int $endColumn
+    ): array {
+        abort_unless($participation->activity_id === $wordsearch->activity_id, 403);
+
         $grid = $wordsearch->grid;
 
         $selected = $this->selectionCells($grid, $startRow, $startColumn, $endRow, $endColumn);
@@ -219,10 +286,8 @@ class WordsearchService
             return $this->error('Debes seleccionar celdas en línea recta (horizontal, vertical o diagonal).');
         }
 
-
         $alreadyFound = $this->foundWords($wordsearch, $participation);
         $selectedSorted = $this->sortCells($selected);
-
 
         foreach ($wordsearch->words as $word) {
 
@@ -261,6 +326,15 @@ class WordsearchService
         }
 
         return $this->error('Esa selección no corresponde a ninguna palabra.');
+    }
+
+    private function isUniqueConstraintViolation(QueryException $exception): bool
+    {
+        $sqlState = $exception->errorInfo[0] ?? (string) $exception->getCode();
+        $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+
+        return in_array($sqlState, ['23000', '23505'], true)
+            && in_array($driverCode, [19, 1062], true);
     }
 
     public function normalize(string $word): string
@@ -464,13 +538,12 @@ class WordsearchService
     /**
      * Ordena celdas por fila y columna para comparar conjuntos.
      *
-     * @param list<array{0:int,1:int}> $cells
-     *
+     * @param  list<array{0:int,1:int}>  $cells
      * @return list<array{0:int,1:int}>
      */
     private function sortCells(array $cells): array
     {
-        usort($cells, static fn(array $a, array $b) => [$a[0], $a[1]] <=> [$b[0], $b[1]]);
+        usort($cells, static fn (array $a, array $b) => [$a[0], $a[1]] <=> [$b[0], $b[1]]);
 
         return $cells;
     }

@@ -1,61 +1,27 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('title', 'Mis clases')
+@section('brand-url', route('teacher.dashboard'))
+@section('brand-caption', 'Panel del profesor')
+@section('header-context')
+<span class="hidden text-sm font-semibold text-slate-600 sm:block">
+    {{ auth()->user()->name }}
+</span>
 
-    <title>Mis clases | Klassio</title>
+<form action="{{ url('/logout') }}" method="POST">
+    @csrf
+    <button type="submit" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
+        Cerrar sesión
+    </button>
+</form>
+@endsection
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-
-<body class="min-h-screen bg-slate-100 text-slate-800">
-
-    {{-- Barra superior --}}
-    <header class="border-b border-slate-200 bg-white shadow-sm">
-        <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-
-            <a href="{{ route('teacher.dashboard') }}" class="flex items-center gap-3">
-
-                <div
-                    class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
-                    K
-                </div>
-
-                <div>
-                    <h1 class="text-xl font-black tracking-tight text-slate-900">
-                        Klassio
-                    </h1>
-
-                    <p class="text-xs font-medium text-slate-500">
-                        Panel del profesor
-                    </p>
-                </div>
+@section('content')
+        <div class="mb-6">
+            <a href="{{ route('teacher.dashboard') }}" class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-900">
+                ← Volver al dashboard
             </a>
-
-            <div class="flex items-center gap-3">
-
-                <span class="hidden text-sm font-semibold text-slate-600 sm:block">
-                    {{ auth()->user()->name }}
-                </span>
-
-                <form action="{{ url('/logout') }}" method="POST">
-                    @csrf
-
-                    <button type="submit"
-                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
-                        Cerrar sesión
-                    </button>
-                </form>
-
-            </div>
-
         </div>
-    </header>
-
-
-    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         {{-- Encabezado --}}
         <section
@@ -346,19 +312,5 @@
             @endif
 
 
-        {{-- Regreso al dashboard --}}
-        <div class="mt-8 border-t border-slate-200 pt-6">
 
-            <a href="{{ route('teacher.dashboard') }}"
-                class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-900">
-
-                ← Volver al dashboard
-            </a>
-
-        </div>
-
-    </main>
-
-</body>
-
-</html>
+@endsection

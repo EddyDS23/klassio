@@ -184,7 +184,31 @@ class RouletteService
         Roulette $roulette,
         Participation $participation,
         int $rouletteItemId,
-        string $response
+        string $response,
+        bool $autoFinish = true
+    ): array {
+        return DB::transaction(function () use ($roulette, $participation, $rouletteItemId, $response, $autoFinish): array {
+            $lockedParticipation = Participation::query()
+                ->whereKey($participation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            return $this->checkAnswerLocked(
+                $roulette,
+                $lockedParticipation,
+                $rouletteItemId,
+                $response,
+                $autoFinish,
+            );
+        });
+    }
+
+    private function checkAnswerLocked(
+        Roulette $roulette,
+        Participation $participation,
+        int $rouletteItemId,
+        string $response,
+        bool $autoFinish
     ): array {
         if ($participation->status !== 'started') {
             return $this->error(
@@ -274,7 +298,11 @@ class RouletteService
             $total > 0 &&
             $answered >= $total;
 
-        if ($completed) {
+        /*
+         * En multijugador la finalización la decide la GameSession,
+         * así que checkAnswer() se invoca con autoFinish = false.
+         */
+        if ($autoFinish && $completed) {
             $participation = $this->participationService->finish(
                 $participation
             );

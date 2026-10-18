@@ -8,21 +8,26 @@
     @include('partials.assets', ['theme' => 'student'])
 </head>
 
-<body class="student-activity">
+<body class="student-activity student-kids">
+    @include('partials.toast')
 
-    <h1>{{ $activity->title }}</h1>
+    <h1>🎮 {{ $activity->title }}</h1>
 
     @if ($activity->description)
         <p>{{ $activity->description }}</p>
     @endif
 
     @if (session('success'))
-        <p style="color: green;">{{ session('success') }}</p>
+        <p data-toast="success" style="color: green;">{{ session('success') }}</p>
     @endif
 
     @if (session('error'))
-        <p style="color: red;">{{ session('error') }}</p>
+        <p data-toast="error" style="color: red;">{{ session('error') }}</p>
     @endif
+
+    <nav aria-label="Navegación de actividades" style="margin: 0 0 1rem;">
+        <a href="{{ route('student.activities.index', $activity->class_id) }}">← Volver a actividades</a>
+    </nav>
 
     {{-- Información general --}}
     <section>
@@ -116,20 +121,28 @@
             default => null,
         };
 
+        $soundGame = match ($activity->type) {
+            'crossword' => 'crossword',
+            'kahoot' => 'kahoot',
+            'word_search' => 'wordsearch',
+            'matching' => 'matching',
+            default => null,
+        };
+
         $playRouteExists = $playRoute && Route::has($playRoute);
     @endphp
 
     <section>
-        <h2>Acciones</h2>
+        <h2>¡A jugar! 🎮</h2>
 
         @if ($activeParticipation)
 
             {{-- Intento activo: continuar, finalizar o abandonar --}}
-            <p>Tienes un intento en curso (intento #{{ $activeParticipation->attempt }}).</p>
+            <p>¡Sigue jugando! (intento #{{ $activeParticipation->attempt }}).</p>
 
             @if ($playRouteExists)
-                <a href="{{ route($playRoute, $activity->id) }}">
-                    Continuar actividad
+                <a href="{{ route($playRoute, $activity->id) }}" @if ($soundGame) data-sound-game="{{ $soundGame }}" @endif>
+                    Seguir jugando ▶
                 </a>
             @else
                 <p>El juego para esta actividad aún no está disponible.</p>
@@ -138,55 +151,55 @@
             <form method="POST" action="{{ route('student.participation.finish', $activity->id) }}"
                 style="display: inline;">
                 @csrf
-                <button type="submit">Finalizar actividad</button>
+                <button type="submit">Terminar 🏁</button>
             </form>
 
             <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
                 style="display: inline;">
                 @csrf
-                <button type="submit" onclick="return confirm('¿Estás seguro de que quieres abandonar?')">
-                    Abandonar
+                <button type="submit" onclick="return confirm('¿Seguro que quieres dejar el juego?')">
+                    Dejar el juego 👋
                 </button>
             </form>
         @elseif ($activity->due_at && now()->isAfter($activity->due_at))
             {{-- Actividad vencida --}}
-            <p>La fecha límite de esta actividad ya pasó.</p>
+            <p>Este juego ya terminó. ⏰</p>
 
             @if ($lastParticipation)
                 <a href="{{ route('student.participation.result', $activity->id) }}">
-                    Ver mi resultado
+                    Ver mi puntaje ⭐
                 </a>
             @endif
         @elseif ($activity->mode === 'team' && !isset($myTeam))
             {{-- Sin equipo asignado --}}
             <p>
-                Aún no perteneces a ningún equipo en esta actividad.
-                Espera a que tu maestro te asigne uno.
+                Todavía no tienes equipo en este juego.
+                Pídele a tu maestro que te ponga en uno. 👥
             </p>
         @else
             {{-- Sin intento activo: mostrar historial y botón de inicio --}}
             @if ($lastParticipation)
                 <p>
-                    Último intento: #{{ $lastParticipation->attempt }}
+                    Última vez: #{{ $lastParticipation->attempt }}
                     ({{ match ($lastParticipation->status) {
-                        'completed' => 'Completado',
-                        'abandoned' => 'Abandonado',
-                        'expired' => 'Expirado',
+                        'completed' => '¡Lo lograste! 🎉',
+                        'abandoned' => 'Lo dejaste',
+                        'expired' => 'Se acabó el tiempo ⏰',
                         default => $lastParticipation->status,
                     } }})
-                    — {{ $lastParticipation->score }} pts
+                    — {{ $lastParticipation->score }} pts ⭐
                 </p>
 
                 <a href="{{ route('student.participation.result', $activity->id) }}">
-                    Ver resultado
+                    ¡Ver mi puntaje! ⭐
                 </a>
             @endif
 
             @if ($playRouteExists)
                 <form method="POST" action="{{ route('student.participation.start', $activity->id) }}">
                     @csrf
-                    <button type="submit">
-                        {{ $lastParticipation ? 'Intentar de nuevo' : 'Iniciar actividad' }}
+                    <button type="submit" @if ($soundGame) data-sound-game="{{ $soundGame }}" @endif>
+                        {{ $lastParticipation ? '¡Otra vez! 🎮' : '¡A jugar! 🎮' }}
                     </button>
                 </form>
             @else
@@ -199,11 +212,17 @@
 
     <hr>
 
-    <nav>
-        <a href="{{ route('student.activities.index', $activity->class_id) }}">
-            Volver a actividades
-        </a>
-    </nav>
+    <script src="/js/klassio-sounds.js"></script>
+    <script>
+        document.querySelectorAll('[data-sound-game]').forEach(function (control) {
+            control.addEventListener('click', function () {
+                if (!window.KlassioSounds) return;
+                var gameName = control.getAttribute('data-sound-game');
+                KlassioSounds.prime(gameName);
+                KlassioSounds.click();
+            });
+        });
+    </script>
 
 </body>
 

@@ -63,17 +63,20 @@ class ActivityController extends Controller
             'roulette' => 'teacher.roulette.configure',
         ];
 
-        $route = $configureRoutes[$activity->type] ?? 'teacher.activities.edit';
+        $isTeamActivity = $activity->mode === 'team';
+        $route = $isTeamActivity
+            ? 'teacher.teams.index'
+            : ($configureRoutes[$activity->type] ?? 'teacher.activities.edit');
+
+        $nextStepMessage = $isTeamActivity
+            ? ' Ahora organiza los equipos antes de configurar el juego.'
+            : (isset($configureRoutes[$activity->type])
+                ? ' Ahora configura el juego.'
+                : '');
 
         return redirect()
             ->route($route, $activity->id)
-            ->with(
-                'success',
-                'Actividad creada correctamente.'
-                    .(isset($configureRoutes[$activity->type])
-                        ? ' Ahora configura el juego.'
-                        : '')
-            );
+            ->with('success', 'Actividad creada correctamente.'.$nextStepMessage);
     }
 
     public function teacherShow(int $id): View

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\RedirectResponse;
+use App\Models\GameSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -13,9 +13,24 @@ class DashboardController extends Controller
         return view('admin.dashboard');
     }
 
-    public function teacher(): mixed
+    public function teacher(): View
     {
-        return view('teacher.dashboard');
+        $activeGameSessions = GameSession::query()
+            ->with('activity:id,title,type')
+            ->withCount([
+                'participations as joined_participations_count' => fn ($query) => $query
+                    ->whereIn('status', ['waiting', 'started', 'completed']),
+            ])
+            ->whereHas('activity', fn ($query) => $query->where('teacher_id', Auth::id()))
+            ->whereIn('status', [
+                GameSession::STATUS_WAITING,
+                GameSession::STATUS_STARTING,
+                GameSession::STATUS_PLAYING,
+            ])
+            ->latest()
+            ->get();
+
+        return view('teacher.dashboard', compact('activeGameSessions'));
     }
 
     public function student(): mixed

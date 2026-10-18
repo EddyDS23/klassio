@@ -51,11 +51,24 @@
         .nav a:hover { text-decoration: underline; }
 
         .empty { color: #888; font-size: 14px; margin-top: 12px; }
+        body.student-kids .summary-card .value { font-size: 30px; }
+        body.student-kids .summary-card .label { font-size: 14px; }
+        body.student-kids .nav a { font-size: 15px; }
+        @media (max-width: 540px) {
+            body { padding: 16px; }
+            .summary { grid-template-columns: 1fr; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
     </style>
 </head>
-<body>
+<body class="student-kids">
 
-<h1>{{ $activity->title }}</h1>
+<nav class="nav" aria-label="Navegación del resultado" style="margin-bottom: 1.25rem;">
+    <a href="{{ route('student.activities.show', $activity->id) }}">🎮 ¡Jugar otra vez!</a>
+    <a href="{{ route('student.class.show', $activity->class_id) }}">← Mi clase</a>
+</nav>
+
+<h1>🎮 {{ $activity->title }}</h1>
 
 <div class="meta">
     Intento #{{ $participation->attempt }} ·
@@ -220,11 +233,6 @@
 @else
     <p class="empty">No hay respuestas registradas para este intento.</p>
 @endif
-
-<div class="nav">
-    <a href="{{ route('student.activities.show', $activity->id) }}">← Volver a la actividad</a>
-    <a href="{{ route('student.class.show', $activity->class_id) }}">Volver a la clase</a>
-</div>
 
 </body>
 </html>

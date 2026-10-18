@@ -16,7 +16,7 @@ services:
     networks:
       - klassio-network
     healthcheck:
-      test: ["CMD", "mariadb-admin","ping","-h","localhost",-u,"root","-p${DB_PASSWORD}",]
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost", -u, "root", "-p${DB_PASSWORD}" ]
       interval: 20s
       timeout: 5s
       retries: 5
@@ -56,18 +56,80 @@ services:
       - klassio-network
       - proxy_network
     depends_on:
-        app:
-          condition: service_started
+      app:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl","-fsS", "http://localhost/up"]
+      test: [ "CMD", "curl", "-fsS", "http://localhost/up" ]
       interval: 20s
       timeout: 5s
       retries: 5
       start_period: 30s
     mem_limit: 256m
     cpus: "0.25"
-    
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: klassio_reverb
+    command: [ "php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=2001" ]
+    ports:
+      - "2001:2001"
+    env_file:
+      - .env
+    volumes:
+      - .:/var/www/html
+    networks:
+      - klassio-network
+    depends_on:
+      app:
+        condition: service_started
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: [ "php", "artisan", "queue:work", "database", "--queue=default", "--tries=3", "--timeout=90" ]
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - .:/var/www/html
+    networks:
+      - klassio-network
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      app:
+        condition: service_started
+    mem_limit: 256m
+    cpus: "0.25"
+
+
+  scheduler:
+      build:
+          context: .
+          dockerfile: Dockerfile
+      container_name: klassio_scheduler
+      command: ["php", "artisan", "schedule:work"]
+      restart: unless-stopped
+      env_file:
+          - .env
+      volumes:
+          - .:/var/www/html
+      networks:
+          - klassio-network
+      depends_on:
+          mariadb:
+              condition: service_healthy
+          app:
+              condition: service_started
+      mem_limit: 256m
+      cpus: "0.25"
+
+
 networks:
   klassio-network:
   proxy_network:

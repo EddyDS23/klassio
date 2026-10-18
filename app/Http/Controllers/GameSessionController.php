@@ -1,0 +1,210 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\JoinGameSessionRequest;
+use App\Models\GameSession;
+use App\Services\GameSessionService;
+use App\Services\ParticipationService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
+use RuntimeException;
+
+class GameSessionController extends Controller
+{
+    public function __construct(
+        protected GameSessionService $gameSessionService,
+        protected ParticipationService $participationService
+    ) {}
+
+    /**
+     * Página para entrar a una sala con un código.
+     */
+    public function joinPage(): View
+    {
+        return view('student.game_sessions.join');
+    }
+
+    /**
+     * Sala de espera.
+     */
+    public function show(int $id): View
+    {
+        $session = GameSession::findOrFail($id);
+
+        Gate::authorize('view', $session);
+
+        $myParticipation = $this->gameSessionService->participationOf(
+            $session,
+            Auth::user()
+        );
+
+        return view('student.game_sessions.lobby', [
+            'session' => $session,
+            'players' => $this->gameSessionService->players($session),
+            'state' => $this->gameSessionService->getState($session),
+            'myParticipation' => $myParticipation,
+        ]);
+    }
+
+    /**
+     * Entrar a una sala por código.
+     */
+    public function join(JoinGameSessionRequest $request): RedirectResponse
+    {
+        $session = $this->gameSessionService->findByCode(
+            (string) $request->validated()['code']
+        );
+
+        if ($session === null) {
+            return redirect()
+                ->back()
+                ->with('error', 'No existe una sala con ese código.');
+        }
+
+        Gate::authorize('join', $session);
+
+        try {
+            $this->gameSessionService->join($session, Auth::user());
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->back()
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('student.game-sessions.show', $session->id);
+    }
+
+    /**
+     * Abandonar la sala o la partida.
+     */
+    public function leave(int $id): RedirectResponse
+    {
+        $session = GameSession::findOrFail($id);
+
+        Gate::authorize('leave', $session);
+
+        try {
+            $this->gameSessionService->leave($session, Auth::user());
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->back()
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('student.activities.show', $session->activity_id)
+            ->with('success', 'Saliste de la sala.');
+    }
+
+    /**
+     * Estado compartido de la partida (JSON).
+     */
+    public function state(int $id): JsonResponse
+    {
+        $session = GameSession::findOrFail($id);
+
+        Gate::authorize('view', $session);
+
+        $session = $this->gameSessionService->closeRoundIfDue($session);
+
+        $participation = $this->gameSessionService->participationOf(
+            $session,
+            Auth::user()
+        );
+
+        $state = $this->gameSessionService->getState($session, $participation);
+
+        $state['can_answer_current'] = $participation !== null
+            && $this->gameSessionService->canAnswerCurrentRound(
+                $session,
+                $participation,
+                Auth::user()
+            );
+
+        $myPlayerState = collect($state['players'])->firstWhere(
+            'participation_id',
+            $participation?->id
+        );
+        $state['answered_current'] = $participation !== null
+            && $this->gameSessionService->hasAnsweredCurrentRound($session, $participation);
+        $state['last_round_answered'] = $myPlayerState['last_round_answered'] ?? false;
+        $state['last_round_answer_correct'] = $myPlayerState['last_round_answer_correct'] ?? null;
+        $state['current_responder_name'] = $myPlayerState['current_responder_name'] ?? null;
+        $state['answer_correct_current'] = $myPlayerState['answer_correct_current'] ?? null;
+
+        if ($participation?->team_id !== null) {
+            $state['team_progress'] = $this->gameSessionService->teamProgress($participation);
+        }
+
+        return response()->json($state);
+    }
+
+    /**
+     * Entrar a la partida según el tipo de actividad.
+     */
+    public function play(int $id): RedirectResponse
+    {
+        $session = GameSession::findOrFail($id);
+
+        Gate::authorize('play', $session);
+
+        return match ($session->activity->type) {
+            'roulette' => redirect()->route('student.roulette.play-session', $session->id),
+            'kahoot' => redirect()->route('student.kahoot.play-session', $session->id),
+            'crossword' => redirect()->route('student.crossword.play-session', $session->id),
+            'word_search' => redirect()->route('student.wordsearch.play-session', $session->id),
+            'matching' => redirect()->route('student.matching.play-session', $session->id),
+            default => redirect()
+                ->route('student.game-sessions.show', $session->id)
+                ->with('error', 'Este juego aún no soporta modo multijugador.'),
+        };
+    }
+
+    /**
+     * Resultados de la partida y resultado individual del usuario.
+     */
+    public function result(int $id): View
+    {
+        $session = GameSession::findOrFail($id);
+
+        Gate::authorize('result', $session);
+
+        $myParticipation = $this->gameSessionService->participationOf(
+            $session,
+            Auth::user()
+        );
+
+        $myResult = $myParticipation !== null
+            ? $this->participationService->getResult($myParticipation)
+            : null;
+
+        $players = $session->participations()
+            ->with('student', 'team')
+            ->orderByDesc('score')
+            ->get();
+
+        if ($session->activity->mode === 'individual') {
+            $players = $players->sort(function ($first, $second): int {
+                $scoreComparison = ($second->score ?? 0) <=> ($first->score ?? 0);
+
+                if ($scoreComparison !== 0) {
+                    return $scoreComparison;
+                }
+
+                return ($first->elapsed_seconds ?? PHP_INT_MAX)
+                    <=> ($second->elapsed_seconds ?? PHP_INT_MAX);
+            })->values();
+        }
+
+        return view('student.game_sessions.result', [
+            'session' => $session,
+            'players' => $players,
+            'state' => $this->gameSessionService->getState($session),
+            'myResult' => $myResult,
+        ]);
+    }
+}

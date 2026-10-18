@@ -15,6 +15,8 @@ class AnswerMatchingRequest extends FormRequest
     {
         return [
             'matching_id' => ['required', 'integer', 'exists:matchings,id'],
+            'participation_id' => ['sometimes', 'nullable', 'integer', 'exists:participations,id'],
+            'session_id' => ['sometimes', 'nullable', 'integer', 'exists:game_sessions,id'],
             'matching_item_id' => ['required', 'integer'],
             'response' => ['required', 'string', 'min:1'],
         ];

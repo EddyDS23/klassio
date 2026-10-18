@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Activity;
 use App\Models\Enrollment;
+use App\Models\GameSession;
 use App\Models\Participation;
 use App\Models\SchoolClass;
 use App\Models\Team;
@@ -573,6 +574,33 @@ class ReportTest extends TestCase
                 && $summary['best_score'] == 90
                 && $summary['average_time'] == 30;
         });
+    }
+
+    public function test_team_report_excludes_game_session_participations(): void
+    {
+        $teacher = $this->teacher();
+        $class = $this->createClass($teacher);
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $team = $this->createTeam($activity);
+        $session = GameSession::create([
+            'activity_id' => $activity->id, 'code' => 'KLS98765', 'status' => 'finished',
+            'max_players' => 4, 'created_by' => $teacher->id,
+        ]);
+        Participation::create([
+            'activity_id' => $activity->id, 'game_session_id' => $session->id,
+            'student_id' => null, 'team_id' => $team->id, 'attempt' => 1,
+            'status' => 'completed', 'score' => 100, 'elapsed_seconds' => 10,
+        ]);
+
+        $response = $this->actingAs($teacher)->get(route('teacher.activities.report', $activity->id));
+
+        $response->assertOk();
+        $response->assertViewHas('summary', fn ($summary) =>
+            $summary['participated'] === 0
+            && $summary['completed'] === 0
+            && $summary['average_score'] === null
+            && $summary['best_score'] === null
+        );
     }
 
     public function test_team_report_ignores_participations_from_another_activity(): void

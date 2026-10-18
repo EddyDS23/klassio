@@ -7,7 +7,9 @@ use App\Models\Enrollment;
 use App\Models\Participation;
 use App\Models\Team;
 use App\Models\User;
+use App\Support\TeamAttemptSelector;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class ParticipationService
@@ -23,35 +25,38 @@ class ParticipationService
      */
     public function start(Activity $activity): Participation
     {
-        /** @var User $student */
-        $student = Auth::user();
+        return DB::transaction(function () use ($activity): Participation {
+            $activity = Activity::query()->whereKey($activity->id)->lockForUpdate()->firstOrFail();
+            /** @var User $student */
+            $student = Auth::user();
 
-        // Actividad debe estar publicada
-        if ($activity->status !== 'published') {
-            throw new RuntimeException('La actividad no está disponible.');
-        }
+            // Actividad debe estar publicada
+            if ($activity->status !== 'published') {
+                throw new RuntimeException('La actividad no está disponible.');
+            }
 
-        // Verificar due_at
-        if ($activity->due_at !== null && now()->isAfter($activity->due_at)) {
-            throw new RuntimeException('La fecha límite de esta actividad ya pasó.');
-        }
+            // Verificar due_at
+            if ($activity->due_at !== null && now()->isAfter($activity->due_at)) {
+                throw new RuntimeException('La fecha límite de esta actividad ya pasó.');
+            }
 
-        // Verificar inscripción activa en la clase
-        $enrolled = Enrollment::where('class_id', $activity->class_id)
-            ->where('student_id', $student->id)
-            ->where('status', 'active')
-            ->exists();
+            // Verificar inscripción activa en la clase
+            $enrolled = Enrollment::where('class_id', $activity->class_id)
+                ->where('student_id', $student->id)
+                ->where('status', 'active')
+                ->exists();
 
-        if (! $enrolled) {
-            throw new RuntimeException('No estás inscrito en la clase de esta actividad.');
-        }
+            if (! $enrolled) {
+                throw new RuntimeException('No estás inscrito en la clase de esta actividad.');
+            }
 
-        // Expirar participaciones anteriores colgadas antes de validar activos
-        $this->expireStale($activity, $student->id);
+            // Expirar participaciones anteriores colgadas antes de validar activos
+            $this->expireStale($activity, $student->id);
 
-        return $activity->mode === 'team'
-            ? $this->startTeam($activity, $student)
-            : $this->startIndividual($activity, $student);
+            return $activity->mode === 'team'
+                ? $this->startTeam($activity, $student)
+                : $this->startIndividual($activity, $student);
+        });
     }
 
     /**
@@ -61,6 +66,7 @@ class ParticipationService
     {
         // Bloquear si ya tiene una participación activa
         $hasActive = Participation::where('activity_id', $activity->id)
+            ->whereNull('game_session_id')
             ->where('student_id', $student->id)
             ->where('status', 'started')
             ->exists();
@@ -70,6 +76,7 @@ class ParticipationService
         }
 
         $attempt = Participation::where('activity_id', $activity->id)
+            ->whereNull('game_session_id')
             ->where('student_id', $student->id)
             ->max('attempt') ?? 0;
 
@@ -113,6 +120,7 @@ class ParticipationService
 
         // Bloquear si el equipo ya tiene una participación activa
         $teamHasActive = Participation::where('activity_id', $activity->id)
+            ->whereNull('game_session_id')
             ->where('team_id', $team->id)
             ->where('status', 'started')
             ->exists();
@@ -122,6 +130,7 @@ class ParticipationService
         }
 
         $attempt = Participation::where('activity_id', $activity->id)
+            ->whereNull('game_session_id')
             ->where('team_id', $team->id)
             ->max('attempt') ?? 0;
 
@@ -162,6 +171,7 @@ class ParticipationService
 
         $query = Participation::where('activity_id', $activity->id)
             ->where('status', 'started')
+            ->whereNull('game_session_id')
             ->latest();
 
         if ($activity->mode === 'team') {
@@ -202,36 +212,44 @@ class ParticipationService
      */
     public function finish(Participation $participation): Participation
     {
-        if ($participation->status !== 'started') {
-            throw new RuntimeException(
-                'Solo se puede finalizar una participación activa.'
-            );
+        $result = DB::transaction(function () use ($participation): array {
+            $participation = Participation::query()->whereKey($participation->id)->lockForUpdate()->firstOrFail();
+
+            if ($participation->status === 'completed') {
+                return ['expired' => false, 'participation' => $participation];
+            }
+
+            if ($participation->status !== 'started') {
+                throw new RuntimeException('Solo se puede finalizar una participación activa.');
+            }
+
+            $activity = $participation->activity;
+            $elapsed = (int) $participation->started_at->diffInSeconds(now());
+
+            if ($activity->time_limit !== null && $activity->time_limit > 0 && $elapsed >= $activity->time_limit) {
+                $participation->update([
+                    'status' => 'expired',
+                    'completed_at' => now(),
+                    'elapsed_seconds' => $elapsed,
+                ]);
+
+                return ['expired' => true, 'participation' => $participation->fresh()];
+            }
+
+            $participation->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+                'elapsed_seconds' => $elapsed,
+            ]);
+
+            return ['expired' => false, 'participation' => $participation->fresh()];
+        });
+
+        if ($result['expired']) {
+            throw new RuntimeException('El tiempo de la actividad ha terminado.');
         }
 
-        $activity = $participation->activity;
-
-        $elapsed = (int) $participation->started_at->diffInSeconds(now());
-
-        // Si terminó después del límite, la participación expira.
-        if (
-            $activity->time_limit !== null &&
-            $activity->time_limit > 0 &&
-            $elapsed >= $activity->time_limit
-        ) {
-            $this->expire($participation);
-
-            throw new RuntimeException(
-                'El tiempo de la actividad ha terminado.'
-            );
-        }
-
-        $participation->update([
-            'status' => 'completed',
-            'completed_at' => now(),
-            'elapsed_seconds' => $elapsed,
-        ]);
-
-        return $participation->fresh();
+        return $result['participation'];
     }
 
     // -------------------------------------------------------------------------
@@ -240,34 +258,38 @@ class ParticipationService
 
     public function abandon(Participation $participation): void
     {
-        if ($participation->status !== 'started') {
-            throw new RuntimeException(
-                'Solo se puede abandonar una participación activa.'
-            );
-        }
+        DB::transaction(function () use ($participation): void {
+            $participation = Participation::query()->whereKey($participation->id)->lockForUpdate()->firstOrFail();
 
-        $elapsed = (int) $participation->started_at->diffInSeconds(now());
+            if ($participation->status !== 'started') {
+                throw new RuntimeException('Solo se puede abandonar una participación activa.');
+            }
 
-        $participation->update([
-            'status' => 'abandoned',
-            'completed_at' => now(),
-            'elapsed_seconds' => $elapsed,
-        ]);
+            $elapsed = (int) $participation->started_at->diffInSeconds(now());
+            $participation->update([
+                'status' => 'abandoned',
+                'completed_at' => now(),
+                'elapsed_seconds' => $elapsed,
+            ]);
+        });
     }
 
     public function expire(Participation $participation): void
     {
-        if ($participation->status !== 'started') {
-            return;
-        }
+        DB::transaction(function () use ($participation): void {
+            $participation = Participation::query()->whereKey($participation->id)->lockForUpdate()->firstOrFail();
 
-        $elapsed = (int) $participation->started_at->diffInSeconds(now());
+            if ($participation->status !== 'started') {
+                return;
+            }
 
-        $participation->update([
-            'status' => 'expired',
-            'completed_at' => now(),
-            'elapsed_seconds' => $elapsed,
-        ]);
+            $elapsed = (int) $participation->started_at->diffInSeconds(now());
+            $participation->update([
+                'status' => 'expired',
+                'completed_at' => now(),
+                'elapsed_seconds' => $elapsed,
+            ]);
+        });
     }
 
     public function remainingSeconds(
@@ -300,7 +322,9 @@ class ParticipationService
         $student = Auth::user();
 
         $query = Participation::where('activity_id', $activity->id)
-            ->latest();
+            ->whereNull('game_session_id')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         if ($activity->mode === 'team') {
             $team = Team::where('activity_id', $activity->id)
@@ -351,6 +375,7 @@ class ParticipationService
     {
         $stale = Participation::where('activity_id', $activity->id)
             ->where('student_id', $studentId)
+            ->whereNull('game_session_id')
             ->where('status', 'started')
             ->get();
 
@@ -425,6 +450,7 @@ class ParticipationService
         if ($activity->mode === 'individual') {
 
             $participations = Participation::where('activity_id', $activity->id)
+                ->whereNull('game_session_id')
                 ->whereIn('student_id', $studentIds)
                 ->orderByDesc('attempt')
                 ->get()
@@ -490,11 +516,12 @@ class ParticipationService
      * de una sola vez.
      */
         $participations = Participation::where('activity_id', $activity->id)
+            ->whereNull('game_session_id')
             ->whereIn('team_id', $teamIds)
             ->orderByDesc('attempt')
             ->get()
             ->groupBy('team_id')
-            ->map(fn ($items) => $items->first());
+            ->map(fn ($items) => TeamAttemptSelector::teacherResult($items));
 
         return $enrollments->map(function ($enrollment) use (
             $teamsByStudent,
@@ -550,7 +577,7 @@ class ParticipationService
             ->get()
             ->map(fn ($a) => [
                 'question' => $a->question->question,
-                'response' => $a->option->text,
+                'response' => $a->option?->text ?? 'Sin respuesta',
                 'is_correct' => $a->is_correct,
                 'score' => $a->score,
             ])

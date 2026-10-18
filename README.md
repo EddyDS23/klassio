@@ -1762,3 +1762,208 @@ Proyecto académico desarrollado para la plataforma educativa **Klassio**.
 
 Plataforma educativa modular para la creación, administración y ejecución de actividades interactivas, con soporte para estudiantes, docentes, administradores, participación individual y por equipos.
 # CI/CD funcionando
+
+---
+
+# 42. Módulo multijugador en tiempo real
+
+Esta sección amplía la documentación funcional general y describe el módulo de partidas multijugador tal como está implementado en el código revisado el **16 de octubre de 2026**. Para el historial de cierre y las salvedades de validación del módulo, véase también `README_CIERRE_MODULO_MULTIJUGADOR_KLASSIO.md`.
+
+El modo multijugador por sala es distinto de una actividad convencional configurada como `team`: la sala tiene un código, un docente anfitrión, participantes registrados para esa sesión, estado compartido y una pantalla de resultados de esa partida. Las actividades individuales y las actividades convencionales por equipo siguen utilizando el flujo de participaciones ordinario.
+
+## 42.1 Juegos soportados en una sala
+
+El módulo admite los cinco tipos siguientes:
+
+| Tipo | Modo de partida | Control principal |
+|---|---|---|
+| `word_search` | Carrera libre | Cada participación busca palabras y comparte su progreso según el modo individual/equipo. |
+| `crossword` | Carrera libre | Cada participación resuelve el tablero y comparte respuestas y puntuación según el modo. |
+| `matching` | Carrera libre | Cada participación relaciona elementos; la interacción y el resultado se sincronizan. |
+| `roulette` | Por rondas | El docente gira la ruleta y abre una ronda común para los participantes. |
+| `kahoot` | Por rondas/preguntas | El docente avanza las preguntas; cada participación responde la pregunta vigente. |
+
+En crucigrama, sopa de letras y Matching, el progreso de cada participación está aislado de los demás jugadores/equipos. En actividades por equipos, los integrantes del mismo equipo comparten una participación y su progreso. En Ruleta y Kahoot, el docente controla la apertura/avance de rondas; en equipos el sistema asigna un integrante respondedor para la ronda y los demás observan el progreso compartido.
+
+## 42.2 Componentes de código
+
+La responsabilidad está distribuida entre las siguientes capas:
+
+| Capa | Componentes principales | Responsabilidad |
+|---|---|---|
+| Rutas | `routes/web.php`, `routes/channels.php` | Entrada a sala, creación y control docente, estado, juego y autorización del canal privado. |
+| Controladores | `GameSessionController`, `TeacherGameSessionController` y controladores de los juegos | Validar acceso, coordinar requests, delegar la lógica y seleccionar las vistas específicas del juego. |
+| Validación | `StoreGameSessionRequest`, `JoinGameSessionRequest` | Validar actividad/cupo al crear una sala y código al unirse. |
+| Autorización | `GameSessionPolicy` | Limitar creación, consulta, ingreso, juego, resultados, control y cancelación al rol/propietario/participante correspondiente. |
+| Lógica de dominio | `GameSessionService`, `GameSessionAnswerService`, `ParticipationService` | Gestionar ciclo de vida, jugadores, turnos/rondas, estado, respuestas, presencia, tiempos y resultados. |
+| Persistencia | `GameSession`, `GameSessionPresence`, `Participation` | Representar sesión, presencia individual y participación individual o de equipo. |
+| Sincronización | Eventos `PlayerJoined`, `PlayerLeft`, `GameStarted`, `TurnChanged`, `RoundStarted`, `RoundClosed`, `ScoreUpdated`, `GameFinished` | Publicar cambios de estado a los suscriptores autorizados del canal de la sala. |
+| Vistas | `resources/views/teacher/game_sessions/`, `resources/views/student/game_sessions/` y vistas multiplayer de cada juego | Mostrar creación, espera, controles docentes, juego y resultados. |
+| Pruebas | `GameSessionTest`, `MultiplayerRaceTest`, `MultiplayerRouletteTest`, `KahootMultiplayerTest`, `GameSessionChannelTest` | Cubrir permisos, estados, modos, rondas, puntuación, resultados y canal. |
+
+Los controladores no deben convertirse en el lugar de la lógica de juego: las reglas de concurrencia, estado y participación se centralizan en los servicios. Las rutas existentes son el contrato del frontend y no deben sustituirse por endpoints inventados.
+
+## 42.3 Flujo de una sala
+
+```text
+Docente selecciona una actividad publicada
+        ↓
+Se crea GameSession con código único y estado waiting
+        ↓
+Alumnos ingresan el código y se validan cupo, actividad y duplicados
+        ↓
+Se crea o recupera la Participation de la sesión
+        ↓
+Para modo equipo, la Participation identifica al team y cada alumno tiene Presence propia
+        ↓
+El docente inicia la sala: estado playing
+        ↓
+El juego actualiza respuestas/progreso y el estado compartido
+        ↓
+Se finaliza por condición del juego, tiempo o acción correspondiente
+        ↓
+GameSession y participaciones quedan disponibles para resultados
+```
+
+El docente no ocupa un lugar de jugador. La sala se crea para una actividad publicada que pertenece al profesor. El código es único, tiene prefijo de producto `KLS` y se usa para localizar la sala. El cupo configurable aceptado por el request va de 2 a 16.
+
+Si el profesor pierde la pantalla o se desconecta, puede volver a abrir la sala de su actividad desde la vista de gestión/panel mientras la sesión siga disponible. El panel de **Salas activas** muestra salas propias en espera o en juego, con código y estado. Las sesiones finalizadas o canceladas no aparecen como activas.
+
+## 42.4 Estados y datos persistidos
+
+### `game_sessions`
+
+La migración `2026_10_07_000001_create_game_sessions_table.php` crea la entidad de sala. Sus datos relevantes son:
+
+- `activity_id`: actividad asociada; se elimina la sala si se elimina la actividad.
+- `code`: código único de acceso.
+- `status`: `waiting`, `starting`, `playing`, `finished` o `cancelled`.
+- `max_players`: cupo máximo.
+- `created_by`: docente creador, nullable y con `nullOnDelete`.
+- `started_at`, `finished_at`: marcas temporales de inicio y cierre.
+- `current_turn_participation_id`: referencia lógica al turno, indexada.
+- `winner_participation_id`: referencia lógica al ganador, indexada.
+- `result_type`: `winner`, `draw` o `collaborative_success`.
+- `state`: JSON con el estado específico compartido del juego/ronda.
+
+Los identificadores del turno y ganador no usan claves foráneas hacia `participations` para evitar una dependencia circular con `participations.game_session_id`.
+
+### Relación con `participations`
+
+La migración `2026_10_07_000002_add_game_session_id_to_participations_table.php` agrega `game_session_id` nullable e indexado, con clave foránea hacia `game_sessions` y `nullOnDelete`. Así se conservan las participaciones convencionales con `game_session_id = null`, mientras que las participaciones pertenecientes a una sala quedan identificadas por la sesión. La entidad Participation conserva `activity_id`, `student_id` o `team_id`, `attempt`, `status`, `score`, `completed_at` y `elapsed_seconds`.
+
+Los estados de participación contemplan `waiting`, `started`, `completed`, `abandoned` y `expired`. En una sesión de equipo, una participación representa el progreso y puntaje común del equipo; no se crea una participación de juego por cada integrante conectado.
+
+### `game_session_presences`
+
+La migración `2026_10_16_000127_create_game_session_presences_table.php` agrega una fila de presencia por estudiante y sala, asociada a su participación. Incluye `status` (`active`/`left`), `joined_at` y `left_at`; la combinación `(game_session_id, student_id)` es única. Esta separación permite que el equipo tenga un resultado compartido, pero que el sistema sepa quién está conectado o salió. La política permite volver a entrar de acuerdo con el estado de la sesión y la participación compartida.
+
+Las respuestas específicas siguen guardándose en las tablas propias de cada juego y referencian la participación. Por ello, las respuestas de una sala se separan de las de la actividad convencional a través de la participación asociada a `game_session_id`, sin cambiar el contrato de respuesta de cada juego.
+
+## 42.5 Individual, equipo convencional y equipo multijugador
+
+Conviene distinguir tres casos:
+
+1. **Actividad individual convencional:** cada estudiante tiene su propia Participation para la actividad.
+2. **Actividad convencional en modo equipo:** los miembros comparten los intentos del equipo. `TeamAttemptSelector` selecciona el mejor intento completado para resultados, ranking y reportes: mayor puntuación, luego menor tiempo y, si también empatan, intento más reciente/ID más reciente. Si no existe intento completado, conserva una salida terminal reciente; en las tablas docentes prioriza el intento activo.
+3. **Partida multijugador por sala en modo equipo:** la participación común del equipo queda vinculada a una GameSession. Las presencias individuales permiten que más integrantes del equipo accedan a la sala sin crear resultados duplicados por integrante. El progreso y la puntuación se comparten por equipo.
+
+En modo individual, cada participante de una sala mantiene su propia participación. Para ordenar resultados individuales se usa puntuación descendente y menor tiempo empleado como desempate cuando aplica. En los resultados por equipo se muestra una fila/resultado por participación de equipo, no una fila competitiva independiente por cada miembro.
+
+## 42.6 Mecánica de carrera libre frente a rondas
+
+### Carrera libre
+
+Crucigrama, sopa de letras y Matching actualizan la participación que resuelve el juego. La respuesta se valida usando los servicios y modelos propios del juego, y se enlaza con el progreso de la participación en la sesión. La finalización debe ser idempotente: una actualización de estado no puede volver a otorgar puntuación ni cerrar dos veces la misma partida.
+
+### Ruleta y Kahoot
+
+El docente abre/avanza rondas. `GameSessionService` persiste en `state` el elemento o pregunta vigente, los identificadores ya utilizados, el inicio de la ronda, la duración, las respuestas y los respondedores de equipo. El endpoint de estado puede cerrar una ronda cuando se agota el tiempo o cuando todos los participantes esperados respondieron. La siguiente ronda requiere la acción de control docente.
+
+En actividades de equipo, el sistema selecciona un respondedor por equipo para cada ronda y evita elegir repetidamente al mismo cuando hay otros integrantes disponibles. El estado que reciben los integrantes indica quién puede responder, si el equipo ya respondió y el resultado de esa respuesta; los demás pueden seguir la ronda como espectadores. Esta modalidad evita envíos múltiples para una sola respuesta de equipo.
+
+## 42.7 Rutas y contratos HTTP
+
+Las rutas están bajo el middleware de usuario autenticado y los grupos de rol existentes. Los nombres concretos deben consultarse con `php artisan route:list`; entre las rutas implementadas se encuentran:
+
+| Acción | Nombre de ruta |
+|---|---|
+| Formulario para unirse | `student.game-sessions.join-page` |
+| Unirse mediante código | `student.game-sessions.join` |
+| Espera del estudiante | `student.game-sessions.show` |
+| Abandonar sala | `student.game-sessions.leave` |
+| Obtener estado compartido | `student.game-sessions.state` |
+| Redirigir a la vista del juego | `student.game-sessions.play` |
+| Resultados de la sala | `student.game-sessions.result` |
+| Crear sala (docente) | `teacher.game-sessions.create` / `teacher.game-sessions.store` |
+| Gestionar sala (docente) | `teacher.game-sessions.show` |
+| Iniciar partida | `teacher.game-sessions.start` |
+| Cancelar sala vacía | `teacher.game-sessions.cancel` |
+| Resultados del docente | `teacher.game-sessions.result` |
+
+Los controladores específicos agregan endpoints de respuesta y avance para las modalidades de cada juego. La ruta de juego central redirige por tipo a Ruleta, Kahoot, Crucigrama, Sopa de letras o Matching. Los campos JSON y parámetros deben conservarse; una mejora de interfaz no autoriza a cambiar payloads ni a alterar métodos HTTP.
+
+## 42.8 Autorización y concurrencia
+
+`GameSessionPolicy` verifica los permisos antes de operar: el docente dueño de la actividad puede gestionar/iniciar/avanzar/resultar; estudiantes con participación válida pueden ver, jugar y consultar su resultado. En modo equipo se comprueba que el estudiante pertenezca al equipo vinculado a la actividad y, donde aplica, que su presencia esté activa.
+
+Las acciones sensibles de creación/ingreso, inicio, respuesta, finalización y cierre usan transacciones y bloqueos de fila donde se requiere serializar peticiones concurrentes. Esto reduce el riesgo de duplicar participaciones, exceder cupos, contestar dos veces la misma ronda o registrar dos veces una finalización. El comportamiento definitivo de bloqueo bajo carga debe validarse con el mismo motor de base de datos usado en producción; una suite con SQLite en memoria no certifica la concurrencia de MariaDB.
+
+## 42.9 Canal de eventos, polling y timeouts
+
+El canal privado `game-session.{id}` se autoriza mediante la política de vista de la sesión. Los eventos de dominio se publican después del commit de la transacción para que los clientes no reciban un cambio que luego se revierta. El frontend puede actualizar presencia, estado de juego, puntaje, rondas y finalización a partir de los eventos y del endpoint de estado.
+
+La validación del cierre del módulo documentó el **polling** como fallback operativo disponible. No se certificó una prueba end-to-end con un servidor Reverb activo ni una prueba real de WebSocket. La presencia de eventos y de la autorización del canal no equivale por sí sola a verificar la infraestructura de broadcasting de un entorno.
+
+Existe el comando Artisan `game-sessions:process-timeouts`, implementado en `app/Console/Commands/ProcessGameSessionTimeouts.php`, que recorre sesiones `playing` y solicita el cierre de rondas vencidas. Antes de producción se debe confirmar que el scheduler/cron del despliegue invoque el comando con la frecuencia deseada; el comando por sí solo no demuestra que esté programado.
+
+## 42.10 Reingreso y cierre de salas sin uso
+
+El panel docente contiene la lista **Salas activas** para recuperar una sesión propia que quedó abierta al perder la pantalla o la conexión. La lista filtra estados activos (en espera o en juego) y no mezcla sesiones de otros docentes.
+
+Para una sala que nadie usó, la pantalla de gestión ofrece **Cerrar sala sin iniciar** únicamente cuando está en `waiting` y la lista de jugadores está vacía. El servidor verifica además que quien solicita sea el docente propietario, que no existan participaciones y que la sesión continúe esperando. `cancelWaitingSession` hace la comprobación bajo transacción y bloqueo de la fila para proteger la carrera entre cancelación e ingreso simultáneo. La sala pasa a `cancelled` y deja de aparecer en Salas activas. No se cancela una partida que ya tuvo participantes.
+
+## 42.11 Datos de prueba
+
+`database/seeders/GameTestingActivitySeeder.php` crea o actualiza actividades de prueba para los cinco juegos, tanto individuales como por equipos, asociadas a la clase de demostración `PROGWEB01`. Configura contenido base de cada juego y distribuye estudiantes disponibles en equipos para las actividades `team`. El seeder usa `updateOrCreate`, por lo que está pensado para facilitar repeticiones en el entorno local.
+
+Antes de ejecutarlo, confirmar que existan la clase y los usuarios que el seeder espera. No es un seeder genérico para producción ni debe asumirse que crea cuentas o clases ausentes. Los cambios de datos generados deben probarse en una base local o de pruebas.
+
+## 42.12 Vistas y experiencia multijugador
+
+Las vistas compartidas cubren:
+
+- Formulario del estudiante para ingresar el código.
+- Sala de espera del estudiante con código, participantes y estado.
+- Creación y configuración docente de una sala.
+- Pantalla docente de gestión, inicio, avance de ronda y resultados.
+- Resultados del estudiante y clasificación de participantes.
+- Vistas de juego específicas de cada uno de los cinco juegos.
+
+Las mejoras visuales conservaron la separación entre pantallas offline y multijugador cuando las mecánicas difieren, los controles reales del juego, el envío de formularios/respuestas y la información que cada tipo de juego muestra en resultados (por ejemplo, palabras, parejas o preguntas). Las vistas no deben enviar respuestas por participantes duplicados cuando el estado y el puntaje son compartidos por equipo.
+
+## 42.13 Pruebas y límites de verificación
+
+El cierre documentado el 15 de octubre de 2026 reportó 373 pruebas aprobadas, 1 risky y 1607 aserciones. En la continuación posterior se añadió el cierre seguro de salas vacías y sus casos de autorización/estado; la suite completa reportada el 16 de octubre fue:
+
+```text
+376 pruebas aprobadas
+1 prueba marcada risky
+1624 aserciones
+0 pruebas fallidas
+```
+
+La prueba marcada risky es el test existente `test_join_page_is_available_for_students`; PHPUnit no lo contó como fallo. También se reportaron satisfactorios Pint, lint PHP de los archivos del cierre, compilación de vistas con `VIEW_COMPILED_PATH=/tmp/klassio-compiled-views`, validación de Composer y `git diff --check`.
+
+El usuario confirmó manualmente las fases 8 y 9 del roadmap antes del cierre. No se repitió una inspección manual de navegador en la última tarea de cierre. Las limitaciones que deben conservarse explícitas en cualquier entrega son:
+
+- Las pruebas SQLite en memoria no prueban bloqueos ni concurrencia real de MariaDB.
+- No se informó una prueba end-to-end con Reverb activo.
+- No se ejecutó build de Vite/npm en el checkout citado, que no contenía `package.json`.
+- Las pruebas automatizadas no sustituyen una prueba de desconexión/reingreso bajo carga real.
+
+## 42.14 Estado del repositorio al ampliar esta documentación
+
+La inspección de esta ampliación encontró el checkout en la rama `develop`, con `HEAD` en `7c83074` (`refactory: views update multiplayers pretty 2`) y sin cambios locales reportados por `git status --short`. Esta observación describe el checkout inspeccionado, no altera el historial temporal del README de cierre del 15 de octubre, que reportaba que no se había realizado merge en ese momento.
+
+No se realizó commit, push ni modificación de código para crear esta documentación.

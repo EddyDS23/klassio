@@ -1,59 +1,21 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('title', $activity->title . ' | Klassio')
+@section('brand-url', route('teacher.dashboard'))
+@section('brand-caption', 'Panel del profesor')
+@section('header-context')
+<span class="hidden text-sm font-semibold text-slate-600 sm:block">
+    {{ auth()->user()->name }}
+</span>
+<form action="{{ url('/logout') }}" method="POST">
+    @csrf
+    <button type="submit" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
+        Cerrar sesión
+    </button>
+</form>
+@endsection
 
-    <title>{{ $activity->title }} | Klassio</title>
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-
-<body class="min-h-screen bg-slate-100 text-slate-800">
-
-    {{-- Barra superior --}}
-    <header class="border-b border-slate-200 bg-white shadow-sm">
-        <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-
-            <a href="{{ route('teacher.dashboard') }}"
-                class="flex items-center gap-3">
-
-                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
-                    K
-                </div>
-
-                <div>
-                    <h1 class="text-xl font-black tracking-tight text-slate-900">
-                        Klassio
-                    </h1>
-
-                    <p class="text-xs font-medium text-slate-500">
-                        Panel del profesor
-                    </p>
-                </div>
-            </a>
-
-            <div class="flex items-center gap-3">
-                <span class="hidden text-sm font-semibold text-slate-600 sm:block">
-                    {{ auth()->user()->name }}
-                </span>
-
-                <form action="{{ url('/logout') }}" method="POST">
-                    @csrf
-
-                    <button type="submit"
-                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
-                        Cerrar sesión
-                    </button>
-                </form>
-            </div>
-        </div>
-    </header>
-
-
-    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-
+@section('content')
         {{-- Regresar --}}
         <div class="mb-6">
             <a href="{{ route('teacher.activities.index', $activity->class_id) }}"
@@ -181,14 +143,6 @@
                             </h4>
     
 
-    @if ($activity->mode === 'team' && $activity->status === 'draft')
-        <a href="{{ route('teacher.teams.index', $activity->id) }}">
-            Administrar equipos
-        </a>
-
-        <hr>
-    @endif
-
                             <p class="text-xs font-medium text-slate-500">
                                 Situación actual
                             </p>
@@ -216,13 +170,6 @@
                 </div>
 
             </div>
-    <p>
-        <a href="{{ route('teacher.activities.report', $activity->id) }}">
-            Ver reporte
-        </a>
-    </p>
-
-
             {{-- Datos --}}
             <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
@@ -324,6 +271,23 @@
                 </div>
 
             </div>
+
+            @if ($activity->mode === 'team')
+                <div class="mt-5 rounded-3xl border border-indigo-200 bg-indigo-50 p-6">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h4 class="font-black text-slate-900">Organización de equipos</h4>
+                            <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                                Revisa los integrantes y los alumnos pendientes antes de continuar con la actividad.
+                            </p>
+                        </div>
+                        <a href="{{ route('teacher.teams.index', $activity->id) }}"
+                            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-700 px-5 py-3 text-sm font-black text-white transition hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2">
+                            Revisar equipos
+                        </a>
+                    </div>
+                </div>
+            @endif
 
         </section>
 
@@ -447,6 +411,37 @@
                 </div>
 
             </div>
+
+            @if ($activity->status === 'published')
+                <div class="mt-5 rounded-3xl border border-violet-200 bg-violet-50 p-6 shadow-sm">
+
+                    <div class="flex items-start justify-between gap-4">
+
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-600 text-2xl">
+                                🎮
+                            </div>
+
+                            <div>
+                                <h4 class="font-black text-slate-900">
+                                    Sala multijugador
+                                </h4>
+
+                                <p class="text-sm font-medium text-slate-500">
+                                    Crea una partida en vivo y comparte el código con tus estudiantes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <a href="{{ route('teacher.game-sessions.create', ['activity_id' => $activity->id]) }}"
+                            class="inline-flex items-center justify-center rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-700">
+                            Crear sala
+                        </a>
+
+                    </div>
+
+                </div>
+            @endif
 
         </section>
 
@@ -783,21 +778,4 @@
             </div>
 
         </section>
-
-
-        {{-- Regresar --}}
-        <div class="border-t border-slate-200 pt-6">
-
-            <a href="{{ route('teacher.activities.index', $activity->class_id) }}"
-                class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-900">
-
-                ← Volver a actividades
-            </a>
-
-        </div>
-
-    </main>
-
-</body>
-
-</html>
+@endsection
