@@ -43,7 +43,15 @@ FROM php-base AS development
 
 COPY . .
 
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN mkdir -p \
+        storage/app/private \
+        storage/app/public \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/testing \
+        storage/logs \
+    && composer install --no-interaction --prefer-dist --optimize-autoloader
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
