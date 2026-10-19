@@ -10,6 +10,28 @@ services:
         volumes:
             - .:/var/www/html
             - klassio-vendor:/var/www/html/vendor
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+
+    migrate:
+        image: klassio-app:development
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: development
+        command: ["php", "artisan", "migrate", "--force"]
+        env_file:
+            - .env.dev
+        volumes:
+            - .:/var/www/html
+            - klassio-vendor:/var/www/html/vendor
+        depends_on:
+            mariadb:
+                condition: service_healthy
+        networks:
+            - database-network
+        restart: "no"
 
     nginx:
         image: klassio-web:development
