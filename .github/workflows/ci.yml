@@ -39,11 +39,82 @@ jobs:
       - name: Run tests
         run: php artisan test
 
-  deploy:
-    name: Deploy
+  validate-production-image:
+    name: Validate ${{ matrix.platform }} image
+    needs: tests
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate production image build
+        run: docker buildx build --platform "${{ matrix.platform }}" --target web --tag klassio-web:ci --load .
+
+  publish-production-images:
+    name: Build and publish multi-architecture images
     needs: tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and publish PHP application image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: app
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            docker.io/${{ vars.DOCKERHUB_USERNAME }}/klassio:${{ github.sha }}-app
+            docker.io/${{ vars.DOCKERHUB_USERNAME }}/klassio:latest-app
+
+      - name: Build and publish Nginx static assets image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            docker.io/${{ vars.DOCKERHUB_USERNAME }}/klassio:${{ github.sha }}-web
+            docker.io/${{ vars.DOCKERHUB_USERNAME }}/klassio:latest-web
+
+  deploy:
+    name: Deploy
+    needs: [tests, publish-production-images]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: ${{ github.sha }}
 
     steps:
       - name: Deploy to server
@@ -52,6 +123,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: IMAGE_TAG
           script: |
             cd /var/www/klassio
             ./deploy.sh
