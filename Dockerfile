@@ -1,26 +1,59 @@
-FROM php:8.3-fpm
+FROM php:8.3-fpm AS php-base
 
-RUN apt-get update && apt-get install -y \
-    libzip-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcurl4-openssl-dev \
     libexif-dev \
     libonig-dev \
+    libzip-dev \
+    && docker-php-ext-install curl exif mbstring opcache pcntl pdo_mysql sockets zip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install pdo_mysql mbstring zip opcache sockets pcntl
-
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+FROM php-base AS app
+
 COPY . .
 
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage \
-    && chmod -R 775 /var/www/html/bootstrap/cache
+RUN mkdir -p \
+        storage/app/private \
+        storage/app/public \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/testing \
+        storage/logs \
+    && composer install \
+        --no-dev \
+        --no-interaction \
+        --prefer-dist \
+        --optimize-autoloader \
+    && php artisan storage:link --force \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT [ "/entrypoint.sh" ]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]
 
-CMD [ "php-fpm" ]
+FROM php-base AS development
+
+COPY . .
+
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]
+
+FROM nginx:alpine AS web
+
+COPY --from=app /var/www/html/public /var/www/html/public
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+
+RUN nginx -t
