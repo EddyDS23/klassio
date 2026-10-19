@@ -61,7 +61,7 @@ services:
             app:
                 condition: service_started
         healthcheck:
-            test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost/up"]
+            test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/up"]
             interval: 20s
             timeout: 5s
             retries: 5
