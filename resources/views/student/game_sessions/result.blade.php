@@ -27,6 +27,16 @@
 @section('content')
 <div class="page-shell session-results">
 
+        {{-- Botón Volver a la actividad (parte superior) --}}
+        <div class="mb-4">
+            <a href="{{ route('student.activities.show', $session->activity_id) }}"
+                class="inline-flex items-center gap-2 text-sm font-bold text-cyan-700 transition hover:text-cyan-900">
+                <span aria-hidden="true">←</span> Volver a la actividad
+            </a>
+        </div>
+
+        <div class="page-shell session-results">
+
         <div class="page-hero text-center">
             <h1 class="font-bold mb-1">Resultados de la partida</h1>
             <p class="mb-0 opacity-75">{{ $session->activity->title }} — Sala {{ $session->code }}</p>

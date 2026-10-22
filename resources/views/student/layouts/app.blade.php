@@ -86,20 +86,34 @@
             </div>
         </aside>
 
-        <main class="min-w-0 flex-1">
-            <header class="sticky top-4 z-20 mx-4 mt-4 flex h-20 items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 shadow-sm sm:mx-6 sm:px-8">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Mi espacio académico</p>
-                    <h2 class="mt-1 text-lg font-bold text-slate-800">@yield('page-heading', 'Inicio')</h2>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <div class="hidden text-right sm:block">
-                        <p class="text-sm font-bold text-slate-800">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-slate-400">Estudiante</p>
+<main class="min-w-0 flex-1">
+            <header class="sticky top-4 z-20 mx-4 mt-4 flex flex-col sm:h-auto rounded-2xl border border-slate-200 bg-white px-5 shadow-sm sm:mx-6 sm:px-8">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Mi espacio académico</p>
+                        <h2 class="mt-1 text-lg font-bold text-slate-800">@yield('page-heading', 'Inicio')</h2>
                     </div>
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 font-bold text-white">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+
+                    <div class="flex items-center gap-3">
+                        <div class="hidden text-right sm:block">
+                            <p class="text-sm font-bold text-slate-800">{{ auth()->user()->name }}</p>
+                            <p class="text-xs text-slate-400">Estudiante</p>
+                        </div>
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 font-bold text-white">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+
+                        {{-- Botón hamburguesa móvil --}}
+                        <button type="button"
+                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:hidden"
+                                id="mobile-nav-open"
+                                aria-label="Abrir menú de navegación"
+                                aria-expanded="false"
+                                aria-controls="mobile-nav-panel">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </header>
@@ -108,7 +122,24 @@
         </main>
     </div>
 
+    @include('partials.mobile-navigation', [
+        'navItems' => [
+            ['route' => 'student.dashboard', 'label' => 'Inicio', 'icon' => '🏠', 'pattern' => 'student.dashboard', 'exact' => true],
+            ['route' => 'student.classes.index', 'label' => 'Mis clases', 'icon' => '📚', 'pattern' => 'student.classes.*'],
+            ['route' => 'student.dashboard', 'label' => 'Juegos educativos', 'icon' => '🎮', 'pattern' => 'student.dashboard', 'fragment' => 'juegos'],
+            ['route' => 'student.dashboard', 'label' => 'Actividades', 'icon' => '📝', 'pattern' => 'student.dashboard', 'fragment' => 'actividades'],
+        ],
+        'userName' => auth()->user()->name ?? 'Estudiante',
+        'userRole' => 'Estudiante',
+        'logoutUrl' => url('/logout'),
+        'avatarLetter' => strtoupper(substr(auth()->user()->name ?? 'E', 0, 1)),
+        'avatarBg' => 'bg-indigo-600',
+        'brandTitle' => 'Klassio',
+        'brandSubtitle' => 'Aprende y conecta',
+        'brandIcon' => 'K',
+        'brandIconBg' => 'bg-indigo-600',
+    ])
+
     @stack('scripts')
 </body>
-
 </html>

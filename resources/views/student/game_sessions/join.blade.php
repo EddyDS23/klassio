@@ -19,6 +19,16 @@
 @section('content')
 <div class="page-shell session-join">
 
+        {{-- Botón Volver al inicio (parte superior) --}}
+        <div class="mb-4">
+            <a href="{{ route('student.dashboard') }}"
+                class="inline-flex items-center gap-2 text-sm font-bold text-cyan-700 transition hover:text-cyan-900">
+                <span aria-hidden="true">←</span> Volver al inicio
+            </a>
+        </div>
+
+        <div class="page-shell session-join">
+
         <div class="page-hero">
             <h1 class="font-bold mb-1">Unirse a una sala</h1>
             <p class="mb-0 opacity-75">Ingresa el código que te compartió tu profesor y únete a la partida.</p>

@@ -93,8 +93,8 @@
                 Distribución de actividades
             </h3>
 
-            <div class="mt-6">
-                <canvas id="activityChart" height="120"></canvas>
+            <div class="mt-6 overflow-hidden">
+                <canvas id="activityChart" height="120" class="w-full max-w-full block"></canvas>
             </div>
         </div>
 
@@ -106,8 +106,8 @@
                 Proporción según estado
             </h3>
 
-            <div class="mt-6">
-                <canvas id="userChart" height="120"></canvas>
+            <div class="mt-6 overflow-hidden">
+                <canvas id="userChart" height="120" class="w-full max-w-full block"></canvas>
             </div>
         </div>
 

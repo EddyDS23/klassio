@@ -96,6 +96,7 @@
     try {
         if (localStorage.getItem('klassio-theme') === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.classList.add('dark');
         }
     } catch (e) {}
 </script>
@@ -108,8 +109,10 @@
             isDark = !isDark;
             if (isDark) {
                 document.documentElement.setAttribute('data-theme', 'dark');
+                document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.removeAttribute('data-theme');
+                document.documentElement.classList.remove('dark');
             }
             try { localStorage.setItem('klassio-theme', isDark ? 'dark' : 'light'); } catch (e) {}
             document.querySelectorAll('.klassio-theme-btn').forEach(function (b) { b.textContent = label(); });

@@ -51,7 +51,7 @@
                 @foreach ($navItems as $item)
                     <a href="{{ route($item['route']) }}"
                        class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition
-                              {{ request()->routeIs($item['pattern']) ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                             {{ request()->routeIs($item['pattern']) ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                         <span class="text-lg">{{ $item['icon'] }}</span>
                         {{ $item['label'] }}
                     </a>
@@ -89,7 +89,7 @@
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
 
-                        <div>
+                        <div class="hidden sm:block">
                             <p class="text-sm font-bold text-slate-800">
                                 {{ auth()->user()->name }}
                             </p>
@@ -100,28 +100,20 @@
                         </div>
                     </div>
 
+                    {{-- Botón hamburguesa móvil --}}
+                    <button type="button"
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:hidden"
+                            id="mobile-nav-open"
+                            aria-label="Abrir menú de navegación"
+                            aria-expanded="false"
+                            aria-controls="mobile-nav-panel">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+
                 </div>
             </header>
-
-            <!-- Navegación móvil -->
-            <nav class="sticky top-[73px] z-10 flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-4 py-3 md:hidden">
-
-                @foreach ($navItems as $item)
-                    <a href="{{ route($item['route']) }}"
-                       class="whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition
-                              {{ request()->routeIs($item['pattern']) ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600' }}">
-                        {{ $item['label'] }}
-                    </a>
-                @endforeach
-
-                <form action="{{ url('/logout') }}" method="POST" class="shrink-0">
-                    @csrf
-                    <button type="submit" class="whitespace-nowrap rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200">
-                        ↪ Salir
-                    </button>
-                </form>
-
-            </nav>
 
             <!-- Contenido -->
             <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
@@ -166,7 +158,7 @@
                 @if (session('error'))
                     <div class="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm">
 
-                        <span class="text-xl">⚠️</span>
+                        <span class="text-xl">!</span>
 
                         <div>
                             <p class="font-bold">
@@ -189,8 +181,26 @@
 
     </div>
 
+    @include('partials.mobile-navigation', [
+        'navItems' => $navItems ?? [
+            ['route' => 'admin.dashboard', 'label' => 'Inicio', 'icon' => '🏠', 'pattern' => 'admin.dashboard'],
+            ['route' => 'admin.users.index', 'label' => 'Usuarios', 'icon' => '👥', 'pattern' => 'admin.users.*'],
+            ['route' => 'admin.classes.index', 'label' => 'Clases', 'icon' => '📚', 'pattern' => 'admin.classes.*'],
+            ['route' => 'admin.activities.index', 'label' => 'Actividades', 'icon' => '🎯', 'pattern' => 'admin.activities.*'],
+            ['route' => 'admin.results.index', 'label' => 'Resultados', 'icon' => '🏆', 'pattern' => 'admin.results.*'],
+        ],
+        'userName' => auth()->user()->name ?? 'Administrador',
+        'userRole' => 'Administrador',
+        'logoutUrl' => url('/logout'),
+        'avatarLetter' => strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)),
+        'avatarBg' => 'bg-amber-500',
+        'brandTitle' => 'Klassio',
+        'brandSubtitle' => 'Administración',
+        'brandIcon' => 'K',
+        'brandIconBg' => 'bg-amber-400',
+    ])
+
     @stack('scripts')
 
 </body>
-
 </html>

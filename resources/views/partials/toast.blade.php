@@ -144,11 +144,17 @@
         function autoConvert() {
             // Avisos del servidor (tienen esos colores en todo el proyecto)
             // + cualquier bloque marcado con [data-toast] o rol de alerta.
+            // SOLO convierte elementos que son mensajes flash del servidor (hijos directos de body o en contenedor principal)
+            // No convierte componentes UI que sucedan a tener las mismas clases.
             var sel = '[data-toast], [role="alert"], [role="status"],' +
-                'div.border-emerald-200.bg-emerald-50,' +
-                'div.border-rose-200.bg-rose-50,' +
-                'div.border-red-200.bg-red-50,' +
-                'div.border-red-200.bg-rose-50';
+                'body > div.border-emerald-200.bg-emerald-50,' +
+                'body > div.border-rose-200.bg-rose-50,' +
+                'body > div.border-red-200.bg-red-50,' +
+                'body > div.border-red-200.bg-rose-50,' +
+                'main > div.border-emerald-200.bg-emerald-50:first-child,' +
+                'main > div.border-rose-200.bg-rose-50:first-child,' +
+                'main > div.border-red-200.bg-red-50:first-child,' +
+                'main > div.border-red-200.bg-rose-50:first-child';
             var nodes = document.querySelectorAll(sel);
             for (var i = 0; i < nodes.length; i++) {
                 // Los que ya viven en la caja no se tocan.

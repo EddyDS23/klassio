@@ -23,6 +23,16 @@
             </form>
         </div></section>
 
+        </section>
+
+        {{-- Botón Volver a la clase (parte superior) --}}
+        <div class="mb-4">
+            <a href="{{ route('student.class.show', $class->id) }}"
+                class="inline-flex items-center gap-2 text-sm font-bold text-indigo-700 transition hover:text-indigo-900">
+                <span aria-hidden="true">←</span> Volver a la clase
+            </a>
+        </div>
+
         @if ($activities->isEmpty())
             <section class="card surface-card text-center"><div class="card-body p-5"><div class="display-3 mb-3">🎈</div><h2 class="h3 fw-bold">¡Todavía no hay actividades!</h2><p class="text-secondary mb-0 fs-5">Cuando tu maestro publique una, aparecerá aquí.</p></div></section>
         @else
@@ -33,10 +43,9 @@
                 @endforeach
             </div>
         @endif
-        @if ($activities->hasPages())
+@if ($activities->hasPages())
             <div class="mt-4 d-flex justify-content-center">{{ $activities->links() }}</div>
         @endif
-        <nav class="mt-4"><a class="btn btn-outline-secondary" href="{{ route('student.class.show', $class->id) }}">← Volver a la clase</a></nav>
-    </main>
+</main>
 </body>
 </html>

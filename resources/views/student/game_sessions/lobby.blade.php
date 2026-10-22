@@ -34,6 +34,16 @@
 @section('content')
 <div class="page-shell session-lobby">
 
+        {{-- Botón Volver a la actividad (parte superior) --}}
+        <div class="mb-4">
+            <a href="{{ route('student.activities.show', $session->activity_id) }}"
+                class="inline-flex items-center gap-2 text-sm font-bold text-cyan-700 transition hover:text-cyan-900">
+                <span aria-hidden="true">←</span> Volver a la actividad
+            </a>
+        </div>
+
+        <div class="page-shell session-lobby">
+
         <div class="page-hero">
             <p class="text-sm uppercase font-bold mb-2">Tu próxima partida</p>
             <h1 class="font-bold mb-1">Sala de juego</h1>
