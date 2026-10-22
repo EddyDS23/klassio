@@ -57,6 +57,25 @@
     .klassio-theme-btn { border: 1px solid #cbd5e1; border-radius: .75rem; background: #fff; padding: .5rem .75rem; font-size: .85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
     html[data-theme="dark"] .klassio-theme-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
 
+    /* === UTILIDAD GLOBAL DE BOTONES === */
+    /* Radio consistente = botón "Negro" (0.75rem = 12px) */
+    .btn-klassio-rounded,
+    button.btn-klassio-rounded,
+    a.btn-klassio-rounded,
+    .btn-klassio { border-radius: .75rem !important; }
+
+    /* Normaliza todos los botones submit/button/enlace-botón */
+    button[type="submit"],
+    button[type="button"],
+    button:not([class*="rounded-"]),
+    a[href*="/logout"] button,
+    form[action*="/logout"] button,
+    .btn-klassio { border-radius: .75rem; }
+
+    /* Elimina esquinas cuadradas en contenedores de botones */
+    form[action*="/logout"] { display: inline-flex; }
+    form[action*="/logout"] > button { border-radius: .75rem; }
+
     /* Ajustes de lectura para el perfil infantil, sin cambiar los demás perfiles. */
     body.student-kids { font-size: 18px; }
     body.student-kids .student-activity > h1 { font-size: 2.1rem; }

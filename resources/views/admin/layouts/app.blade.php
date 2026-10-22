@@ -68,7 +68,7 @@
                     @csrf
 
                     <button type="submit"
-                            class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-slate-400 transition hover:bg-red-500/10 hover:text-red-400">
+                            class="flex w-full items-center gap-3 rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold text-slate-300 transition hover:bg-red-900/30 hover:text-red-300">
                         <span>↪</span>
                         Cerrar sesión
                     </button>
@@ -116,7 +116,7 @@
 
                 <form action="{{ url('/logout') }}" method="POST" class="shrink-0">
                     @csrf
-                    <button type="submit" class="whitespace-nowrap rounded-full bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200">
+                    <button type="submit" class="whitespace-nowrap rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200">
                         ↪ Salir
                     </button>
                 </form>

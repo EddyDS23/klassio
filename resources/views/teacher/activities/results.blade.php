@@ -323,7 +323,7 @@
 
                                         @if ($result['elapsed_seconds'] !== null)
 
-                                            <span class="rounded-lg bg-slate-100 px-3 py-1">
+                                            <span class="rounded-xl bg-slate-100 px-3 py-1">
                                                 {{ sprintf(
                                                     '%02d:%02d',
                                                     intdiv($result['elapsed_seconds'], 60),

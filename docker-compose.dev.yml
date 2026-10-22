@@ -1,75 +1,151 @@
 services:
-    app:
-        image: klassio-app:development
-        build:
-            context: .
-            dockerfile: Dockerfile
-            target: development
-        env_file:
-            - .env.dev
-        volumes:
-            - .:/var/www/html
-            - klassio-vendor:/var/www/html/vendor
-        depends_on:
-            migrate:
-                condition: service_completed_successfully
+  mariadb:
+    image: mariadb:11.8
+    container_name: klassio_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_DATABASE}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    expose:
+      - "3306"
+    volumes:
+      - klassio-data:/var/lib/mysql
+    networks:
+      - database-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD}",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    mem_limit: 2g
+    cpus: "1"
 
-    migrate:
-        image: klassio-app:development
-        build:
-            context: .
-            dockerfile: Dockerfile
-            target: development
-        command: ["php", "artisan", "migrate", "--force"]
-        env_file:
-            - .env.dev
-        volumes:
-            - .:/var/www/html
-            - klassio-vendor:/var/www/html/vendor
-        depends_on:
-            mariadb:
-                condition: service_healthy
-        networks:
-            - database-network
-        restart: "no"
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    command: ["php", "artisan", "migrate", "--force"]
+    env_file:
+      - .env.dev
+    volumes:
+      - .:/var/www/html
+      - klassio-vendor:/var/www/html/vendor
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - database-network
+    restart: "no"
 
-    nginx:
-        image: klassio-web:development
-        build:
-            context: .
-            dockerfile: Dockerfile
-            target: web
-        ports:
-            - "200:80"
-        volumes:
-            - .:/var/www/html:ro
-            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    env_file:
+      - .env.dev
+    volumes:
+      - .:/var/www/html
+      - klassio-vendor:/var/www/html/vendor
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - database-network
+    mem_limit: 512m
+    cpus: "0.5"
 
-    reverb:
-        image: klassio-app:development
-        env_file:
-            - .env.dev
-        ports:
-            - "2001:2001"
-        volumes:
-            - .:/var/www/html
-            - klassio-vendor:/var/www/html/vendor
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    ports:
+      - "200:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - database-network
+    mem_limit: 256m
+    cpus: "0.25"
 
-    worker:
-        image: klassio-app:development
-        env_file:
-            - .env.dev
-        volumes:
-            - .:/var/www/html
-            - klassio-vendor:/var/www/html/vendor
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    command: ["php", "artisan", "queue:work", "database", "--queue=default", "--tries=3", "--timeout=90"]
+    env_file:
+      - .env.dev
+    volumes:
+      - .:/var/www/html
+      - klassio-vendor:/var/www/html/vendor
+    networks:
+      - database-network
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    mem_limit: 256m
+    cpus: "0.25"
 
-    scheduler:
-        image: klassio-app:development
-        env_file:
-            - .env.dev
-        volumes:
-            - .:/var/www/html
-            - klassio-vendor:/var/www/html/vendor
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    command: ["php", "artisan", "schedule:work"]
+    env_file:
+      - .env.dev
+    volumes:
+      - .:/var/www/html
+      - klassio-vendor:/var/www/html/vendor
+    networks:
+      - database-network
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    mem_limit: 256m
+    cpus: "0.25"
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=2001"]
+    ports:
+      - "2001:2001"
+    env_file:
+      - .env.dev
+    volumes:
+      - .:/var/www/html
+      - klassio-vendor:/var/www/html/vendor
+    networks:
+      - database-network
+    mem_limit: 256m
+    cpus: "0.25"
+
+networks:
+  database-network:
 
 volumes:
-    klassio-vendor:
+  klassio-data:
+  klassio-vendor:
