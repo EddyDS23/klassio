@@ -8,6 +8,45 @@
     <title>Alumnos - {{ $class->name }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        @media (max-width: 767.98px) {
+            /* Bootstrap aplica !important a px-5, p-5 y gap-4. */
+            #teacher-enrolled-students { padding-inline: 1rem !important; }
+            #teacher-enrolled-students .enrolled-students-section { padding: 1rem; }
+            #teacher-enrolled-students .enrolled-students-list { grid-template-columns: minmax(0, 1fr); }
+            #teacher-enrolled-students .enrolled-student-card { min-width: 0; padding: 1rem !important; }
+
+            #teacher-enrolled-students .enrolled-student-profile {
+                display: grid;
+                grid-template-columns: 3.5rem minmax(0, 1fr);
+                gap: .5rem .75rem !important;
+            }
+            #teacher-enrolled-students .enrolled-student-avatar { grid-column: 1; grid-row: 1 / span 2; }
+            #teacher-enrolled-students .enrolled-student-details { display: contents; }
+            #teacher-enrolled-students .enrolled-student-name,
+            #teacher-enrolled-students .enrolled-student-email {
+                grid-column: 2;
+                min-width: 0;
+                margin: 0 !important;
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+                overflow-wrap: anywhere;
+                word-break: normal;
+            }
+            #teacher-enrolled-students .enrolled-student-status {
+                grid-column: 1 / -1;
+                justify-self: start;
+                max-width: 100%;
+                margin-top: .25rem !important;
+            }
+            #teacher-enrolled-students .enrolled-student-status > span { flex-shrink: 0; }
+            #teacher-enrolled-students .enrolled-student-actions {
+                margin-top: 1rem !important;
+                padding-top: 1rem !important;
+            }
+        }
+    </style>
 </head>
 
 <body class="min-h-screen bg-slate-100 text-slate-800">
@@ -49,7 +88,7 @@
         </div>
     </header>
 
-    <main class="mx-auto max-w-7xl space-y-8 px-5 py-8 lg:px-8">
+    <main id="teacher-enrolled-students" class="mx-auto max-w-7xl space-y-8 px-5 py-8 lg:px-8">
 
         <!-- Encabezado -->
         <section
@@ -135,7 +174,7 @@
         @endif
 
         <!-- Contenido principal -->
-        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <section class="enrolled-students-section rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
 
             <div class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
 
@@ -191,32 +230,32 @@
                 </div>
             @else
                 <!-- Lista de alumnos -->
-                <div class="grid gap-4 md:grid-cols-2">
+                <div class="enrolled-students-list grid gap-4 md:grid-cols-2">
 
                     @foreach ($students as $enrollment)
                         <article
-                            class="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-lg">
+                            class="enrolled-student-card group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-lg">
 
-                            <div class="flex items-start gap-4">
+                            <div class="enrolled-student-profile flex items-start gap-4">
 
                                 <!-- Inicial -->
                                 <div
-                                    class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-md shadow-emerald-100">
+                                    class="enrolled-student-avatar flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-md shadow-emerald-100">
                                     {{ strtoupper(substr($enrollment->student->name, 0, 1)) }}
                                 </div>
 
-                                <div class="min-w-0 flex-1">
+                                <div class="enrolled-student-details min-w-0 flex-1">
 
-                                    <h3 class="truncate text-base font-black text-slate-900">
+                                    <h3 class="enrolled-student-name truncate text-base font-black text-slate-900">
                                         {{ $enrollment->student->name }}
                                     </h3>
 
-                                    <p class="mt-1 break-all text-sm text-slate-500">
+                                    <p class="enrolled-student-email mt-1 break-all text-sm text-slate-500">
                                         {{ $enrollment->student->email }}
                                     </p>
 
                                     <div
-                                        class="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                                        class="enrolled-student-status mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
                                         <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
                                         Alumno inscrito
                                     </div>
@@ -225,7 +264,7 @@
 
                             </div>
 
-                            <div class="mt-5 border-t border-slate-200 pt-4">
+                            <div class="enrolled-student-actions mt-5 border-t border-slate-200 pt-4">
 
                                 <form
                                     action="{{ route('teacher.classes.students.remove', [
