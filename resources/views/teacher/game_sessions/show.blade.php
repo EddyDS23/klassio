@@ -43,6 +43,12 @@
 
     <div class="page-shell teacher-session">
 
+        <div class="mb-4">
+            <a href="{{ route('teacher.dashboard') }}" class="klassio-back-button">
+                <span aria-hidden="true">←</span> Volver al panel
+            </a>
+        </div>
+
         <div class="page-hero">
             <p class="text-sm uppercase font-bold mb-2">{{ $session->status === 'waiting' ? 'Preparación de partida' : 'Sesión multijugador' }}</p>
             <h1 class="font-bold mb-1">{{ $session->status === 'waiting' ? 'Tu sala está lista' : 'Panel de la partida' }}</h1>
@@ -191,10 +197,6 @@
                     Ver resultados
                 </a>
             @endif
-        </div>
-
-        <div class="mt-4">
-            <a href="{{ route('teacher.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">Volver al panel</a>
         </div>
 
     </div>

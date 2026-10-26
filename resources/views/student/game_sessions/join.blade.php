@@ -22,12 +22,10 @@
         {{-- Botón Volver al inicio (parte superior) --}}
         <div class="mb-4">
             <a href="{{ route('student.dashboard') }}"
-                class="inline-flex items-center gap-2 text-sm font-bold text-cyan-700 transition hover:text-cyan-900">
+                class="klassio-back-button">
                 <span aria-hidden="true">←</span> Volver al inicio
             </a>
         </div>
-
-        <div class="page-shell session-join">
 
         <div class="page-hero">
             <h1 class="font-bold mb-1">Unirse a una sala</h1>
@@ -82,10 +80,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="mt-4">
-            <a href="{{ route('student.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 join-back">Volver al inicio</a>
         </div>
 
     </div>

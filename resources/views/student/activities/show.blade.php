@@ -11,6 +11,12 @@
 <body class="student-activity student-kids">
     @include('partials.toast')
 
+    <nav aria-label="Navegación de actividades" style="margin: 0 0 1rem;">
+        <a href="{{ route('student.activities.index', $activity->class_id) }}" class="klassio-back-button">
+            <span aria-hidden="true">←</span> Volver a actividades
+        </a>
+    </nav>
+
     <h1>🎮 {{ $activity->title }}</h1>
 
     @if ($activity->description)
@@ -24,10 +30,6 @@
     @if (session('error'))
         <p data-toast="error" style="color: red;">{{ session('error') }}</p>
     @endif
-
-    <nav aria-label="Navegación de actividades" style="margin: 0 0 1rem;">
-        <a href="{{ route('student.activities.index', $activity->class_id) }}">← Volver a actividades</a>
-    </nav>
 
     {{-- Información general --}}
     <section>

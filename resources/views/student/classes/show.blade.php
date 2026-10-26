@@ -100,7 +100,7 @@
                     </div>
 
                     <a href="{{ route('student.classes.index') }}"
-                       class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700">
+                       class="klassio-back-button">
                         ← Volver
                     </a>
 

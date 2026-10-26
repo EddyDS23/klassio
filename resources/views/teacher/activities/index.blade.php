@@ -11,7 +11,7 @@
 
 @section('content')
         <div class="mb-6">
-            <a href="{{ route('teacher.classes.show', $class->id) }}" class="inline-flex items-center gap-2 text-sm font-black text-emerald-700 transition hover:text-emerald-900">
+            <a href="{{ route('teacher.classes.show', $class->id) }}" class="klassio-back-button">
                 <span aria-hidden="true">←</span> Volver a la clase
             </a>
         </div>

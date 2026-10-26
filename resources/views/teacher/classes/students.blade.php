@@ -36,7 +36,7 @@
             <div class="flex flex-wrap items-center gap-2">
 
                 <a href="{{ route('teacher.classes.show', $class->id) }}"
-                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700">
+                    class="klassio-back-button">
                     ← Volver a la clase
                 </a>
 
@@ -184,7 +184,7 @@
                     </p>
 
                     <a href="{{ route('teacher.classes.show', $class->id) }}"
-                        class="mt-6 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700">
+                        class="mt-6 klassio-back-button">
                         Volver a la clase
                     </a>
 

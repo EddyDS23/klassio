@@ -61,16 +61,14 @@
         <div class="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2">
 
             <a href="{{ route('teacher.classes.show', $class->id) }}"
-                class="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 transition hover:text-emerald-900">
+                class="klassio-back-button">
 
                 <span class="text-lg">←</span>
                 Volver a la clase
             </a>
 
-            <span class="text-slate-300">|</span>
-
             <a href="{{ route('teacher.classes.index') }}"
-                class="text-sm font-bold text-slate-500 transition hover:text-slate-800">
+                class="klassio-back-button">
                 Volver a mis clases
             </a>
 

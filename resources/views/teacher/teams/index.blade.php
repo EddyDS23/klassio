@@ -63,26 +63,6 @@
         .teams-page .header p strong { color: #fff; }
         .teams-page .header .eyebrow { color: #fed7aa; font-size: .72rem; letter-spacing: .14em; }
 
-        .teams-page .back {
-            display: inline-flex;
-            align-items: center;
-            margin-bottom: 16px;
-            padding: 8px 13px;
-            border: 1px solid #ddd6fe;
-            border-radius: 999px;
-            background: rgb(255 255 255 / .88);
-            color: #5b21b6;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 750;
-            transition: background .16s, transform .16s;
-        }
-
-        .teams-page .back:hover {
-            background: #fff;
-            transform: translateX(-2px);
-        }
-
         .teams-page a:focus-visible,
         .teams-page button:focus-visible,
         .teams-page input:focus-visible,
@@ -649,7 +629,7 @@
                 : route('teacher.activities.show', $activity->id);
         @endphp
 
-        <a class="back" href="{{ route('teacher.activities.show', $activity->id) }}">
+        <a class="klassio-back-button mb-4" href="{{ route('teacher.activities.show', $activity->id) }}">
             ← Volver al resumen de la actividad
         </a>
 
@@ -1037,9 +1017,8 @@
                 <p class="small">
                     Esta actividad ya no está en preparación. Puedes regresar al resumen para consultar sus acciones disponibles.
                 </p>
-                <a href="{{ route('teacher.activities.show', $activity->id) }}" class="btn-primary next-step-link">
+                <a href="{{ route('teacher.activities.show', $activity->id) }}" class="klassio-back-button">
                     Volver al resumen de actividad
-                    <span aria-hidden="true">→</span>
                 </a>
             @endif
         </section>

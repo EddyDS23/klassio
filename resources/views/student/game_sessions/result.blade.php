@@ -30,12 +30,10 @@
         {{-- Botón Volver a la actividad (parte superior) --}}
         <div class="mb-4">
             <a href="{{ route('student.activities.show', $session->activity_id) }}"
-                class="inline-flex items-center gap-2 text-sm font-bold text-cyan-700 transition hover:text-cyan-900">
+                class="klassio-back-button">
                 <span aria-hidden="true">←</span> Volver a la actividad
             </a>
         </div>
-
-        <div class="page-shell session-results">
 
         <div class="page-hero text-center">
             <h1 class="font-bold mb-1">Resultados de la partida</h1>
@@ -202,9 +200,6 @@
         @endif
 
         <div class="flex flex-wrap gap-2 result-actions">
-            <a href="{{ route('student.activities.show', $session->activity_id) }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-cyan-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 disabled:cursor-not-allowed disabled:opacity-50">
-                Volver a la actividad
-            </a>
             <a href="{{ route('student.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">
                 Ir al inicio
             </a>

@@ -105,7 +105,7 @@
                     </div>
 
                     <a href="{{ route('student.class.show', $class->id) }}"
-                        class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700">
+                        class="klassio-back-button">
                         ← Volver a la clase
                     </a>
 
@@ -242,16 +242,6 @@
                     @endif
 
                 </section>
-
-                <!-- BOTÓN INFERIOR -->
-                <div class="flex justify-center">
-
-                    <a href="{{ route('student.class.show', $class->id) }}"
-                        class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 font-bold text-white shadow-md transition hover:bg-indigo-700">
-                        ← Regresar a la clase
-                    </a>
-
-                </div>
 
             </div>
 

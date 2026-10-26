@@ -61,7 +61,7 @@
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         <div class="mb-6">
-            <a href="{{ route('teacher.activities.show', $activity->id) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50">← Volver a la actividad</a>
+            <a href="{{ route('teacher.activities.show', $activity->id) }}" class="klassio-back-button">← Volver a la actividad</a>
         </div>
 
         <!-- Encabezado principal -->

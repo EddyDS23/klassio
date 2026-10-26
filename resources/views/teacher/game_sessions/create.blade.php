@@ -21,6 +21,12 @@
 @section('content')
     <div class="page-shell session-create">
 
+        <div class="mb-4">
+            <a href="{{ route('teacher.dashboard') }}" class="klassio-back-button">
+                <span aria-hidden="true">←</span> Volver al panel
+            </a>
+        </div>
+
         <div class="page-hero">
             <h1 class="font-bold mb-1">Crear sala multijugador</h1>
             <p class="mb-0 opacity-75">Elige una actividad publicada y comparte el código con tus estudiantes.</p>
@@ -53,9 +59,6 @@
                                 Aún no tienes actividades publicadas. Publica una actividad para crear una sala.
                             </div>
 
-                            <a href="{{ route('teacher.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">
-                                Volver al panel
-                            </a>
                         @else
                             <form method="POST" action="{{ route('teacher.game-sessions.store') }}">
                                 @csrf
@@ -96,10 +99,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="mt-4">
-            <a href="{{ route('teacher.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">Volver al panel</a>
         </div>
 
     </div>

@@ -121,6 +121,12 @@
         </header>
 
         <div class="game-content">
+            <nav class="mb-4" aria-label="Navegación de actividades">
+                <a href="{{ route('student.activities.show', $activity->id) }}" class="klassio-back-button">
+                    <span aria-hidden="true">←</span> Volver a la actividad
+                </a>
+            </nav>
+
             <p class="game-summary" aria-label="Puntaje de la actividad">
                 <span>Puntos <strong id="score-display">0</strong></span>
             </p>
@@ -169,9 +175,6 @@
                     @csrf
                     <button type="submit">Dejar el juego 👋</button>
                 </form>
-                <nav>
-                    <a href="{{ route('student.activities.show', $activity->id) }}">Volver a la actividad</a>
-                </nav>
             </div>
         </div>
     </main>
