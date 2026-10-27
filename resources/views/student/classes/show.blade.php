@@ -215,7 +215,7 @@
                             </div>
 
                             <h2 class="text-xl font-black text-slate-900">
-                                Mis amigos 👥
+                                Mis amigos
                             </h2>
 
                             <p class="mt-2 text-base font-medium leading-6 text-slate-500">
@@ -245,7 +245,7 @@
 
                             <div>
                                 <h2 class="text-xl font-black text-slate-900 sm:text-2xl">
-                                    ✨ Lo nuevo
+                                    Lo nuevo
                                 </h2>
 
                                 <p class="text-base font-medium text-slate-500">

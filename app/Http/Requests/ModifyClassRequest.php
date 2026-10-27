@@ -24,7 +24,7 @@ class ModifyClassRequest extends FormRequest
     {
         return [
             'name'=>['sometimes','string','max:150'],
-            'description'=>['sometimes','string','max:255']
+            'description'=>['nullable','string','max:255']
         ];
     }
 }

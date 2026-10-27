@@ -1493,6 +1493,8 @@
             if (answering || !currentItem) return;
             answering = true;
 
+            window.KlassioSounds?.startMusic();
+
             Array.from(document.querySelectorAll('.round-option-btn')).forEach((b) => b.disabled = true);
             btn.classList.add('disabled');
 
@@ -1529,9 +1531,11 @@
                 }
 
                 answeredThisRound = true;
+                window.KlassioSounds?.[data.is_correct ? 'correcto' : 'error']();
                 showRoundResult(data.is_correct, data.participation_score, data.correct_text);
 
                 if (data.finished) {
+                    window.KlassioSounds?.completado();
                     redirectAfterFinalResult(2200);
                 }
             } catch (e) {
@@ -1541,6 +1545,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            window.KlassioSounds?.startMusic();
             tick();
             refreshState();
 
@@ -1563,6 +1568,11 @@
             }
             setupStateSync(refreshState);
         });
+    </script>
+
+    <script src="/js/klassio-sounds.js"></script>
+    <script>
+        window.KlassioSounds?.setup('roulette');
     </script>
 
 </body>

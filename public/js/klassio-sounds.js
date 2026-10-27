@@ -31,6 +31,7 @@
         matching: '/sounds/conectalospuntos.mp3',
         crossword: '/sounds/crucigrama.mp3',
         kahoot: '/sounds/kahoot.mp3',
+        roulette: '/sounds/juegoruleta.mp3',
     };
 
     var SFX = {
@@ -228,21 +229,33 @@
             ensureMusic();
             preloadAll();
             addButton();
+            // Intenta iniciar la música de fondo inmediatamente al cargar el juego.
+            // Si el navegador bloquea el autoplay, fallará silenciosamente y el
+            // listener global de 'pointerdown' lo reintentará en el primer clic.
+            if (!muted) {
+                try {
+                    var p = playMusic();
+                    if (p && p.then) {
+                        p.then(function () { musicStarted = true; }, function () { musicStarted = false; });
+                    } else {
+                        musicStarted = true;
+                    }
+                } catch (e) { musicStarted = false; }
+            }
             // Si el alumno viene de "Iniciar / Intentar de nuevo" (bandera que
-            // deja la página anterior), intentar sonar de inmediato. Si el
-            // navegador lo bloquea, el primer toque lo arranca igual.
+            // deja la página anterior), intentar sonar de inmediato.
             var wantAuto = false;
             try {
                 wantAuto = sessionStorage.getItem('klassio-autoplay') === game;
                 sessionStorage.removeItem('klassio-autoplay');
             } catch (e) {}
-            if (wantAuto && !muted) {
+            if (wantAuto && !muted && !musicStarted) {
                 var m = ensureMusic();
                 if (m) {
                     try {
-                        var p = m.play();
-                        if (p && p.then) {
-                            p.then(function () { musicStarted = true; }, function () { musicStarted = false; });
+                        var p2 = m.play();
+                        if (p2 && p2.then) {
+                            p2.then(function () { musicStarted = true; }, function () { musicStarted = false; });
                         } else {
                             musicStarted = true;
                         }

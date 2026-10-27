@@ -49,17 +49,9 @@
                 <a href="{{ route('student.dashboard') }}#juegos"
                     class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12a4 4 0 014 4v3a4 4 0 01-4 4h-1l-3-3H10l-3 3H6a4 4 0 01-4-4v-3a4 4 0 014-4zM8 12v4M6 14h4M16 13h.01M19 11h.01" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12a4 4 0 014 4v3a4 4 0 01-4 4h-1l-3-3H10l-3 3H6a4 4 0 014-4zM8 12v4M6 14h4M16 13h.01M19 11h.01" />
                     </svg>
                     Juegos educativos
-                </a>
-
-                <a href="{{ route('student.dashboard') }}#actividades"
-                    class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5h6M9 3h6v4H9V3zM6 7h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2zM8 12h8M8 16h5" />
-                    </svg>
-                    Actividades
                 </a>
             </nav>
 
@@ -87,22 +79,14 @@
         </aside>
 
 <main class="min-w-0 flex-1">
-            <header class="sticky top-4 z-20 mx-4 mt-4 flex flex-col sm:h-auto rounded-2xl border border-slate-200 bg-white px-5 shadow-sm sm:mx-6 sm:px-8">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <header class="sticky top-4 z-20 mx-4 mt-2 flex flex-col sm:h-auto rounded-2xl border border-slate-200 bg-white px-5 shadow-sm sm:mx-6 sm:px-8">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Mi espacio académico</p>
                         <h2 class="mt-1 text-lg font-bold text-slate-800">@yield('page-heading', 'Inicio')</h2>
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <div class="hidden text-right sm:block">
-                            <p class="text-sm font-bold text-slate-800">{{ auth()->user()->name }}</p>
-                            <p class="text-xs text-slate-400">Estudiante</p>
-                        </div>
-                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 font-bold text-white">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                        </div>
-
                         {{-- Botón hamburguesa móvil --}}
                         <button type="button"
                                 class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:hidden"
@@ -127,7 +111,6 @@
             ['route' => 'student.dashboard', 'label' => 'Inicio', 'icon' => '🏠', 'pattern' => 'student.dashboard', 'exact' => true],
             ['route' => 'student.classes.index', 'label' => 'Mis clases', 'icon' => '📚', 'pattern' => 'student.classes.*'],
             ['route' => 'student.dashboard', 'label' => 'Juegos educativos', 'icon' => '🎮', 'pattern' => 'student.dashboard', 'fragment' => 'juegos'],
-            ['route' => 'student.dashboard', 'label' => 'Actividades', 'icon' => '📝', 'pattern' => 'student.dashboard', 'fragment' => 'actividades'],
         ],
         'userName' => auth()->user()->name ?? 'Estudiante',
         'userRole' => 'Estudiante',

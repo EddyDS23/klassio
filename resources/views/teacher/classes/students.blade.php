@@ -192,16 +192,6 @@
                     </p>
                 </div>
 
-                <div class="rounded-2xl bg-emerald-50 px-4 py-3 text-center">
-                    <p class="text-2xl font-black text-emerald-700">
-                        {{ $students->count() }}
-                    </p>
-
-                    <p class="text-xs font-bold text-emerald-600">
-                        Inscritos
-                    </p>
-                </div>
-
             </div>
 
             @if ($students->isEmpty())

@@ -162,7 +162,7 @@
 
                         <div>
                             <h2 class="text-xl font-black text-slate-900 sm:text-2xl">
-                                Mis amigos 👥
+                                Mis amigos
                             </h2>
 
                             <p class="text-base font-medium text-slate-500">

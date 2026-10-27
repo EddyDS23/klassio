@@ -1200,11 +1200,14 @@
 
                 button.addEventListener(
                     'click',
-                    () => answerQuestion(
-                        button,
-                        option.key,
-                        item.id
-                    )
+                    function () {
+                        window.KlassioSounds?.startMusic();
+                        answerQuestion(
+                            button,
+                            option.key,
+                            item.id
+                        );
+                    }
                 );
 
                 optionsBox.appendChild(button);
@@ -1401,6 +1404,8 @@
                     answerFeedback.className =
                         'answer-feedback visible ok';
 
+                    window.KlassioSounds?.correcto();
+
                 } else {
                     /*
                      * La seleccionada es roja.
@@ -1431,6 +1436,8 @@
 
                     answerFeedback.className =
                         'answer-feedback visible bad';
+
+                    window.KlassioSounds?.error();
                 }
 
                 awaitingAnswer = false;
@@ -1447,6 +1454,7 @@
                 );
 
                 if (data.completed) {
+                    window.KlassioSounds?.completado();
                     closeQuestionModal();
 
                     finishGame();
@@ -1672,6 +1680,8 @@
         ========================================================== */
 
         function finishGame() {
+            window.KlassioSounds?.completado();
+
             spinning = false;
             awaitingAnswer = false;
 
@@ -1707,7 +1717,10 @@
 
         spinBtn.addEventListener(
             'click',
-            spin
+            function () {
+                window.KlassioSounds?.startMusic();
+                spin();
+            }
         );
 
         /*
@@ -1762,6 +1775,16 @@
         ) {
             finishGame();
         }
+    </script>
+
+    <script src="/js/klassio-sounds.js"></script>
+    <script>
+        window.KlassioSounds?.setup('roulette');
+        // Desbloquear música de fondo en el primer gesto del usuario,
+        // igual que en kahoot, wordsearch y crossword.
+        document.addEventListener('DOMContentLoaded', function () {
+            window.KlassioSounds?.startMusic();
+        });
     </script>
 
 </body>

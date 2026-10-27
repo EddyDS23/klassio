@@ -128,6 +128,7 @@
             'kahoot' => 'kahoot',
             'word_search' => 'wordsearch',
             'matching' => 'matching',
+            'roulette' => 'roulette',
             default => null,
         };
 

@@ -9,14 +9,14 @@
 
                 <!-- =====================================
                      BIENVENIDA
-                ====================================== -->
+                 ====================================== -->
 
                 <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 px-6 py-10 text-white shadow-xl shadow-indigo-200 sm:px-10 sm:py-12">
 
                     <div class="relative z-10 max-w-2xl">
 
                         <span class="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-xs font-black uppercase tracking-widest text-white">
-                            🎮 ¡Hora de jugar!
+                            🏆 ¡Hora de jugar!
                         </span>
 
 
@@ -35,7 +35,7 @@
                         </p>
 
                         <div class="mt-7 flex flex-wrap gap-3">
-                            <a href="#juegos" class="inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 text-base font-black text-indigo-700 shadow-lg transition hover:scale-105 active:scale-95">¡A jugar! 🎮</a>
+                            <a href="#juegos" class="inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 text-base font-black text-indigo-700 shadow-lg transition hover:scale-105 active:scale-95">¡A jugar! 🏆</a>
                             <a href="{{ route('student.classes.index') }}" class="inline-flex items-center gap-2 rounded-2xl bg-white/15 px-7 py-4 text-base font-black text-white ring-2 ring-white/30 transition hover:scale-105 hover:bg-white/25 active:scale-95">Mis clases 📚</a>
                         </div>
 
@@ -57,7 +57,7 @@
 
                 <!-- =====================================
                      MENSAJES DE LARAVEL
-                ====================================== -->
+                 ====================================== -->
 
                 @if(session('success'))
 
@@ -91,7 +91,7 @@
 
                 <!-- =====================================
                      ACCIONES PRINCIPALES
-                ====================================== -->
+                 ====================================== -->
 
                 <section class="grid gap-5 md:grid-cols-2">
 
@@ -149,10 +149,7 @@
                         <div class="flex items-start justify-between">
 
                             <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-500 text-white">
-
-                                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12a4 4 0 014 4v3a4 4 0 01-4 4h-1l-3-3H10l-3 3H6a4 4 0 01-4-4v-3a4 4 0 014-4zM8 12v4M6 14h4M16 13h.01M19 11h.01"/>
-                                </svg>
+                                <span class="text-3xl leading-none">🧩</span>
 
                             </div>
 
@@ -191,10 +188,7 @@
                         <div class="flex items-start justify-between">
 
                             <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-white">
-
-                                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12a4 4 0 014 4v3a4 4 0 01-4 4h-1l-3-3H10l-3 3H6a4 4 0 01-4-4v-3a4 4 0 014-4zM8 12v4M6 14h4M16 13h.01M19 11h.01"/>
-                                </svg>
+                                <span class="text-3xl leading-none">👥</span>
 
                             </div>
 
@@ -326,7 +320,7 @@
 
                 <!-- =====================================
                      JUEGOS EDUCATIVOS
-                ====================================== -->
+                 ====================================== -->
 
                 <section id="juegos" class="scroll-mt-6 space-y-5">
 
@@ -335,7 +329,7 @@
                         <div>
 
                             <p class="text-sm font-black uppercase tracking-widest text-indigo-600">
-                                🎮 ¡A jugar!
+                                🏆 ¡A jugar!
                             </p>
 
                             <h2 class="mt-2 text-3xl font-black tracking-tight text-slate-900">
@@ -367,7 +361,7 @@
                             </h3>
 
                             <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
-                                ¡Busca las palabras! 🔎
+                                ¡Busca las palabras!
                             </p>
 
                             <span class="mt-4 inline-block text-xs font-bold text-rose-500">
@@ -390,7 +384,7 @@
                             </h3>
 
                             <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
-                                ¡Adivina con las pistas! 🧩
+                                ¡Adivina con las pistas!
                             </p>
 
                             <span class="mt-4 inline-block text-xs font-bold text-amber-600">
@@ -413,7 +407,7 @@
                             </h3>
 
                             <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
-                                ¡Une parejas y gana puntos! ✨
+                                ¡Une parejas y gana puntos!
                             </p>
 
                             <span class="mt-4 inline-block text-xs font-bold text-teal-600">
@@ -436,7 +430,7 @@
                             </h3>
 
                             <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
-                                ¡Responde rapidísimo! 🏆
+                                ¡Responde rapidísimo!
                             </p>
 
                             <span class="mt-4 inline-block text-xs font-bold text-indigo-600">
@@ -449,46 +443,6 @@
                     </div>
 
                 </section>
-
-
-                <!-- =====================================
-                     ACTIVIDADES
-                ====================================== -->
-
-                <section id="actividades" class="rounded-3xl border-2 border-indigo-100 bg-white p-6 shadow-sm sm:p-8">
-
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-                        <div>
-
-                            <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
-                                Tu aprendizaje
-                            </p>
-
-                            <h2 class="mt-2 text-2xl font-extrabold text-slate-900">
-                                Actividades
-                            </h2>
-
-                            <p class="mt-2 text-sm text-slate-500">
-                                Aquí podrás consultar las actividades asignadas por tus maestros.
-                            </p>
-
-                        </div>
-
-
-                        <a
-                            href="{{ route('student.classes.index') }}"
-                            class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-600"
-                        >
-
-                            Ver mis clases →
-
-                        </a>
-
-                    </div>
-
-                </section>
-
 
                 <!-- PIE -->
 
