@@ -40,12 +40,6 @@ class GameSessionService
     public const MAX_PLAYERS = 16;
 
     /**
-     * Segundos sin presencia registrada antes de considerar que un
-     * jugador se desconectó y liberar su lugar en la partida.
-     */
-    public const PRESENCE_TIMEOUT_SECONDS = 120;
-
-    /**
      * Segundos por defecto para responder cada ronda de la ruleta.
      *
      * El profesor elige el tiempo antes de girar; este valor se usa
@@ -502,55 +496,6 @@ class GameSessionService
         });
     }
 
-    /**
-     * Expira las presencias activas que llevan demasiado tiempo sin
-     * actualizarse y reasigna el turno cuando el respondedor expiró,
-     * de esta forma un jugador con desconexión abrupta puede volver a
-     * entrar a la partida con el código de la sala.
-     *
-     * @return list<GameSessionPresence>
-     */
-    public function expireStalePresences(GameSession $session, int $seconds = self::PRESENCE_TIMEOUT_SECONDS): array
-    {
-        $stalePresences = GameSessionPresence::query()
-            ->where('game_session_id', $session->id)
-            ->where('status', GameSessionPresence::STATUS_ACTIVE)
-            ->where('joined_at', '<', now()->subSeconds($seconds))
-            ->get();
-
-        foreach ($stalePresences as $presence) {
-            $presence->update([
-                'status' => GameSessionPresence::STATUS_LEFT,
-                'left_at' => now(),
-            ]);
-
-            $this->reassignResponderAfterExpired($session, $presence);
-        }
-
-        return $stalePresences->all();
-    }
-
-    private function reassignResponderAfterExpired(GameSession $session, GameSessionPresence $presence): void
-    {
-        if ($this->currentRoundItemId($session) === null) {
-            return;
-        }
-
-        $participation = $presence->participation;
-
-        if ($participation === null) {
-            return;
-        }
-
-        $responderId = $this->currentRoundResponderId($session, $participation);
-
-        if ($responderId === null || (int) $responderId !== (int) $presence->student_id) {
-            return;
-        }
-
-        $this->reassignResponderAfterLeave($session, $participation, (int) $presence->student_id);
-    }
-
     private function ensureSeatAvailable(GameSession $session): void
     {
         $count = $session->participations()
@@ -750,20 +695,12 @@ class GameSessionService
 
             $startedAt = now();
 
-            $startedParticipationIds = [];
-
             foreach ($this->players($session) as $participation) {
                 $participation = Participation::query()->whereKey($participation->id)->lockForUpdate()->firstOrFail();
                 $participation->status = 'started';
                 $participation->started_at = $startedAt;
                 $participation->save();
-                $startedParticipationIds[] = $participation->id;
             }
-
-            GameSessionPresence::query()
-                ->whereIn('participation_id', $startedParticipationIds)
-                ->where('status', GameSessionPresence::STATUS_ACTIVE)
-                ->update(['joined_at' => now()]);
 
             $first = $session->participations()
                 ->where('status', 'started')

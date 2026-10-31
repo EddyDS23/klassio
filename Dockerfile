@@ -51,15 +51,7 @@ RUN mkdir -p \
         storage/framework/views \
         storage/framework/testing \
         storage/logs \
-<<<<<<< HEAD
     && composer install --no-interaction --prefer-dist --optimize-autoloader
-=======
-        bootstrap/cache \
-    && composer install \
-        --no-interaction \
-        --prefer-dist \
-        --optimize-autoloader
->>>>>>> master
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
