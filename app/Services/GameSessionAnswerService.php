@@ -144,8 +144,11 @@ class GameSessionAnswerService
                     ->firstOrFail();
 
                 abort_unless($session->activity_id === $activity->id, 403);
-                Gate::authorize('play', $session);
 
+                /*
+                 * Cierra una carrera vencida o procesa el cierre de una ronda.
+                 * La comprobación temporal se realiza en el servidor.
+                 */
                 $session = $this->gameSessionService->closeRoundIfDue($session);
                 $session->refresh();
 
@@ -154,6 +157,8 @@ class GameSessionAnswerService
 
                     return null;
                 }
+
+                Gate::authorize('play', $session);
 
                 if ($this->gameSessionService->isExpired($session)) {
                     $this->gameSessionService->finish($session);
@@ -179,10 +184,20 @@ class GameSessionAnswerService
                 return null;
             }
 
+            $scoreBefore = $participation->score;
+
             $result = $callback($participation);
 
             if ($session !== null) {
                 $this->gameSessionService->closeRoundIfDue($session->fresh());
+
+                $participation->refresh();
+
+                if ($participation->score !== $scoreBefore) {
+                    // Mantiene el panel del profesor en sincronía: los juegos
+                    // de carrera solo notifican cuando la puntuación cambió.
+                    $this->gameSessionService->notifyScore($session, $participation);
+                }
             }
 
             return $result;
@@ -221,8 +236,6 @@ class GameSessionAnswerService
             'La sala no corresponde a esta actividad.',
         );
 
-        Gate::authorize('play', $session);
-
         /*
          * Cierra una carrera vencida o procesa el cierre de una ronda.
          * La comprobación temporal se realiza en el servidor.
@@ -235,6 +248,8 @@ class GameSessionAnswerService
             409,
             'La partida ya no acepta respuestas.',
         );
+
+        Gate::authorize('play', $session);
 
         /*
          * Comprobación explícita adicional del límite global.

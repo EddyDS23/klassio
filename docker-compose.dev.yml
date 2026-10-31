@@ -54,6 +54,9 @@ services:
         volumes:
             - .:/var/www/html
             - klassio-vendor:/var/www/html/vendor
+        networks:
+            - realtime-network
+            - database-network
 
     worker:
         image: klassio-app:development

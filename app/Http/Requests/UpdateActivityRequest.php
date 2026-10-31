@@ -79,6 +79,12 @@ class UpdateActivityRequest extends FormRequest
                 'nullable',
                 'date',
             ],
+
+            'unit_id' => [
+                'nullable',
+                'integer',
+                'exists:units,id',
+            ],
         ];
     }
 }

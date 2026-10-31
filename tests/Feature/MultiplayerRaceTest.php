@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Events\ScoreUpdated;
 use App\Models\Activity;
 use App\Models\Crossword;
 use App\Models\Enrollment;
@@ -19,6 +20,7 @@ use App\Services\GameSessionService;
 use App\Services\MatchingService;
 use App\Services\WordsearchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -368,6 +370,72 @@ class MultiplayerRaceTest extends TestCase
         $this->assertGreaterThan(0, $participation->score);
     }
 
+    public function test_multiplayer_race_answer_broadcasts_a_score_update(): void
+    {
+        Event::fake([ScoreUpdated::class]);
+
+        ['s1' => $s1, 'activity' => $activity, 'session' => $session] = $this->setupRace('matching');
+
+        $matching = $activity->matching;
+        $item = $matching->items()->where('left_text', 'HTTP')->firstOrFail();
+
+        $participation = $this->participationOf($session, $s1);
+
+        $this->actingAs($s1)
+            ->postJson(route('student.matching.answer'), [
+                'matching_id' => $matching->id,
+                'participation_id' => $participation->id,
+                'session_id' => $session->id,
+                'matching_item_id' => $item->id,
+                'response' => $item->right_text,
+            ])
+            ->assertOk()
+            ->assertJsonPath('correct', true);
+
+        Event::assertDispatched(ScoreUpdated::class, function (ScoreUpdated $event) use ($session, $participation) {
+            return $event->session->id === $session->id
+                && ($event->payload['participation_id'] ?? null) === $participation->id
+                && ($event->payload['score'] ?? null) > 0;
+        });
+    }
+
+    public function test_multiplayer_race_answer_without_score_change_does_not_broadcast(): void
+    {
+        Event::fake([ScoreUpdated::class]);
+
+        ['s1' => $s1, 'activity' => $activity, 'session' => $session] = $this->setupRace('matching');
+
+        $matching = $activity->matching;
+        $item = $matching->items()->where('left_text', 'HTTP')->firstOrFail();
+
+        $participation = $this->participationOf($session, $s1);
+
+        $this->actingAs($s1)
+            ->postJson(route('student.matching.answer'), [
+                'matching_id' => $matching->id,
+                'participation_id' => $participation->id,
+                'session_id' => $session->id,
+                'matching_item_id' => $item->id,
+                'response' => $item->right_text,
+            ])
+            ->assertOk()
+            ->assertJsonPath('correct', true);
+
+        // Respuesta repetida (ya encontrada): no cambia el score y no
+        // debe generar otro evento.
+        $this->actingAs($s1)
+            ->postJson(route('student.matching.answer'), [
+                'matching_id' => $matching->id,
+                'participation_id' => $participation->id,
+                'session_id' => $session->id,
+                'matching_item_id' => $item->id,
+                'response' => $item->right_text,
+            ])
+            ->assertOk();
+
+        Event::assertDispatchedTimes(ScoreUpdated::class, 1);
+    }
+
     public function test_wordsearch_answer_updates_the_session_participation(): void
     {
         ['s1' => $s1, 'activity' => $activity, 'session' => $session] = $this->setupRace('word_search');
@@ -640,7 +708,7 @@ class MultiplayerRaceTest extends TestCase
             'session_id' => $session->id,
             'crossword_word_id' => $word->id,
             'response' => $word->word,
-        ])->assertForbidden();
+        ])->assertStatus(409);
 
         $this->assertDatabaseMissing('crossword_answers', [
             'participation_id' => $participation->id,

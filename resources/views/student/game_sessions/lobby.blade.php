@@ -40,6 +40,10 @@
             <p class="mb-0 opacity-75">{{ $session->activity->title }}</p>
         </div>
 
+        @if (session('success'))
+            <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">{{ session('success') }}</div>
+        @endif
+
         @if (session('error'))
             <div class="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">{{ session('error') }}</div>
         @endif

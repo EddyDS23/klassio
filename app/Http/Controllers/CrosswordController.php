@@ -145,8 +145,6 @@ class CrosswordController extends Controller
     {
         $session = GameSession::findOrFail($sessionId);
 
-        Gate::authorize('play', $session);
-
         $activity = $session->activity;
         $crossword = $activity->crossword;
 
@@ -164,6 +162,8 @@ class CrosswordController extends Controller
         if ($session->status !== GameSession::STATUS_PLAYING) {
             return redirect()->route('student.game-sessions.result', $session->id);
         }
+
+        Gate::authorize('play', $session);
 
         return view('student.crossword.multiplayer', [
             'session' => $session,

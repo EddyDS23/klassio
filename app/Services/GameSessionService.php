@@ -40,6 +40,19 @@ class GameSessionService
     public const MAX_PLAYERS = 16;
 
     /**
+     * Segundos sin presencia registrada antes de considerar que un
+     * jugador se desconectó y liberar su lugar en la partida.
+     */
+    public const PRESENCE_TIMEOUT_SECONDS = 120;
+
+    /**
+     * Mensaje para el caso en el que el jugador ya es participante vivo
+     * de la sala. No es un error del flujo: es la señal para devolverlo
+     * a la página de la sala.
+     */
+    public const ALREADY_IN_ROOM_MESSAGE = 'Ya estás en esta sala.';
+
+    /**
      * Segundos por defecto para responder cada ronda de la ruleta.
      *
      * El profesor elige el tiempo antes de girar; este valor se usa
@@ -258,10 +271,10 @@ class GameSessionService
                     ->lockForUpdate()
                     ->first();
 
-                if (
-                    $teamParticipation === null &&
-                    in_array($session->status, [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING], true)
-                ) {
+                if ($teamParticipation === null) {
+                    // Reutiliza la participación abandonada más reciente del
+                    // equipo, sin importar el estado de la sala: así un equipo
+                    // que salió a mitad de partida puede reingresar.
                     $teamParticipation = $session->participations()
                         ->where('team_id', $team->id)
                         ->where('status', 'abandoned')
@@ -276,8 +289,17 @@ class GameSessionService
                     ->lockForUpdate()
                     ->first();
 
-                if ($presence?->status === GameSessionPresence::STATUS_ACTIVE) {
-                    throw new RuntimeException('Ya estás en esta sala.');
+                // Solo se evalúa la presencia del propio jugador: una
+                // presencia activa pero antigua indica una desconexión
+                // abrupta y permite el reingreso. Nunca se barre al resto
+                // de la sala, porque jugadores activos de partidas largas
+                // también tienen una fecha de entrada antigua.
+                $presenceIsLive = $presence !== null
+                    && $presence->status === GameSessionPresence::STATUS_ACTIVE
+                    && $presence->joined_at?->gt(now()->subSeconds(self::PRESENCE_TIMEOUT_SECONDS));
+
+                if ($presenceIsLive) {
+                    throw new RuntimeException(self::ALREADY_IN_ROOM_MESSAGE);
                 }
 
                 $isOpenForNewTeam = in_array(
@@ -286,7 +308,7 @@ class GameSessionService
                     true
                 );
                 $isOpenForExistingTeamMember = $session->status === GameSession::STATUS_PLAYING
-                    && in_array($teamParticipation?->status, ['started', 'completed'], true);
+                    && in_array($teamParticipation?->status, ['started', 'completed', 'abandoned'], true);
 
                 if (! $isOpenForNewTeam && ! $isOpenForExistingTeamMember) {
                     throw new RuntimeException('Esta sala ya no acepta jugadores.');
@@ -310,12 +332,24 @@ class GameSessionService
                 } elseif ($teamParticipation->status === 'abandoned') {
                     $this->ensureSeatAvailable($session);
 
-                    $teamParticipation->update([
-                        'status' => 'waiting',
-                        'completed_at' => null,
-                        'elapsed_seconds' => null,
-                        'score' => 0,
-                    ]);
+                    if ($session->status === GameSession::STATUS_PLAYING) {
+                        // El equipo regresó a mitad de partida: reactiva como
+                        // started para entrar en la rotación y responder
+                        // (el gate de respuesta exige started).
+                        $teamParticipation->status = 'started';
+                        $teamParticipation->started_at = now();
+                        $teamParticipation->completed_at = null;
+                        $teamParticipation->elapsed_seconds = null;
+                        $teamParticipation->score = 0;
+                        $teamParticipation->save();
+                    } else {
+                        $teamParticipation->update([
+                            'status' => 'waiting',
+                            'completed_at' => null,
+                            'elapsed_seconds' => null,
+                            'score' => 0,
+                        ]);
+                    }
                 }
 
                 if ($isNewTeamSeat || $teamParticipation->wasChanged('status')) {
@@ -347,12 +381,54 @@ class GameSessionService
                 return $teamParticipation;
             }
 
-            if (! in_array($session->status, [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING], true)) {
+            $participation = $session->participations()
+                ->where('student_id', $student->id)
+                ->orderByDesc('id')
+                ->first();
+
+            $isLiveParticipation = $participation !== null
+                && in_array($participation->status, ['waiting', 'started'], true)
+                && (
+                    $participation->status === 'waiting'
+                    || $participation->started_at?->gt(now()->subSeconds(self::PRESENCE_TIMEOUT_SECONDS))
+                );
+
+            if ($isLiveParticipation) {
+                throw new RuntimeException(self::ALREADY_IN_ROOM_MESSAGE);
+            }
+
+            $isOpenForRejoin = in_array($session->status, [GameSession::STATUS_WAITING, GameSession::STATUS_STARTING], true)
+                || ($session->status === GameSession::STATUS_PLAYING && $participation !== null);
+
+            if (! $isOpenForRejoin) {
                 throw new RuntimeException('Esta sala ya no acepta jugadores.');
             }
 
-            if ($this->isParticipant($session, $student)) {
-                throw new RuntimeException('Ya estás en esta sala.');
+            if ($participation !== null) {
+                if ($session->status === GameSession::STATUS_PLAYING) {
+                    // Reingreso a mitad de partida: reactiva como started con
+                    // fecha reciente para que pueda seguir jugando (el gate de
+                    // respuesta exige started).
+                    $participation->status = 'started';
+                    $participation->started_at = now();
+                    $participation->completed_at = null;
+                    $participation->elapsed_seconds = null;
+                    $participation->score = 0;
+                    $participation->save();
+
+                    return $participation;
+                }
+
+                // Reingreso a la sala de espera: la participación previa quedó
+                // abandonada o expirada y se reactiva como waiting.
+                $participation->update([
+                    'status' => 'waiting',
+                    'completed_at' => null,
+                    'elapsed_seconds' => null,
+                    'score' => 0,
+                ]);
+
+                return $participation;
             }
 
             $this->ensureSeatAvailable($session);
@@ -695,12 +771,20 @@ class GameSessionService
 
             $startedAt = now();
 
+            $startedParticipationIds = [];
+
             foreach ($this->players($session) as $participation) {
                 $participation = Participation::query()->whereKey($participation->id)->lockForUpdate()->firstOrFail();
                 $participation->status = 'started';
                 $participation->started_at = $startedAt;
                 $participation->save();
+                $startedParticipationIds[] = $participation->id;
             }
+
+            GameSessionPresence::query()
+                ->whereIn('participation_id', $startedParticipationIds)
+                ->where('status', GameSessionPresence::STATUS_ACTIVE)
+                ->update(['joined_at' => now()]);
 
             $first = $session->participations()
                 ->where('status', 'started')
@@ -1305,8 +1389,10 @@ class GameSessionService
                 if ($top->count() === 1) {
                     $winner = $top->first();
                     $resultType = GameSession::RESULT_WINNER;
-                } elseif ($session->activity->mode === 'individual'
-                    && $top->every(fn (Participation $p) => $p->elapsed_seconds !== null)) {
+                } else {
+                    // Empate en la mayor puntuación: gana quien llegó primero
+                    // (menor tiempo transcurrido). Si persiste el empate, es un
+                    // empate.
                     $fastestTime = $top->min('elapsed_seconds');
                     $fastest = $top->filter(
                         fn (Participation $p) => (int) $p->elapsed_seconds === (int) $fastestTime
@@ -1318,8 +1404,6 @@ class GameSessionService
                     } else {
                         $resultType = GameSession::RESULT_DRAW;
                     }
-                } else {
-                    $resultType = GameSession::RESULT_DRAW;
                 }
             }
 

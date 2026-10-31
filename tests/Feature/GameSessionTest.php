@@ -352,7 +352,7 @@ class GameSessionTest extends TestCase
         ]);
     }
 
-    public function test_duplicate_join_is_rejected(): void
+    public function test_duplicate_join_redirects_to_the_room(): void
     {
         ['s2' => $s2, 'session' => $session] = $this->setupRoom();
 
@@ -365,7 +365,14 @@ class GameSessionTest extends TestCase
             ->post(route('student.game-sessions.join'), [
                 'code' => $session->code,
             ])
-            ->assertSessionHas('error', 'Ya estás en esta sala.');
+            ->assertRedirect(route('student.game-sessions.show', $session->id))
+            ->assertSessionHas('success', 'Ya estás en esta sala.')
+            ->assertSessionMissing('error');
+
+        $this->assertSame(1, $session->participations()
+            ->where('student_id', $s2->id)
+            ->whereIn('status', ['waiting', 'started'])
+            ->count());
     }
 
     public function test_full_room_rejects_new_player(): void
@@ -435,7 +442,9 @@ class GameSessionTest extends TestCase
 
         $this->actingAs($secondMember)
             ->post(route('student.game-sessions.join'), ['code' => $session->code])
-            ->assertSessionHas('error', 'Ya estás en esta sala.');
+            ->assertRedirect(route('student.game-sessions.show', $session->id))
+            ->assertSessionHas('success', 'Ya estás en esta sala.')
+            ->assertSessionMissing('error');
     }
 
     public function test_teammate_can_join_a_started_team_participation_and_rejoin_after_disconnect(): void
@@ -504,6 +513,151 @@ class GameSessionTest extends TestCase
 
         $this->assertSame(GameSession::STATUS_FINISHED, $session->fresh()->status);
         $this->assertSame('abandoned', $teamParticipation->fresh()->status);
+    }
+
+    public function test_individual_player_who_closes_the_window_rejoins_by_code_without_wait(): void
+    {
+        ['teacher' => $teacher, 's1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+
+        $this->actingAs($s2)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id));
+
+        // La participación de s1 sigue viva (started con fecha reciente),
+        // igual que cuando cierra la pestaña y regresa de inmediato.
+        $participation = Participation::where('game_session_id', $session->id)
+            ->where('student_id', $s1->id)
+            ->firstOrFail();
+        $this->assertSame('started', $participation->status);
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id))
+            ->assertSessionHas('success', 'Ya estás en esta sala.')
+            ->assertSessionMissing('error');
+
+        $this->assertSame('started', $participation->fresh()->status);
+        $this->assertSame(GameSession::STATUS_PLAYING, $session->fresh()->status);
+    }
+
+    public function test_team_member_who_closes_the_window_rejoins_by_code_without_wait(): void
+    {
+        $teacher = $this->teacher();
+        $firstMember = $this->student('quick-return-member-1@example.com');
+        $secondMember = $this->student('quick-return-member-2@example.com');
+        $opponent = $this->student('quick-return-opponent@example.com');
+        $class = $this->createClass($teacher);
+
+        foreach ([$firstMember, $secondMember, $opponent] as $student) {
+            $this->enroll($class, $student);
+        }
+
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $firstTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Uno']);
+        $opponentTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Dos']);
+        TeamMember::create(['team_id' => $firstTeam->id, 'student_id' => $firstMember->id]);
+        TeamMember::create(['team_id' => $firstTeam->id, 'student_id' => $secondMember->id]);
+        TeamMember::create(['team_id' => $opponentTeam->id, 'student_id' => $opponent->id]);
+        $session = $this->createRoom($teacher, $activity, 2);
+
+        foreach ([$firstMember, $opponent] as $student) {
+            $this->actingAs($student)
+                ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+        }
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id))
+            ->assertRedirect()
+            ->assertSessionMissing('error');
+
+        $this->actingAs($secondMember)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+
+        $presence = GameSessionPresence::query()
+            ->where('game_session_id', $session->id)
+            ->where('student_id', $secondMember->id)
+            ->firstOrFail();
+        $this->assertSame(GameSessionPresence::STATUS_ACTIVE, $presence->status);
+
+        // La presencia sigue viva: regresa enseguida tras cerrar la ventana.
+        $this->actingAs($secondMember)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id))
+            ->assertSessionHas('success', 'Ya estás en esta sala.')
+            ->assertSessionMissing('error');
+
+        $this->assertSame(GameSessionPresence::STATUS_ACTIVE, $presence->fresh()->status);
+        $this->assertSame(GameSession::STATUS_PLAYING, $session->fresh()->status);
+    }
+
+    public function test_team_with_a_single_member_can_rejoin_after_leaving_a_started_match(): void
+    {
+        $teacher = $this->teacher();
+        $member = $this->student('solo-team-member@example.com');
+        $memberB = $this->student('solo-team-opponent-b@example.com');
+        $memberC = $this->student('solo-team-opponent-c@example.com');
+        $class = $this->createClass($teacher);
+
+        foreach ([$member, $memberB, $memberC] as $student) {
+            $this->enroll($class, $student);
+        }
+
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $team = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Uno']);
+        $teamB = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Dos']);
+        $teamC = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Tres']);
+        TeamMember::create(['team_id' => $team->id, 'student_id' => $member->id]);
+        TeamMember::create(['team_id' => $teamB->id, 'student_id' => $memberB->id]);
+        TeamMember::create(['team_id' => $teamC->id, 'student_id' => $memberC->id]);
+        $session = $this->createRoom($teacher, $activity, 3);
+
+        foreach ([$member, $memberB, $memberC] as $student) {
+            $this->actingAs($student)
+                ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+        }
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id))
+            ->assertRedirect()
+            ->assertSessionMissing('error');
+
+        // El único integrante del equipo se sale con la partida en curso.
+        $this->actingAs($member)
+            ->post(route('student.game-sessions.leave', $session->id))
+            ->assertRedirect();
+
+        $teamParticipation = Participation::where('game_session_id', $session->id)
+            ->where('team_id', $team->id)
+            ->firstOrFail();
+        $this->assertSame('abandoned', $teamParticipation->status);
+        $this->assertSame(GameSession::STATUS_PLAYING, $session->fresh()->status);
+
+        // Reingresa con el código: la sala vuelve a aceptar a su equipo.
+        $this->actingAs($member)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id))
+            ->assertSessionMissing('error');
+
+        $rejoined = $teamParticipation->fresh();
+        $this->assertSame('started', $rejoined->status);
+        $this->assertNotNull($rejoined->started_at);
+        $this->assertSame(0, $rejoined->score);
+
+        $this->assertSame(
+            GameSessionPresence::STATUS_ACTIVE,
+            GameSessionPresence::query()
+                ->where('game_session_id', $session->id)
+                ->where('student_id', $member->id)
+                ->whereNull('left_at')
+                ->latest('id')
+                ->value('status')
+        );
+        $this->assertSame(GameSession::STATUS_PLAYING, $session->fresh()->status);
     }
 
     public function test_invalid_code_is_rejected(): void
@@ -768,5 +922,168 @@ class GameSessionTest extends TestCase
         $this->assertSame($activity->id, $session->activity->id);
         $this->assertSame($session->id, $activity->gameSessions()->first()->id);
         $this->assertTrue($activity->gameSessions->contains($session->id));
+    }
+
+    public function test_stale_team_member_presence_allows_rejoin_after_disconnect(): void
+    {
+        $teacher = $this->teacher();
+        $firstMember = $this->student('stale-presence-member-1@example.com');
+        $secondMember = $this->student('stale-presence-member-2@example.com');
+        $opponent = $this->student('stale-presence-opponent@example.com');
+        $class = $this->createClass($teacher);
+
+        foreach ([$firstMember, $secondMember, $opponent] as $student) {
+            $this->enroll($class, $student);
+        }
+
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $firstTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Uno']);
+        $opponentTeam = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Dos']);
+        TeamMember::create(['team_id' => $firstTeam->id, 'student_id' => $firstMember->id]);
+        TeamMember::create(['team_id' => $firstTeam->id, 'student_id' => $secondMember->id]);
+        TeamMember::create(['team_id' => $opponentTeam->id, 'student_id' => $opponent->id]);
+        $session = $this->createRoom($teacher, $activity, 2);
+
+        foreach ([$firstMember, $opponent] as $student) {
+            $this->actingAs($student)
+                ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+        }
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id))
+            ->assertRedirect();
+
+        $teamParticipation = $session->participations()->where('team_id', $firstTeam->id)->firstOrFail();
+
+        $this->actingAs($secondMember)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id));
+
+        $presence = GameSessionPresence::query()
+            ->where('game_session_id', $session->id)
+            ->where('student_id', $firstMember->id)
+            ->firstOrFail();
+
+        // Simula una desconexión abrupta: la presencia sigue activa pero con
+        // una fecha de entrada antigua.
+        $presence->update([
+            'joined_at' => now()->subHours(2),
+        ]);
+
+        // Simula una partida larga: la presencia del equipo rival también es
+        // antigua aunque el jugador sigue jugando activamente; el reingreso
+        // no debe barrerlo de la sala.
+        $opponentPresence = GameSessionPresence::query()
+            ->where('game_session_id', $session->id)
+            ->where('student_id', $opponent->id)
+            ->firstOrFail();
+
+        $opponentPresence->update([
+            'joined_at' => now()->subHours(2),
+        ]);
+
+        // El reingreso se resuelve con la expiración lazy de la propia
+        // presencia: no se espera al job y no se expulsa a nadie más.
+        $this->actingAs($firstMember)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id));
+
+        $this->assertSame(GameSessionPresence::STATUS_ACTIVE, $presence->fresh()->status);
+        $this->assertSame($teamParticipation->id, $presence->fresh()->participation_id);
+
+        $this->assertSame(
+            GameSessionPresence::STATUS_ACTIVE,
+            $opponentPresence->fresh()->status
+        );
+
+        // Tras el reingreso el participante debe poder consultar el estado
+        // sin recibir un error de autorización.
+        $this->actingAs($firstMember)
+            ->get(route('student.game-sessions.state', $session->id))
+            ->assertOk();
+    }
+
+    public function test_stale_presence_in_waiting_session_allows_rejoin_after_disconnect(): void
+    {
+        $teacher = $this->teacher();
+        $firstMember = $this->student('stale-waiting-member-1@example.com');
+        $secondMember = $this->student('stale-waiting-member-2@example.com');
+        $class = $this->createClass($teacher);
+
+        foreach ([$firstMember, $secondMember] as $student) {
+            $this->enroll($class, $student);
+        }
+
+        $activity = $this->createActivity($class, $teacher, ['mode' => 'team']);
+        $team = Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Uno']);
+        TeamMember::create(['team_id' => $team->id, 'student_id' => $firstMember->id]);
+        TeamMember::create(['team_id' => $team->id, 'student_id' => $secondMember->id]);
+        $session = $this->createRoom($teacher, $activity, 2);
+
+        foreach ([$firstMember, $secondMember] as $student) {
+            $this->actingAs($student)
+                ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+        }
+
+        $presence = GameSessionPresence::query()
+            ->where('game_session_id', $session->id)
+            ->where('student_id', $firstMember->id)
+            ->firstOrFail();
+
+        $presence->update([
+            'joined_at' => now()->subHours(2),
+        ]);
+
+        $this->actingAs($firstMember)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id));
+
+        $this->assertSame(GameSessionPresence::STATUS_ACTIVE, $presence->fresh()->status);
+    }
+
+    public function test_individual_participant_can_rejoin_after_abrupt_disconnect(): void
+    {
+        ['teacher' => $teacher, 's1' => $s1, 's2' => $s2, 'session' => $session] = $this->setupRoom();
+
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+
+        $this->actingAs($s2)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id));
+
+        $session->refresh();
+
+        $participation = Participation::where('game_session_id', $session->id)
+            ->where('student_id', $s1->id)
+            ->firstOrFail();
+
+        // Simula una desconexión abrupta: la participación sigue "started"
+        // pero con una fecha de inicio muy antigua.
+        $participation->started_at = now()->subMinutes(5);
+        $participation->save();
+
+        // El reingreso se resuelve como started: no se espera al job, no
+        // toca al resto de jugadores y puede volver a responder.
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id));
+
+        $rejoined = Participation::where('game_session_id', $session->id)
+            ->where('student_id', $s1->id)
+            ->firstOrFail();
+
+        $this->assertSame('started', $rejoined->status);
+        $this->assertNotNull($rejoined->started_at);
+        $this->assertTrue($rejoined->started_at?->gt(now()->subSeconds(GameSessionService::PRESENCE_TIMEOUT_SECONDS)));
+
+        $otherParticipation = Participation::where('game_session_id', $session->id)
+            ->where('student_id', $s2->id)
+            ->firstOrFail();
+
+        $this->assertSame('started', $otherParticipation->fresh()->status);
+        $this->assertSame(GameSession::STATUS_PLAYING, $session->fresh()->status);
     }
 }

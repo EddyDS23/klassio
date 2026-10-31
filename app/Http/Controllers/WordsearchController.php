@@ -119,8 +119,6 @@ class WordsearchController extends Controller
     {
         $session = GameSession::findOrFail($sessionId);
 
-        Gate::authorize('play', $session);
-
         $activity = $session->activity;
         $wordsearch = $activity->wordsearch;
 
@@ -138,6 +136,8 @@ class WordsearchController extends Controller
         if ($session->status !== GameSession::STATUS_PLAYING) {
             return redirect()->route('student.game-sessions.result', $session->id);
         }
+
+        Gate::authorize('play', $session);
 
         $found = $this->wordSearchService->foundWords(
             $wordsearch,
