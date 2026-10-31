@@ -15,10 +15,14 @@ class ProcessGameSessionTimeouts extends Command
     public function handle(GameSessionService $gameSessionService): int
     {
         GameSession::query()
-            ->where('status', GameSession::STATUS_PLAYING)
+            ->whereIn('status', [
+                GameSession::STATUS_PLAYING,
+                GameSession::STATUS_WAITING,
+            ])
             ->select('id')
             ->chunkById(100, function ($sessions) use ($gameSessionService): void {
                 foreach ($sessions as $session) {
+                    $gameSessionService->expireStalePresences($session);
                     $gameSessionService->closeRoundIfDue($session);
                 }
             });
