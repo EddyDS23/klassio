@@ -196,6 +196,52 @@
                 </div>
 
 
+                {{-- Unidades --}}
+                <div>
+
+                    <label class="mb-2 block text-sm font-black text-slate-700">
+                        Unidades de la clase
+                    </label>
+
+                    <div id="units-rows" class="space-y-3">
+                        @forelse (old('units', []) as $oldUnit)
+                            <div class="unit-row flex items-center gap-3">
+                                <span
+                                    class="w-28 shrink-0 text-xs font-black text-emerald-700"
+                                >Unidad {{ $loop->iteration }}</span>
+                                <input
+                                    type="text"
+                                    name="units[][name]"
+                                    value="{{ collect($oldUnit)->get('name') }}"
+                                    maxlength="150"
+                                    placeholder="Nombre de la unidad (opcional)"
+                                    class="flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                                >
+                                <button
+                                    type="button"
+                                    data-remove-unit
+                                    class="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                                >✕</button>
+                            </div>
+                        @empty
+                        @endforelse
+                    </div>
+
+                    <button
+                        type="button"
+                        id="add-unit"
+                        class="mt-3 rounded-xl border border-dashed border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+                    >
+                        + Agregar unidad
+                    </button>
+
+                    <p class="mt-2 text-xs font-medium text-slate-500">
+                        Cada fila se guarda como una unidad, en el orden en que aparece. El nombre es opcional: si lo dejas en blanco la unidad se mostrará como «Unidad N». Máximo 8.
+                    </p>
+
+                </div>
+
+
                 {{-- Separador --}}
                 <div class="border-t border-slate-200 pt-6">
 
@@ -235,6 +281,64 @@
         </div>
 
     </main>
+
+    <script>
+        const unitsRows = document.getElementById('units-rows');
+        const addUnit = document.getElementById('add-unit');
+        const MAX_UNITS = 8;
+
+        function unitRow() {
+            const row = document.createElement('div');
+            row.className = 'unit-row flex items-center gap-3';
+
+            const label = document.createElement('span');
+            label.className = 'w-28 shrink-0 text-xs font-black text-emerald-700';
+            label.textContent = 'Unidad';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'units[][name]';
+            input.maxLength = 150;
+            input.placeholder = 'Nombre de la unidad (opcional)';
+            input.className = 'flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100';
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.setAttribute('data-remove-unit', '');
+            remove.className = 'shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600';
+            remove.textContent = '✕';
+
+            row.append(label, input, remove);
+
+            return row;
+        }
+
+        function renumberUnits() {
+            unitsRows.querySelectorAll('.unit-row').forEach((row, index) => {
+                row.querySelector('span').textContent = 'Unidad ' + (index + 1);
+            });
+
+            addUnit.disabled = unitsRows.querySelectorAll('.unit-row').length >= MAX_UNITS;
+        }
+
+        addUnit?.addEventListener('click', () => {
+            if (unitsRows.querySelectorAll('.unit-row').length >= MAX_UNITS) return;
+
+            unitsRows.appendChild(unitRow());
+            renumberUnits();
+        });
+
+        unitsRows?.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-remove-unit]');
+
+            if (!button) return;
+
+            button.closest('.unit-row').remove();
+            renumberUnits();
+        });
+
+        renumberUnits();
+    </script>
 
 </body>
 

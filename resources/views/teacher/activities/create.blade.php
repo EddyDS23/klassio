@@ -325,6 +325,32 @@
                                    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
                         </div>
 
+                        <!-- UNIDAD -->
+                        <div>
+                            <label for="unit_id"
+                                   class="mb-2 block text-sm font-bold text-slate-700">
+                                Unidad
+                            </label>
+
+                            <select id="unit_id"
+                                    name="unit_id"
+                                    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+                                <option value="">Sin unidad</option>
+                                @forelse ($units as $unit)
+                                    <option value="{{ $unit->id }}"
+                                        @selected((string) old('unit_id') === (string) $unit->id)>
+                                        Unidad {{ $unit->number }}{{ filled($unit->name) ? ' — '.$unit->name : '' }}
+                                    </option>
+                                @empty
+                                    <option value="" disabled>Esta clase no tiene unidades registradas</option>
+                                @endforelse
+                            </select>
+
+                            <p class="mt-2 text-xs font-medium text-slate-500">
+                                Puedes organizar la actividad en una unidad de la clase. Es opcional.
+                            </p>
+                        </div>
+
                     </div>
 
                 </div>

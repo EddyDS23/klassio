@@ -335,12 +335,12 @@ class GameSessionService
                     if ($session->status === GameSession::STATUS_PLAYING) {
                         // El equipo regresó a mitad de partida: reactiva como
                         // started para entrar en la rotación y responder
-                        // (el gate de respuesta exige started).
+                        // (el gate de respuesta exige started). Conserva el
+                        // score derivado de sus respuestas previas.
                         $teamParticipation->status = 'started';
                         $teamParticipation->started_at = now();
                         $teamParticipation->completed_at = null;
                         $teamParticipation->elapsed_seconds = null;
-                        $teamParticipation->score = 0;
                         $teamParticipation->save();
                     } else {
                         $teamParticipation->update([
@@ -408,12 +408,13 @@ class GameSessionService
                 if ($session->status === GameSession::STATUS_PLAYING) {
                     // Reingreso a mitad de partida: reactiva como started con
                     // fecha reciente para que pueda seguir jugando (el gate de
-                    // respuesta exige started).
+                    // respuesta exige started). El score no se resetea: se
+                    // conserva el progreso (respuestas previas) y la
+                    // puntuación derivada de ellas.
                     $participation->status = 'started';
                     $participation->started_at = now();
                     $participation->completed_at = null;
                     $participation->elapsed_seconds = null;
-                    $participation->score = 0;
                     $participation->save();
 
                     return $participation;
@@ -1497,8 +1498,9 @@ class GameSessionService
     }
 
     /**
-     * Returns the caller's team's solved items without exposing another team's
-     * answers through the shared session state endpoint.
+     * Returns the caller's own progress (answers and score) without
+     * exposing another player's answers through the shared session state
+     * endpoint. Works for team and individual participations.
      *
      * @return array{participation_id:int,status:string,score:int,completed_item_ids:list<int>,incorrect_item_ids:list<int>}
      */

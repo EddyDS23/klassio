@@ -144,7 +144,9 @@ class GameSessionController extends Controller
         $state['current_responder_name'] = $myPlayerState['current_responder_name'] ?? null;
         $state['answer_correct_current'] = $myPlayerState['answer_correct_current'] ?? null;
 
-        if ($participation?->team_id !== null) {
+        if ($participation !== null) {
+            // Progreso propio de quien consulta: sirve para reingresos
+            // (equipos e individual) y restaurar tableros al recargar.
             $state['team_progress'] = $this->gameSessionService->teamProgress($participation);
         }
 

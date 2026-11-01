@@ -20,7 +20,7 @@ class ClassController extends Controller
         $classes = $this->classService->getClassesTeacher();
 
         return view('teacher.classes.index', [
-            'classes' => $classes
+            'classes' => $classes,
         ]);
     }
 
@@ -31,7 +31,7 @@ class ClassController extends Controller
         Gate::authorize('view', $class);
 
         return view('teacher.classes.show', [
-            'class' => $class
+            'class' => $class,
         ]);
     }
 
@@ -44,7 +44,10 @@ class ClassController extends Controller
     {
         Gate::authorize('create', SchoolClass::class);
 
-        $this->classService->create($request->validated());
+        $this->classService->create(
+            $request->safe()->except(['units']),
+            $request->validatedUnits()
+        );
 
         return redirect()
             ->route('teacher.classes.index')
@@ -58,7 +61,7 @@ class ClassController extends Controller
         Gate::authorize('update', $class);
 
         return view('teacher.classes.edit', [
-            'class' => $class
+            'class' => $class,
         ]);
     }
 
@@ -127,10 +130,9 @@ class ClassController extends Controller
 
         return view('teacher.classes.students', [
             'class' => $class,
-            'students' => $students
+            'students' => $students,
         ]);
     }
-
 
     public function join(JoinClassRequest $request)
     {
@@ -162,7 +164,7 @@ class ClassController extends Controller
         $classes = $this->classService->getClassesStudent();
 
         return view('student.classes.index', [
-            'classes' => $classes
+            'classes' => $classes,
         ]);
     }
 
@@ -176,7 +178,7 @@ class ClassController extends Controller
 
         return view('student.classes.students', [
             'class' => $class,
-            'students' => $students
+            'students' => $students,
         ]);
     }
 

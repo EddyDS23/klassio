@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sopa de Letras — Multijugador</title>
+    @if ((bool) config('broadcasting.connections.reverb.enabled', false))
+        <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+        <script>
+            window.Echo = new Echo({
+                broadcaster: 'reverb',
+                key: @json(config('broadcasting.connections.reverb.key')),
+                wsHost: @json(config('broadcasting.connections.reverb.client_host', 'localhost')),
+                wsPort: @json(config('broadcasting.connections.reverb.options.port', 8080)),
+                forceTLS: @json(config('broadcasting.connections.reverb.options.scheme', 'http') === 'https'),
+                enabledTransports: ['ws', 'wss']
+            });
+        </script>
+    @endif
     <style>
         :root {
             --ws-ink: #183b3a;
@@ -594,8 +608,58 @@
             }
         }
 
-        pollState();
-        setInterval(pollState, 2000);
+        const reverbEnabled = @json((bool) config('broadcasting.connections.reverb.enabled', false));
+        if (window.Echo && reverbEnabled) {
+            window.Echo.private('game-session.{{ $session->id }}')
+                .listen('.ScoreUpdated', (e) => pollState())
+                .listen('.GameFinished', (e) => pollState())
+                .listen('.PlayerJoined', (e) => pollState())
+                .listen('.PlayerLeft', (e) => pollState());
+        }
+
+        function setupStateSync(refreshFn) {
+            let fallbackPolling = null;
+
+            const startFallback = () => {
+                if (fallbackPolling !== null) return;
+
+                refreshFn();
+                fallbackPolling = window.setInterval(refreshFn, 2000);
+            };
+
+            const stopFallback = () => {
+                if (fallbackPolling === null) return;
+
+                window.clearInterval(fallbackPolling);
+                fallbackPolling = null;
+            };
+
+            const connection = window.Echo?.connector?.pusher?.connection;
+
+            if (!connection) {
+                startFallback();
+                return;
+            }
+
+            connection.bind('state_change', ({
+                current
+            }) => {
+                if (current === 'connected') {
+                    stopFallback();
+                    refreshFn();
+                } else {
+                    startFallback();
+                }
+            });
+
+            if (connection.state === 'connected') {
+                refreshFn();
+            } else {
+                startFallback();
+            }
+        }
+
+        setupStateSync(pollState);
     </script>
 </body>
 

@@ -83,7 +83,7 @@ class StoreActivityRequest extends FormRequest
             'unit_id' => [
                 'nullable',
                 'integer',
-                'exists:units,id',
+                Rule::exists('units', 'id')->where('class_id', (int) $this->route('id')),
             ],
         ];
     }

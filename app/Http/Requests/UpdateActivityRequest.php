@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Activity;
+use App\Models\Unit;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateActivityRequest extends FormRequest
 {
@@ -85,6 +88,39 @@ class UpdateActivityRequest extends FormRequest
                 'integer',
                 'exists:units,id',
             ],
+        ];
+    }
+
+    /**
+     * La unidad del update se valida contra la clase de la actividad que
+     * llega en la ruta; si la actividad no existe, el 404 lo resuelve el
+     * controlador.
+     *
+     * @return list<callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $unitId = $this->integer('unit_id');
+
+                if ($unitId === 0 || $validator->errors()->has('unit_id')) {
+                    return;
+                }
+
+                $activity = Activity::find($this->route('id'));
+
+                if ($activity === null) {
+                    return;
+                }
+
+                if (Unit::whereKey($unitId)->value('class_id') !== $activity->class_id) {
+                    $validator->errors()->add(
+                        'unit_id',
+                        'La unidad seleccionada no pertenece a la clase de la actividad.'
+                    );
+                }
+            },
         ];
     }
 }

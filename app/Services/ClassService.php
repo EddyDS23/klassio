@@ -5,13 +5,13 @@ namespace App\Services;
 use App\Models\Enrollment;
 use App\Models\SchoolClass;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ClassService
 {
-
     public function get(int $id)
     {
 
@@ -34,7 +34,7 @@ class ClassService
             ->paginate(15);
     }
 
-    public function create(array $data): void
+    public function create(array $data, array $units = []): void
     {
 
         /** @var User $user */
@@ -46,9 +46,28 @@ class ClassService
         $data['code'] = $code;
         $data['teacher_id'] = $user->id;
 
-        SchoolClass::create($data);
-    }
+        DB::transaction(function () use ($data, $units): void {
+            $class = SchoolClass::create($data);
 
+            // Las filas sin nombre se descartan: el profesor las deja
+            // vacías al agregar y quitar unidades en el formulario.
+            $number = 1;
+
+            foreach (array_values($units) as $unit) {
+                $name = $unit['name'] ?? null;
+                $name = is_string($name) && trim($name) !== '' ? trim($name) : null;
+
+                if ($name === null) {
+                    continue;
+                }
+
+                $class->units()->create([
+                    'number' => $number++,
+                    'name' => $name,
+                ]);
+            }
+        });
+    }
 
     public function update(array $data, int $id): void
     {
@@ -77,7 +96,7 @@ class ClassService
         } while (SchoolClass::where('code', $code)->exists());
 
         $class->update([
-            'code' => $code
+            'code' => $code,
         ]);
     }
 
@@ -96,15 +115,14 @@ class ClassService
             ->where('status', 'active')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             abort(404, 'El alumno no pertenece a esta clase');
         }
 
         $enrollment->update([
-            'status' => 'removed'
+            'status' => 'removed',
         ]);
     }
-
 
     /**
      * @return array{class: SchoolClass, alreadyJoined: bool}
@@ -114,7 +132,7 @@ class ClassService
 
         $class = SchoolClass::where('code', $code)->first();
 
-        if (!$class) {
+        if (! $class) {
             abort(404, 'Clase no existe');
         }
 
@@ -135,7 +153,7 @@ class ClassService
 
             if ($enrollment->status === 'removed') {
                 $enrollment->update([
-                    'status' => 'active'
+                    'status' => 'active',
                 ]);
 
                 return ['class' => $class, 'alreadyJoined' => false];
@@ -158,7 +176,7 @@ class ClassService
         return SchoolClass::whereHas('enrollments', function ($query) use ($user) {
             $query->where('student_id', $user->id)
                 ->where('status', 'active');
-        })->where('status','active')->paginate(15);
+        })->where('status', 'active')->paginate(15);
     }
 
     public function getClassmates(SchoolClass $class): LengthAwarePaginator

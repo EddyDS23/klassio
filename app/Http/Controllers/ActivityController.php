@@ -41,7 +41,10 @@ class ActivityController extends Controller
         $class = SchoolClass::findOrFail($id);
         Gate::authorize('create', [Activity::class, $class]);
 
-        return view('teacher.activities.create', compact('class'));
+        return view('teacher.activities.create', [
+            'class' => $class,
+            'units' => $class->units,
+        ]);
     }
 
     public function teacherStore(StoreActivityRequest $request, int $id): RedirectResponse
@@ -92,7 +95,10 @@ class ActivityController extends Controller
         $activity = Activity::findOrFail($id);
         Gate::authorize('update', $activity);
 
-        return view('teacher.activities.edit', compact('activity'));
+        return view('teacher.activities.edit', [
+            'activity' => $activity,
+            'units' => $activity->schoolClass->units,
+        ]);
     }
 
     public function teacherUpdate(UpdateActivityRequest $request, int $id): RedirectResponse

@@ -37,4 +37,9 @@ class SchoolClass extends Model
     {
         return $this->hasMany(Activity::class, 'class_id');
     }
+
+    public function units(): HasMany
+    {
+        return $this->hasMany(Unit::class, 'class_id')->orderBy('number');
+    }
 }
