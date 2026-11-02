@@ -6,6 +6,8 @@ use App\Support\PeriodResolver;
 use DateTimeInterface;
 use Illuminate\Console\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,6 +19,16 @@ class SchoolClass extends Model
     public $table = 'classes';
 
     public $timestamps = true;
+
+    #[Scope]
+    protected function periodOf(Builder $query, string $code): Builder
+    {
+        [$year, $half] = PeriodResolver::split($code) ?? [0, 1];
+
+        return $query
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $half === 1 ? '<=' : '>=', $half === 1 ? 6 : 7);
+    }
 
     public function period(?DateTimeInterface $date = null): string
     {

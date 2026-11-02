@@ -31,9 +31,13 @@ class ActivityController extends Controller
             $query->where('title', 'like', '%'.request('search').'%');
         }
 
-        $activities = $query->latest()->paginate(12)->withQueryString();
+        $activities = $query->with('unit')->latest()->paginate(12)->withQueryString();
 
-        return view('teacher.activities.index', compact('class', 'activities'));
+        return view('teacher.activities.index', [
+            'class' => $class,
+            'activities' => $activities,
+            'units' => $class->units,
+        ]);
     }
 
     public function teacherCreate(int $id): View
@@ -153,9 +157,13 @@ class ActivityController extends Controller
             $query->where('title', 'like', '%'.request('search').'%');
         }
 
-        $activities = $query->latest()->paginate(12)->withQueryString();
+        $activities = $query->with('unit')->latest()->paginate(12)->withQueryString();
 
-        return view('student.activities.index', compact('class', 'activities'));
+        return view('student.activities.index', [
+            'class' => $class,
+            'activities' => $activities,
+            'units' => $class->units,
+        ]);
     }
 
     public function studentShow(int $id): View

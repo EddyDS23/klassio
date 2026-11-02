@@ -26,12 +26,41 @@
         @if ($activities->isEmpty())
             <section class="card surface-card text-center"><div class="card-body p-5"><div class="display-3 mb-3">🎈</div><h2 class="h3 fw-bold">¡Todavía no hay actividades!</h2><p class="text-secondary mb-0 fs-5">Cuando tu maestro publique una, aparecerá aquí.</p></div></section>
         @else
-            <div class="row g-4">
-                @foreach ($activities as $activity)
-                    @php($icon = match($activity->type) { 'kahoot' => '⚡', 'crossword' => '🧩', 'word_search' => '🔎', 'matching' => '🔗', 'roulette' => '🎡', default => '🎯' })
-                    <div class="col-md-6 col-xl-4"><article class="card surface-card h-100"><div class="card-body p-4 d-flex flex-column"><div class="d-flex align-items-start justify-content-between gap-3 mb-3"><div class="activity-icon">{{ $icon }}</div><span class="badge rounded-pill text-bg-info">{{ $activity->mode === 'team' ? 'En equipo' : 'Individual' }}</span></div><h2 class="h4 fw-bold">{{ $activity->title }}</h2><p class="text-secondary flex-grow-1">{{ $activity->description ?: 'Un nuevo reto para poner a prueba lo que aprendiste.' }}</p><div class="d-flex flex-wrap gap-2 small text-secondary mb-4"><span class="badge text-bg-light">🏆 {{ $activity->max_score }} pts</span>@if ($activity->time_limit)<span class="badge text-bg-light">⏱ {{ $activity->time_limit }} s</span>@endif</div><a class="btn btn-klassio w-100 py-3 fs-5 fw-bold" href="{{ route('student.activities.show', $activity->id) }}">¡Jugar! 🎮</a></div></article></div>
-                @endforeach
-            </div>
+            @php
+                $pageActivities = $activities->getCollection();
+                $unitGroups = $units
+                    ->map(fn ($unit) => ['unit' => $unit, 'activities' => $pageActivities->where('unit_id', $unit->id)->values()])
+                    ->reject(fn ($group) => $group['activities']->isEmpty())
+                    ->values();
+                $unassigned = $pageActivities->filter(fn ($activity) => $activity->unit_id === null)->values();
+            @endphp
+
+            @forelse ($unitGroups as $group)
+                <details class="card surface-card mb-4" @if ($loop->first) open @endif>
+                    <summary class="d-flex align-items-center justify-content-between gap-3 px-4 py-3 user-select-none" style="cursor: pointer;">
+                        <span class="d-flex align-items-center gap-2 fw-bold text-primary text-uppercase" style="letter-spacing: .05em;">
+                            <span>📂</span>
+                            <span class="text-truncate">Unidad {{ $group['unit']->number }}{{ filled($group['unit']->name) ? ' — '.$group['unit']->name : '' }}</span>
+                        </span>
+                        <span class="badge rounded-pill text-bg-light">{{ $group['activities']->count() }} {{ $group['activities']->count() === 1 ? 'actividad' : 'actividades' }}</span>
+                    </summary>
+                    <div class="border-top p-3"><div class="row g-3">@each('partials.activity-card-student', $group['activities'], 'activity')</div></div>
+                </details>
+            @empty
+            @endforelse
+
+            @if ($unassigned->isNotEmpty())
+                <details class="card surface-card mb-4" @if ($unitGroups->isEmpty()) open @endif>
+                    <summary class="d-flex align-items-center justify-content-between gap-3 px-4 py-3 user-select-none" style="cursor: pointer;">
+                        <span class="d-flex align-items-center gap-2 fw-bold text-secondary text-uppercase" style="letter-spacing: .05em;">
+                            <span>🗂️</span>
+                            <span class="text-truncate">Sin unidad</span>
+                        </span>
+                        <span class="badge rounded-pill text-bg-light">{{ $unassigned->count() }} {{ $unassigned->count() === 1 ? 'actividad' : 'actividades' }}</span>
+                    </summary>
+                    <div class="border-top p-3"><div class="row g-3">@each('partials.activity-card-student', $unassigned, 'activity')</div></div>
+                </details>
+            @endif
         @endif
         @if ($activities->hasPages())
             <div class="mt-4 d-flex justify-content-center">{{ $activities->links() }}</div>

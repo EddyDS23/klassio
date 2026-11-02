@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\PeriodResolver;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 class PeriodResolverTest extends TestCase
@@ -49,5 +50,26 @@ class PeriodResolverTest extends TestCase
         ]);
 
         $this->assertSame(PeriodResolver::forDate($class->created_at), $class->period());
+    }
+
+    public function test_label_describes_the_period_in_spanish(): void
+    {
+        $this->assertSame('Primer semestre 2026 · Ene–Jun', PeriodResolver::label('2026-H1'));
+        $this->assertSame('Segundo semestre 2025 · Jul–Dic', PeriodResolver::label('2025-H2'));
+    }
+
+    public function test_label_rejects_invalid_codes(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        PeriodResolver::label('2026-H3');
+    }
+
+    public function test_split_translates_codes_to_year_and_half(): void
+    {
+        $this->assertSame([2026, 1], PeriodResolver::split('2026-H1'));
+        $this->assertSame([2025, 2], PeriodResolver::split('2025-H2'));
+        $this->assertNull(PeriodResolver::split('26-H1'));
+        $this->assertNull(PeriodResolver::split('invalid'));
     }
 }
