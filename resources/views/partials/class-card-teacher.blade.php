@@ -103,6 +103,14 @@
                             </a>
 
 
+                            <a href="{{ route('teacher.classes.grading', $class->id) }}"
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-black text-amber-700 transition hover:bg-amber-100">
+
+                                ⭐
+                                Calificaciones
+                            </a>
+
+
                             @if ($class->status === 'active')
                                 <a href="{{ route('teacher.classes.edit', $class->id) }}"
                                     class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700">

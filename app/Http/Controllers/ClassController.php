@@ -7,6 +7,7 @@ use App\Http\Requests\JoinClassRequest;
 use App\Http\Requests\ModifyClassRequest;
 use App\Models\SchoolClass;
 use App\Services\ClassService;
+use App\Services\GradingService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -18,7 +19,10 @@ class ClassController extends Controller
     /** Periodos por página en los listados agrupados. */
     private const PERIODS_PER_PAGE = 4;
 
-    public function __construct(public ClassService $classService) {}
+    public function __construct(
+        public ClassService $classService,
+        public GradingService $gradingService
+    ) {}
 
     public function index(Request $request): mixed
     {
@@ -74,6 +78,21 @@ class ClassController extends Controller
 
         return view('teacher.classes.show', [
             'class' => $class,
+        ]);
+    }
+
+    public function grading(int $id): mixed
+    {
+        $class = $this->classService->get($id);
+
+        Gate::authorize('view', $class);
+
+        $grading = $this->gradingService->forClass($class);
+
+        return view('teacher.classes.grading', [
+            'class' => $class,
+            'units' => $grading['units'],
+            'studentRows' => $grading['students'],
         ]);
     }
 
