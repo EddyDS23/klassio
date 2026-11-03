@@ -221,9 +221,4 @@ class PeriodsTest extends TestCase
             ->assertSee('Segundo semestre 2024')
             ->assertSee($oldest->name);
     }
-
-    public function test_teacher_index_keeps_period_filter_when_paginating(): void
-    {
-: (removed)
-    }
 }

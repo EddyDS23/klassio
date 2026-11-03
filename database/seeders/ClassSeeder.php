@@ -35,7 +35,7 @@ class ClassSeeder extends Seeder
 
         foreach (self::UNITS as $number => $name) {
             Unit::updateOrCreate(
-                ['class_id' => $class->id, 'number' => $number],
+                ['class_id' => $class->id, 'number' => $number + 1],
                 ['name' => $name]
             );
         }

@@ -245,37 +245,6 @@ class ClassService
             ->values();
     }
 
-    /**
-     * Periodos (código "AAAA-Hn") presentes en las clases visibles para el
-     * usuario, ordenados del más reciente al más antiguo.
-     *
-     * @return list<string>
-     */
-    public function availablePeriodsFor(User $user): array
-    {
-        return $this->groupClassesByPeriod($this->visibleClassesFor($user))
-            ->pluck('code')
-            ->all();
-    }
-
-    /**
-     * Clases visibles para el usuario: propias si es profesor, inscritas
-     * activas si es estudiante.
-     */
-    private function visibleClassesFor(User $user): Collection
-    {
-        $query = SchoolClass::query()->orderByDesc('created_at');
-
-        if ($user->role === 'teacher') {
-            return $query->where('teacher_id', $user->id)->get();
-        }
-
-        return $query->whereHas('enrollments', function ($query) use ($user) {
-            $query->where('student_id', $user->id)
-                ->where('status', 'active');
-        })->where('status', 'active')->get();
-    }
-
     public function getClassmates(SchoolClass $class): LengthAwarePaginator
     {
         return $class->enrollments()
