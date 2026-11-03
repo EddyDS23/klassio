@@ -79,7 +79,7 @@
 
                                 <label class="mb-2 block text-sm font-semibold" for="max_players">Máximo de jugadores</label>
                                 <select name="max_players" id="max_players" class="create-select w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-900 shadow-sm focus:border-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-100 mb-4">
-                                    @foreach ([2, 3, 4, 5, 6, 8] as $max)
+                                    @foreach ([2, 4, 6, 8, 12, 16, 24, 30, 40, 50] as $max)
                                         <option value="{{ $max }}" @selected($max === 4)>{{ $max }}</option>
                                     @endforeach
                                 </select>

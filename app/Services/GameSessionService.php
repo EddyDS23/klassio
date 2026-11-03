@@ -37,7 +37,7 @@ class GameSessionService
      */
     public const MIN_PLAYERS = 2;
 
-    public const MAX_PLAYERS = 16;
+    public const MAX_PLAYERS = 50;
 
     /**
      * Segundos sin presencia registrada antes de considerar que un

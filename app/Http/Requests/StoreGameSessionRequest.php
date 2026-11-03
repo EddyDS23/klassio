@@ -15,7 +15,7 @@ class StoreGameSessionRequest extends FormRequest
     {
         return [
             'activity_id' => ['required', 'integer', 'exists:activities,id'],
-            'max_players' => ['required', 'integer', 'min:2', 'max:16'],
+            'max_players' => ['required', 'integer', 'min:2', 'max:50'],
         ];
     }
 }

@@ -279,6 +279,44 @@ class GameSessionTest extends TestCase
         ]);
     }
 
+    public function test_teacher_can_create_a_room_with_up_to_50_players(): void
+    {
+        $teacher = $this->teacher();
+        $class = $this->createClass($teacher);
+        $activity = $this->createActivity($class, $teacher);
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.store'), [
+                'activity_id' => $activity->id,
+                'max_players' => 50,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('game_sessions', [
+            'activity_id' => $activity->id,
+            'max_players' => 50,
+        ]);
+    }
+
+    public function test_room_capacity_above_50_is_rejected(): void
+    {
+        $teacher = $this->teacher();
+        $class = $this->createClass($teacher);
+        $activity = $this->createActivity($class, $teacher);
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.store'), [
+                'activity_id' => $activity->id,
+                'max_players' => 60,
+            ])
+            ->assertSessionHasErrors('max_players');
+
+        $this->assertDatabaseMissing('game_sessions', [
+            'activity_id' => $activity->id,
+            'max_players' => 60,
+        ]);
+    }
+
     public function test_teacher_cannot_create_room_for_activity_of_another_teacher(): void
     {
         $owner = $this->teacher('owner@example.com');
