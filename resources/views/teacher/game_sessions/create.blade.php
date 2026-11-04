@@ -22,14 +22,25 @@
     <div class="page-shell session-create">
 
         <div class="mb-4">
-            <a href="{{ route('teacher.dashboard') }}" class="klassio-back-button">
-                <span aria-hidden="true">←</span> Volver al panel
-            </a>
+            @if ($selectedClass)
+                <a href="{{ route('teacher.classes.show', $selectedClass->id) }}" class="klassio-back-button">
+                    <span aria-hidden="true">←</span> Volver a {{ $selectedClass->name }}
+                </a>
+            @else
+                <a href="{{ route('teacher.dashboard') }}" class="klassio-back-button">
+                    <span aria-hidden="true">←</span> Volver al panel
+                </a>
+            @endif
         </div>
 
         <div class="page-hero">
-            <h1 class="font-bold mb-1">Crear sala multijugador</h1>
-            <p class="mb-0 opacity-75">Elige una actividad publicada y comparte el código con tus estudiantes.</p>
+            @if ($selectedClass)
+                <h1 class="font-bold mb-1">Crear sala · {{ $selectedClass->name }}</h1>
+                <p class="mb-0 opacity-75">Elige entre tus actividades publicadas de esta clase y comparte el código con tus estudiantes.</p>
+            @else
+                <h1 class="font-bold mb-1">Crear sala multijugador</h1>
+                <p class="mb-0 opacity-75">Elige una actividad publicada y comparte el código con tus estudiantes.</p>
+            @endif
         </div>
 
         @if (session('error'))
@@ -54,10 +65,37 @@
                         <h2 class="text-xl font-bold mb-2">Elige qué jugarán</h2>
                         <p class="text-slate-500 mb-4">La sala usará el juego y las reglas de la actividad que selecciones.</p>
 
+                        @unless ($selectedClass)
+                            @if ($classes->isNotEmpty())
+                                <div class="mb-4 flex flex-wrap items-center gap-2" data-class-filter>
+                                    <span class="text-xs font-black uppercase tracking-wide text-slate-400">Clase:</span>
+
+                                    <a href="{{ route('teacher.game-sessions.create') }}"
+                                        class="rounded-full px-3 py-1.5 text-xs font-black transition {{ $selectedClassId === null ? 'bg-violet-600 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:border-violet-300 hover:bg-violet-50' }}">
+                                        Todas
+                                    </a>
+
+                                    @foreach ($classes as $classItem)
+                                        <a href="{{ route('teacher.game-sessions.create', ['class_id' => $classItem->id]) }}"
+                                            class="rounded-full px-3 py-1.5 text-xs font-black transition {{ $selectedClassId === $classItem->id ? 'bg-violet-600 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:border-violet-300 hover:bg-violet-50' }}">
+                                            {{ $classItem->name }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        @endunless
+
                         @if ($activities->isEmpty())
-                            <div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-                                Aún no tienes actividades publicadas. Publica una actividad para crear una sala.
-                            </div>
+                            @if ($selectedClass)
+                                <div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                                    No tienes actividades publicadas en <strong>{{ $selectedClass->name }}</strong>.
+                                    Publica una actividad de esta clase para crear su sala.
+                                </div>
+                            @else
+                                <div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                                    Aún no tienes actividades publicadas. Publica una actividad para crear una sala.
+                                </div>
+                            @endif
 
                         @else
                             <form method="POST" action="{{ route('teacher.game-sessions.store') }}">
@@ -69,13 +107,15 @@
                                         <option value="{{ $activity->id }}"
                                             @selected($selectedActivityId === $activity->id)>
                                             {{ $activity->title }}
-                                            ({{ $activity->schoolClass?->name }}) · {{ match ($activity->type) {
+                                            @unless ($selectedClass)
+                                                ({{ $activity->schoolClass?->name }}) · {{ match ($activity->type) {
                                                 'crossword' => 'Crucigrama',
                                                 'kahoot' => 'Kahoot',
                                                 'word_search' => 'Sopa de letras',
                                                 'matching' => 'Relacionar',
                                                 default => 'Ruleta',
                                             } }}
+                                            @endunless
                                         </option>
                                     @endforeach
                                 </select>

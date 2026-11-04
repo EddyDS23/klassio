@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreGameSessionRequest;
 use App\Models\Activity;
 use App\Models\GameSession;
+use App\Models\SchoolClass;
 use App\Services\GameSessionService;
 use App\Services\ParticipationService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,16 +26,37 @@ class TeacherGameSessionController extends Controller
 
     /**
      * Formulario para crear una sala multijugador.
+     *
+     * Con ?class_id=X muestra solo las actividades publicadas de esa clase del
+     * profesor; sin filtro, todas las publicadas del profesor (agrupadas por
+     * clase en la vista).
      */
     public function create(Request $request): View
     {
+        $selectedClassId = (int) $request->query('class_id', 0) ?: null;
+        $selectedActivityId = (int) $request->query('activity_id', 0) ?: null;
+
+        $classes = SchoolClass::where('teacher_id', Auth::id())
+            ->orderBy('name')
+            ->get();
+
+        $selectedClass = null;
+
+        if ($selectedClassId !== null) {
+            $selectedClass = $classes->firstWhere('id', $selectedClassId);
+
+            if ($selectedClass === null) {
+                // Clase inexistente o ajena: se ignora el filtro.
+                $selectedClassId = null;
+            }
+        }
+
         $activities = Activity::with('schoolClass')
             ->where('teacher_id', Auth::id())
             ->where('status', 'published')
+            ->when($selectedClassId !== null, fn (Builder $query) => $query->where('class_id', $selectedClassId))
             ->orderBy('title')
             ->get();
-
-        $selectedActivityId = (int) $request->query('activity_id', 0) ?: null;
 
         if ($selectedActivityId !== null && $activities->doesntContain('id', $selectedActivityId)) {
             $selectedActivityId = null;
@@ -41,6 +64,9 @@ class TeacherGameSessionController extends Controller
 
         return view('teacher.game_sessions.create', [
             'activities' => $activities,
+            'classes' => $classes,
+            'selectedClass' => $selectedClass,
+            'selectedClassId' => $selectedClassId,
             'selectedActivityId' => $selectedActivityId,
         ]);
     }
