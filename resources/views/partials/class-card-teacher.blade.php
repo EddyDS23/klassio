@@ -102,6 +102,13 @@
                                 <span>→</span>
                             </a>
 
+                            @if ($class->status === 'active')
+                                <a href="{{ route('teacher.game-sessions.create', ['class_id' => $class->id]) }}"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-black text-white transition hover:bg-violet-700">
+                                    🎮 Crear sala
+                                </a>
+                            @endif
+
 
                             <a href="{{ route('teacher.classes.grading', $class->id) }}"
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-black text-amber-700 transition hover:bg-amber-100">
