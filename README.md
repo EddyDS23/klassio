@@ -212,7 +212,7 @@ cp .env.dev.example .env.dev
 Define una clave única para `APP_KEY` en `.env.dev`. Puedes generar una sin modificar archivos del proyecto con:
 
 ```bash
-docker compose --env-file .env.dev -f docker-compose.yml -f docker-compose.dev.yml \
+docker compose --env-file .env.dev -f docker-compose.dev.yml \
   run --rm --no-deps app php artisan key:generate --show
 ```
 
@@ -228,17 +228,17 @@ Desde la raíz del proyecto, construir y levantar el entorno:
 
 ```bash
 docker compose --env-file .env.dev --profile realtime \
-  -f docker-compose.yml -f docker-compose.dev.yml \
+  -f docker-compose.dev.yml \
   up -d --build
 ```
 
-El archivo base define MariaDB y las redes compartidas; `docker-compose.dev.yml` añade el código local y las opciones de desarrollo. `--profile realtime` inicia Reverb. El servicio `migrate` espera a MariaDB, aplica las migraciones y permite que después arranque la aplicación.
+`docker-compose.dev.yml` es auto-contenido: define MariaDB, la app (código vivo de tu PC montado como volumen vía `Dockerfile.dev`), Nginx, Reverb, worker y scheduler. `--profile realtime` inicia Reverb. El servicio `migrate` espera a MariaDB, aplica las migraciones y permite que después arranque la aplicación.
 
 Comprobar el estado:
 
 ```bash
 docker compose --env-file .env.dev --profile realtime \
-  -f docker-compose.yml -f docker-compose.dev.yml ps
+  -f docker-compose.dev.yml ps
 ```
 
 La aplicación queda disponible en `http://localhost:200`.
@@ -247,14 +247,14 @@ Ver los logs:
 
 ```bash
 docker compose --env-file .env.dev --profile realtime \
-  -f docker-compose.yml -f docker-compose.dev.yml logs -f
+  -f docker-compose.dev.yml logs -f
 ```
 
 Detener los servicios sin borrar la base de datos local:
 
 ```bash
 docker compose --env-file .env.dev --profile realtime \
-  -f docker-compose.yml -f docker-compose.dev.yml down
+  -f docker-compose.dev.yml down
 ```
 
 No añadas `-v` a `down` salvo que quieras eliminar también el volumen de MariaDB.
@@ -269,7 +269,7 @@ Consultar el estado de las migraciones:
 
 ```bash
 docker compose --env-file .env.dev --profile realtime \
-  -f docker-compose.yml -f docker-compose.dev.yml \
+  -f docker-compose.dev.yml \
   exec app php artisan migrate:status
 ```
 
@@ -277,7 +277,7 @@ Ejecutar seeders manualmente:
 
 ```bash
 docker compose --env-file .env.dev --profile realtime \
-  -f docker-compose.yml -f docker-compose.dev.yml \
+  -f docker-compose.dev.yml \
   exec app php artisan db:seed
 ```
 
@@ -290,37 +290,37 @@ docker compose --env-file .env.dev --profile realtime \
 Entrar al contenedor:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app bash
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app bash
 ```
 
 Ver las rutas:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan route:list
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan route:list
 ```
 
 Limpiar cachés:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan optimize:clear
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan optimize:clear
 ```
 
 Limpiar únicamente la caché de configuración:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan config:clear
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan config:clear
 ```
 
 Limpiar la caché de rutas:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan route:clear
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan route:clear
 ```
 
 Limpiar la caché de vistas:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan view:clear
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan view:clear
 ```
 
 ---
@@ -707,7 +707,7 @@ Crear una migración específica para la información que necesite el nuevo jueg
 Por ejemplo:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan make:migration create_memories_table
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan make:migration create_memories_table
 ```
 
 La tabla debe relacionarse con la actividad correspondiente.
@@ -731,13 +731,13 @@ La estructura real debe adaptarse a las reglas del nuevo juego.
 Crear los modelos necesarios:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan make:model Memory
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan make:model Memory
 ```
 
 Si el juego requiere entidades adicionales:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan make:model MemoryItem
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan make:model MemoryItem
 ```
 
 Definir las relaciones Eloquent correspondientes.
@@ -1217,25 +1217,25 @@ Las pruebas se ejecutan dentro del contenedor de Laravel.
 Ejecutar toda la suite:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan test
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan test
 ```
 
 Ejecutar una prueba específica:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan test tests/Feature/WordsearchTest.php
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan test tests/Feature/WordsearchTest.php
 ```
 
 Ejecutar un conjunto específico:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan test tests/Feature
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan test tests/Feature
 ```
 
 También es posible ejecutar una prueba mediante su nombre:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan test --filter=NombreDeLaPrueba
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan test --filter=NombreDeLaPrueba
 ```
 
 ---
@@ -1358,49 +1358,99 @@ El flujo recomendado es:
 
 # 32. Comandos útiles de Docker
 
-Todos estos comandos corresponden al entorno de desarrollo y usan ambos archivos Compose y el perfil de Reverb.
+Estos comandos corresponden al entorno de desarrollo (`docker-compose.dev.yml`, código vivo de tu PC) y al perfil `realtime` de Reverb. El entorno de desarrollo se define en un único archivo Compose auto-contenido; el de producción en otro (`docker-compose.yml`).
 
 Levantar o reconstruir:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml up -d --build
 ```
 
 Detener sin borrar la base de datos:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml down
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml down
 ```
 
 Ver contenedores:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml ps
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml ps
 ```
 
 Ver logs:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml logs -f
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml logs -f
 ```
 
 Entrar al contenedor:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app bash
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app bash
 ```
 
 Ejecutar Artisan:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan <comando>
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan <comando>
 ```
 
 Ejecutar Composer:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app composer <comando>
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app composer <comando>
 ```
+
+---
+
+## Producción (Docker Compose + Docker Hub)
+
+El entorno de producción (`docker-compose.yml`) es auto-contenido: MariaDB, app, Nginx, Reverb (`--profile realtime`), worker y scheduler. **No buildea nada en el servidor**: descarga las imágenes construidas en el CI desde Docker Hub.
+
+Requisitos en el servidor (replicable a cualquier host, sin nada fijado en el código):
+
+1. Crear `.env` a partir de la plantilla y completar, entre otras:
+
+   ```env
+   APP_DOMAIN=tu-dominio.example       # lo resuelve Traefik (labels de docker-compose.yml)
+   APP_URL=https://tu-dominio.example
+   DOCKERHUB_USERNAME=tu-usuario       # cuenta de Docker Hub de las imágenes
+   IMAGE_TAG=latest                    # tag a desplegar; deploy.sh lo usa
+   DB_*                                # credenciales de MariaDB
+   ```
+
+2. Red externa `proxy_network` creada y con el reverse proxy (Traefik) conectado: `docker network create proxy_network` si todavía no existe.
+
+Flujo normal de despliegue (recomendado):
+
+```bash
+git push origin master   # el CI construye y sube a Docker Hub:
+                         #   docker.io/<usuario>/klassio:<sha>-app / -web  (versionado)
+                         #   docker.io/<usuario>/klassio:latest-app / -web (última)
+# y en el VPS:
+./deploy.sh              # o ./deploy.sh con IMAGE_TAG=<sha> para una versión concreta
+```
+
+`deploy.sh` valida el commit limpio del VPS, actualiza `master`, verifica el Compose, descarga las imágenes ("latest" por defecto), ejecuta las migraciones, levanta todo y espera los healthchecks de MariaDB y Nginx.
+
+Comandos equivalentes de Operación en el VPS:
+
+```bash
+docker compose --env-file .env -f docker-compose.yml --profile realtime pull
+docker compose --env-file .env -f docker-compose.yml --profile realtime up -d --remove-orphans
+docker compose --env-file .env -f docker-compose.yml --profile realtime ps
+docker compose --env-file .env -f docker-compose.yml logs -f app
+```
+
+Build y push manuales (sin pasar por el CI), en cualquier PC con credenciales de Docker Hub:
+
+```bash
+docker build -f Dockerfile.prod --target app -t <tu-usuario>/klassio:latest-app . && docker push <tu-usuario>/klassio:latest-app
+docker build -f Dockerfile.prod --target web -t <tu-usuario>/klassio:latest-web . && docker push <tu-usuario>/klassio:latest-web
+```
+
+Cada build reemplaza la imagen anterior con el mismo tag; las imágenes viejas quedan sin etiqueta y se limpian con `docker image prune -f`. En desarrollo, la imagen vive con build local sobre `Dockerfile.dev` (`klassio-app:development` / `klassio-web:development`) y el código se monta desde tu PC como volumen: no requiere build continuo al editar.
 
 ---
 
@@ -1411,19 +1461,19 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f d
 Comprobar:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml ps
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml ps
 ```
 
 y:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml logs -f
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml logs -f
 ```
 
 Después limpiar cachés:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan optimize:clear
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan optimize:clear
 ```
 
 ---
@@ -1433,21 +1483,21 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f d
 Comprobar los contenedores:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml ps
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml ps
 ```
 
 Ver los logs:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml logs -f mariadb
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml logs -f mariadb
 ```
 
-Comprobar la configuración de `.env`.
+Comprobar la configuración de `.env.dev`.
 
 Después ejecutar:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan migrate:status
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan migrate:status
 ```
 
 ---
@@ -1457,14 +1507,14 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f d
 Ejecutar:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan route:clear
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan optimize:clear
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan route:clear
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan optimize:clear
 ```
 
 Comprobar las rutas:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan route:list
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan route:list
 ```
 
 ---
@@ -1474,7 +1524,7 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f d
 Ejecutar:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan view:clear
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan view:clear
 ```
 
 ---
@@ -1692,7 +1742,7 @@ Generar una clave según la sección 7, guardarla en `.env.dev` y levantar los s
 
 ```bash
 docker compose --env-file .env.dev --profile realtime \
-  -f docker-compose.yml -f docker-compose.dev.yml \
+  -f docker-compose.dev.yml \
   up -d --build
 ```
 
@@ -1703,7 +1753,7 @@ Para producción, completar `.env` a partir de `.env.prod.example` en el VPS y u
 Para ejecutar las pruebas en desarrollo:
 
 ```bash
-docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan test
+docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan test
 ```
 
 ---
@@ -1712,12 +1762,15 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f d
 
 | Acción | Comando |
 |---|---|
-| Levantar desarrollo | `docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml up -d --build` |
-| Detener desarrollo | `docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml down` |
-| Estado | `docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml ps` |
-| Logs | `docker compose --env-file .env.dev --profile realtime -f docker-compose.yml -f docker-compose.dev.yml logs -f` |
-| Migraciones | Automáticas al iniciar desarrollo mediante el servicio `migrate` |
-| Producción | Ejecutar `./deploy.sh` en el VPS |
+| Levantar desarrollo | `docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml up -d --build` |
+| Detener desarrollo | `docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml down` |
+| Estado | `docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml ps` |
+| Logs | `docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml logs -f` |
+| Migraciones (dev) | Automáticas al iniciar desarrollo mediante el servicio `migrate` |
+| Estado producción | `docker compose --env-file .env -f docker-compose.yml --profile realtime ps` |
+| Producción (normal) | `git push origin master` (CI sube imágenes) y `./deploy.sh` en el VPS |
+| Producción (build manual) | `docker build -f Dockerfile.prod --target app -t <tu-usuario>/klassio:latest-app . && docker push ...` |
+| Migraciones (prod) | `deploy.sh` las ejecuta automáticamente; manual: `docker compose --env-file .env -f docker-compose.yml run --rm --no-deps app php artisan migrate --force` |
 
 ---
 

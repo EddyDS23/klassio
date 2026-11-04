@@ -1,7 +1,27 @@
+# ==============[ Klassio · Docker Compose de PRODUCCIÓN (auto-contenido) ]=========
+#
+# Requisitos en el servidor (replicable a cualquier host, nada fijo en código):
+#   - Archivo .env de Laravel (copia de .env.prod.example) con, entre otros:
+#       DB_*               credenciales de MariaDB
+#       DOCKERHUB_USERNAME cuenta de Docker Hub de las imágenes
+#       IMAGE_TAG          tag de imagen a desplegar (deploy.sh usa "latest")
+#       APP_DOMAIN         dominio público que resuelve Traefik (sin esquema)
+#   - Red externa "proxy_network" con el reverse proxy (Traefik) ya conectado.
+#
+# Uso:   ./deploy.sh
+# (equivale a: docker compose --env-file .env -f docker-compose.yml \
+#               --profile realtime pull / up -d ...)
+#
+# Nada se publica en puertos del host: Nginx se expone vía Traefik y app,
+# MariaDB y Reverb solo son accesibles desde las redes internas.
+# ================================================================================
+
 services:
     mariadb:
         image: mariadb:11.8
         restart: unless-stopped
+        security_opt:
+            - "no-new-privileges:true"
         environment:
             MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
             MARIADB_DATABASE: ${DB_DATABASE}
@@ -33,8 +53,12 @@ services:
         cpus: "1"
 
     app:
-        image: klassio-app:production
+        image: docker.io/${DOCKERHUB_USERNAME:?Set DOCKERHUB_USERNAME en .env}/klassio:${IMAGE_TAG:-latest}-app
         restart: unless-stopped
+        security_opt:
+            - "no-new-privileges:true"
+        env_file:
+            - .env
         expose:
             - "9000"
         volumes:
@@ -46,17 +70,28 @@ services:
         depends_on:
             mariadb:
                 condition: service_healthy
-        mem_limit: 512m
-        cpus: "0.5"
+        mem_limit: 768m
+        cpus: "1"
 
     nginx:
-        image: klassio-web:production
+        image: docker.io/${DOCKERHUB_USERNAME:?Set DOCKERHUB_USERNAME en .env}/klassio:${IMAGE_TAG:-latest}-web
         restart: unless-stopped
+        security_opt:
+            - "no-new-privileges:true"
         volumes:
             - ./storage:/var/www/html/storage:ro
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.klassio.rule=Host(`${APP_DOMAIN:?Set APP_DOMAIN en .env}`)"
+            - "traefik.http.routers.klassio.entrypoints=websecure"
+            - "traefik.http.routers.klassio.tls.certresolver=letsencrypt"
+            - "traefik.http.services.klassio.loadbalancer.server.port=80"
         networks:
-            - app-network
-            - realtime-network
+            app-network: {}
+            realtime-network: {}
+            proxy_network:
+                aliases:
+                    - klassio-web
         depends_on:
             app:
                 condition: service_started
@@ -70,8 +105,13 @@ services:
         cpus: "0.25"
 
     reverb:
-        image: klassio-app:production
+        image: docker.io/${DOCKERHUB_USERNAME:?Set DOCKERHUB_USERNAME en .env}/klassio:${IMAGE_TAG:-latest}-app
         command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=2001"]
+        restart: unless-stopped
+        security_opt:
+            - "no-new-privileges:true"
+        env_file:
+            - .env
         profiles: ["realtime"]
         expose:
             - "2001"
@@ -82,14 +122,17 @@ services:
         depends_on:
             app:
                 condition: service_started
-        restart: unless-stopped
         mem_limit: 256m
         cpus: "0.25"
 
     worker:
-        image: klassio-app:production
+        image: docker.io/${DOCKERHUB_USERNAME:?Set DOCKERHUB_USERNAME en .env}/klassio:${IMAGE_TAG:-latest}-app
         command: ["php", "artisan", "queue:work", "database", "--queue=default", "--tries=3", "--timeout=90"]
         restart: unless-stopped
+        security_opt:
+            - "no-new-privileges:true"
+        env_file:
+            - .env
         volumes:
             - ./storage:/var/www/html/storage
         networks:
@@ -104,9 +147,13 @@ services:
         cpus: "0.25"
 
     scheduler:
-        image: klassio-app:production
+        image: docker.io/${DOCKERHUB_USERNAME:?Set DOCKERHUB_USERNAME en .env}/klassio:${IMAGE_TAG:-latest}-app
         command: ["php", "artisan", "schedule:work"]
         restart: unless-stopped
+        security_opt:
+            - "no-new-privileges:true"
+        env_file:
+            - .env
         volumes:
             - ./storage:/var/www/html/storage
         networks:
@@ -124,6 +171,8 @@ networks:
     app-network:
     database-network:
     realtime-network:
+    proxy_network:
+        external: true
 
 volumes:
     klassio-data:
