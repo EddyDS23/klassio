@@ -198,7 +198,9 @@
         ])->values();
     @endphp
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
+        window.KlassioSounds?.setup('wordsearch');
         const MULTIPLAYER = true;
         const stateUrl = @json(route('student.game-sessions.state', $session->id));
         const sessionResultUrl = @json(route('student.game-sessions.result', $session->id));
@@ -311,6 +313,7 @@
                      * PALABRA CORRECTA
                      */
                     if (data.correct && !data.already_found) {
+                        window.KlassioSounds?.correcto();
 
                         // Marcar las celdas encontradas
                         data.cells.forEach(([r, c]) => {
@@ -354,6 +357,8 @@
                          * SI TERMINÓ LA SOPA
                          */
                         if (data.finished) {
+                            window.KlassioSounds?.completado();
+
                             const finish = document.getElementById('finish');
 
                             finish.textContent =
@@ -365,6 +370,8 @@
                          * PALABRA YA ENCONTRADA
                          */
                     } else if (data.already_found) {
+                        window.KlassioSounds?.error();
+
                         markCellsFound(data.cells);
                         const matchedWord = wordPositions.find((word) => word.word === data.word);
                         if (matchedWord) markWordFound(matchedWord.id);
@@ -378,6 +385,7 @@
                          * RESPUESTA INCORRECTA
                          */
                     } else {
+                        window.KlassioSounds?.error();
 
                         markWrong(
                             cellsBetween(startCell, endCell)
@@ -503,6 +511,7 @@
             cell.addEventListener('pointerdown', (event) => {
                 if (cell.dataset.found === '1') return;
                 event.preventDefault();
+                window.KlassioSounds?.click();
                 dragging = true;
                 start = cell;
                 end = cell;

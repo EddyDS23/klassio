@@ -166,7 +166,9 @@
         @csrf
     </form>
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
+        window.KlassioSounds?.setup('matching');
         const MULTIPLAYER = @json($multiplayer);
         const items = @json($items->map(fn($item) => ['id' => $item->id, 'left' => $item->left_text, 'right' => $item->right_text]));
         let remainingSeconds = @json($remainingSeconds);
