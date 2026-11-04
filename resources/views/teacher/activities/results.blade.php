@@ -11,7 +11,7 @@
 
 @section('content')
         <div class="mb-6">
-            <a href="{{ route('teacher.activities.show', $activity->id) }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 hover:shadow-xl">
+            <a href="{{ route('teacher.activities.show', $activity->id) }}" class="klassio-back-button">
                 <span aria-hidden="true">←</span> Volver a la actividad
             </a>
         </div>
@@ -323,7 +323,7 @@
 
                                         @if ($result['elapsed_seconds'] !== null)
 
-                                            <span class="rounded-lg bg-slate-100 px-3 py-1">
+                                            <span class="rounded-xl bg-slate-100 px-3 py-1">
                                                 {{ sprintf(
                                                     '%02d:%02d',
                                                     intdiv($result['elapsed_seconds'], 60),

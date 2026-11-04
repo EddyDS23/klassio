@@ -9,8 +9,8 @@
     KlassioToast.error('Título', 'Mensaje');
     KlassioToast.info('Título', 'Mensaje');
 
-  Además convierte solo en toasts los bloques con [data-toast],
-  [role="alert"] o [role="status"] (mensajes flash del servidor).
+  Además convierte en toasts los mensajes flash marcados con [data-toast].
+  Los roles ARIA de estado/alerta no implican una notificación flotante.
   ============================================================ --}}
 <div id="klassio-toasts" aria-live="polite" aria-atomic="false"></div>
 <style>
@@ -142,14 +142,9 @@
         }
 
         function autoConvert() {
-            // Avisos del servidor (tienen esos colores en todo el proyecto)
-            // + cualquier bloque marcado con [data-toast] o rol de alerta.
-            var sel = '[data-toast], [role="alert"], [role="status"],' +
-                'div.border-emerald-200.bg-emerald-50,' +
-                'div.border-rose-200.bg-rose-50,' +
-                'div.border-red-200.bg-red-50,' +
-                'div.border-red-200.bg-rose-50';
-            var nodes = document.querySelectorAll(sel);
+            // Los juegos también usan role="status" en resultados aún ocultos.
+            // Solo los mensajes marcados explícitamente deben moverse a la caja.
+            var nodes = document.querySelectorAll('[data-toast]');
             for (var i = 0; i < nodes.length; i++) {
                 // Los que ya viven en la caja no se tocan.
                 if (nodes[i].parentElement && nodes[i].parentElement.id === BOX_ID) continue;

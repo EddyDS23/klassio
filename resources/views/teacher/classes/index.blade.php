@@ -18,7 +18,7 @@
 
 @section('content')
         <div class="mb-6">
-            <a href="{{ route('teacher.dashboard') }}" class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-900">
+            <a href="{{ route('teacher.dashboard') }}" class="klassio-back-button">
                 ← Volver al dashboard
             </a>
         </div>

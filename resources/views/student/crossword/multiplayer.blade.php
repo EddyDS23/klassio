@@ -143,6 +143,12 @@
         </header>
 
         <div class="game-content">
+            <nav class="mb-4" aria-label="Navegación de actividades">
+                <a href="{{ route('student.activities.show', $activity->id) }}" class="klassio-back-button">
+                    <span aria-hidden="true">←</span> Volver a la actividad
+                </a>
+            </nav>
+
             <div class="race-banner" aria-label="Estado de la sala multijugador">
                 <div class="race-banner-heading">
                     <div class="race-banner-title">🏁 Sala {{ $session->code }} · {{ $activity->mode === 'team' ? 'Carrera por equipos' : 'Carrera individual' }}</div>
@@ -198,9 +204,6 @@
                     @csrf
                     <button type="submit">Salir de la sala 👋</button>
                 </form>
-                <nav>
-                    <a href="{{ route('student.activities.show', $activity->id) }}">Volver a la actividad</a>
-                </nav>
             </div>
         </div>
     </main>

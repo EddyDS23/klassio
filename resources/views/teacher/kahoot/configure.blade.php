@@ -41,9 +41,9 @@
 
                 <a
                     href="{{ route('teacher.activities.show', $activity->id) }}"
-                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                    class="klassio-back-button"
                 >
-                    ← Cancelar
+                    <span aria-hidden="true">←</span> Volver a la actividad
                 </a>
 
                 <a
@@ -365,7 +365,7 @@
                                                     type="button"
                                                     onclick="removeOption(this, {{ $qi }})"
                                                     title="Eliminar opción"
-                                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
+                                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
                                                 >
                                                     ✕
                                                 </button>
@@ -535,7 +535,7 @@
                                             type="button"
                                             onclick="removeOption(this, 0)"
                                             title="Eliminar opción"
-                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
+                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
                                         >
                                             ✕
                                         </button>
@@ -573,7 +573,7 @@
                                             type="button"
                                             onclick="removeOption(this, 0)"
                                             title="Eliminar opción"
-                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
+                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
                                         >
                                             ✕
                                         </button>
@@ -752,7 +752,7 @@
                     type="button"
                     onclick="removeOption(this, ${qi})"
                     title="Eliminar opción"
-                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
                 >
                     ✕
                 </button>
@@ -985,7 +985,7 @@
                                 type="button"
                                 onclick="removeOption(this, ${qi})"
                                 title="Eliminar opción"
-                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
+                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
                             >
                                 ✕
                             </button>
@@ -1023,7 +1023,7 @@
                                 type="button"
                                 onclick="removeOption(this, ${qi})"
                                 title="Eliminar opción"
-                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
+                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black text-red-500 transition hover:bg-red-100 hover:text-red-700"
                             >
                                 ✕
                             </button>

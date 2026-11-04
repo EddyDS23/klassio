@@ -60,7 +60,7 @@
         {{-- Regresar --}}
         <div class="mb-6">
             <a href="{{ route('teacher.classes.index') }}"
-                class="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 transition hover:text-emerald-900">
+                class="klassio-back-button">
 
                 <span class="text-lg">←</span>
                 Volver a mis clases

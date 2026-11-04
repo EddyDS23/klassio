@@ -45,7 +45,7 @@
     <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
 
         <div class="mb-6">
-            <a href="{{ route('teacher.activities.index', $activity->class_id) }}" class="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 transition hover:text-emerald-900">
+            <a href="{{ route('teacher.activities.index', $activity->class_id) }}" class="klassio-back-button">
                 <span aria-hidden="true">←</span> Volver a actividades
             </a>
         </div>

@@ -140,7 +140,7 @@
 
 
                         <a href="{{ route('student.dashboard') }}"
-                            class="inline-flex w-fit items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-indigo-50 hover:text-indigo-600">
+                            class="klassio-back-button">
 
                             ← Volver al dashboard
 

@@ -57,6 +57,25 @@
     .klassio-theme-btn { border: 1px solid #cbd5e1; border-radius: .75rem; background: #fff; padding: .5rem .75rem; font-size: .85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
     html[data-theme="dark"] .klassio-theme-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
 
+    /* === UTILIDAD GLOBAL DE BOTONES === */
+    /* Radio consistente = botón "Negro" (0.75rem = 12px) */
+    .btn-klassio-rounded,
+    button.btn-klassio-rounded,
+    a.btn-klassio-rounded,
+    .btn-klassio { border-radius: .75rem !important; }
+
+    /* Normaliza todos los botones submit/button/enlace-botón */
+    button[type="submit"],
+    button[type="button"],
+    button:not([class*="rounded-"]),
+    a[href*="/logout"] button,
+    form[action*="/logout"] button,
+    .btn-klassio { border-radius: .75rem; }
+
+    /* Elimina esquinas cuadradas en contenedores de botones */
+    form[action*="/logout"] { display: inline-flex; }
+    form[action*="/logout"] > button { border-radius: .75rem; }
+
     /* Ajustes de lectura para el perfil infantil, sin cambiar los demás perfiles. */
     body.student-kids { font-size: 18px; }
     body.student-kids .student-activity > h1 { font-size: 2.1rem; }
@@ -65,6 +84,22 @@
     body.student-kids #timer { font-size: 1.1rem; }
     body.student-kids .klassio-toast-msg { font-size: .95rem; }
     body.student-kids :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+
+    /* Acciones de regreso: mismo marco en vistas Tailwind y Bootstrap. */
+    a.klassio-back-button,
+    .student-activity a.klassio-back-button {
+        display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+        max-width: 100%; min-height: 44px; padding: .75rem 1.25rem;
+        border: 1px solid #cbd5e1; border-radius: .75rem;
+        background: #fff; color: #475569; box-shadow: 0 1px 2px rgb(15 23 42 / .05);
+        font-size: .875rem; font-weight: 700; line-height: 1.5; text-align: center;
+        text-decoration: none; transition: background-color .15s, border-color .15s;
+    }
+    a.klassio-back-button:hover { background: #f8fafc; border-color: #94a3b8; color: #334155; }
+    a.klassio-back-button:focus-visible { outline: 2px solid #6366f1; outline-offset: 3px; }
+    html[data-theme="dark"] a.klassio-back-button { background: #1e293b; border-color: #64748b; color: #e2e8f0; }
+    html[data-theme="dark"] a.klassio-back-button:hover { background: #334155; border-color: #94a3b8; }
+
     ::selection { background: rgb(99 91 255 / .25); }
     :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -77,6 +112,7 @@
     try {
         if (localStorage.getItem('klassio-theme') === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.classList.add('dark');
         }
     } catch (e) {}
 </script>
@@ -89,8 +125,10 @@
             isDark = !isDark;
             if (isDark) {
                 document.documentElement.setAttribute('data-theme', 'dark');
+                document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.removeAttribute('data-theme');
+                document.documentElement.classList.remove('dark');
             }
             try { localStorage.setItem('klassio-theme', isDark ? 'dark' : 'light'); } catch (e) {}
             document.querySelectorAll('.klassio-theme-btn').forEach(function (b) { b.textContent = label(); });

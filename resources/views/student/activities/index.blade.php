@@ -8,6 +8,12 @@
 </head>
 <body class="student-kids">
     <main class="page-shell">
+        <div class="mb-4">
+            <a href="{{ route('student.class.show', $class->id) }}" class="klassio-back-button">
+                <span aria-hidden="true">←</span> Volver a la clase
+            </a>
+        </div>
+
         <section class="page-hero">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                 <div><span class="badge rounded-pill text-bg-light text-primary mb-3">MI AULA 🎒</span><h1 class="display-4 fw-bold mb-2">¡A jugar! 🎮</h1><p class="mb-0 opacity-75 fs-5">Elige un reto de {{ $class->name }}.</p></div>
@@ -62,10 +68,9 @@
                 </details>
             @endif
         @endif
-        @if ($activities->hasPages())
+@if ($activities->hasPages())
             <div class="mt-4 d-flex justify-content-center">{{ $activities->links() }}</div>
         @endif
-        <nav class="mt-4"><a class="btn btn-outline-secondary" href="{{ route('student.class.show', $class->id) }}">← Volver a la clase</a></nav>
-    </main>
+</main>
 </body>
 </html>

@@ -41,9 +41,9 @@
 
                 <a
                     href="{{ route('teacher.activities.show', $activity->id) }}"
-                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                    class="klassio-back-button"
                 >
-                    ← Cancelar
+                    <span aria-hidden="true">←</span> Volver a la actividad
                 </a>
 
                 <a

@@ -34,6 +34,14 @@
 @section('content')
 <div class="page-shell session-lobby">
 
+        {{-- Botón Volver a la actividad (parte superior) --}}
+        <div class="mb-4">
+            <a href="{{ route('student.activities.show', $session->activity_id) }}"
+                class="klassio-back-button">
+                <span aria-hidden="true">←</span> Volver a la actividad
+            </a>
+        </div>
+
         <div class="page-hero">
             <p class="text-sm uppercase font-bold mb-2">Tu próxima partida</p>
             <h1 class="font-bold mb-1">Sala de juego</h1>
@@ -115,12 +123,6 @@
                     <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">Salir de la sala</button>
                 </form>
             @endif
-        </div>
-
-        <div class="mt-4">
-            <a href="{{ route('student.activities.show', $session->activity_id) }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">
-                Volver a la actividad
-            </a>
         </div>
 
     </div>
