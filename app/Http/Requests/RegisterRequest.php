@@ -27,7 +27,6 @@ class RegisterRequest extends FormRequest
             'name'=>['required','string','max:255'],
             'email'=>['required','email',Rule::unique('users','email')],
             'password'=>['required','string','min:8','max:50','confirmed'],
-            'role'=>['required','in:teacher,student']
         ];
     }
 }

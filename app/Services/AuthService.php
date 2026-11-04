@@ -33,6 +33,10 @@ class AuthService{
     }
 
     public function register(array $data ) :User{
+        // Todo registro público es alumno: maestro y admin solo desde el panel
+        // del administrador, ignorando cualquier clave "role" llegada del cliente.
+        $data['role'] = 'student';
+
         return User::create($data);
     }
 

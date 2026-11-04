@@ -194,15 +194,21 @@ class AdminUserTest extends TestCase
 
     public function test_public_registration_cannot_create_admin_users(): void
     {
+        // El registro ignora el rol solicitado y la cuenta nace como alumno.
         $this->post(route('register'), [
             'name' => 'Usuario Público',
             'email' => 'publico@example.com',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'role' => 'admin',
-        ])->assertSessionHasErrors('role');
+        ]);
 
-        $this->assertDatabaseMissing('users', ['email' => 'publico@example.com']);
+        $this->assertDatabaseHas('users', [
+            'email' => 'publico@example.com',
+            'role' => 'student',
+        ]);
+
+        $this->assertDatabaseMissing('users', ['email' => 'publico@example.com', 'role' => 'admin']);
     }
 
     public function test_admin_cannot_change_own_status(): void

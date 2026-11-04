@@ -111,7 +111,7 @@
                 <div class="register-notice" role="alert">
                     <p>Revisa los campos indicados para continuar.</p>
                     @foreach ($errors->getMessages() as $field => $messages)
-                        @unless (in_array($field, ['name', 'email', 'password', 'password_confirmation', 'role'], true))
+                        @unless (in_array($field, ['name', 'email', 'password', 'password_confirmation'], true))
                             @foreach ($messages as $message)
                                 <p>{{ $message }}</p>
                             @endforeach
@@ -187,23 +187,6 @@
                     @if ($errors->has('password_confirmation'))
                         <div id="register-password-confirmation-error" class="register-errors">
                             @foreach ($errors->get('password_confirmation') as $message)
-                                <p>{{ $message }}</p>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-
-                <div class="register-field">
-                    <label for="register-role">Rol del usuario</label>
-                    <select id="register-role" name="role" class="register-control"
-                        aria-invalid="{{ $errors->has('role') ? 'true' : 'false' }}"
-                        @if ($errors->has('role')) aria-describedby="register-role-error" @endif>
-                        <option value="teacher" {{ old('role') == 'teacher' ? 'selected' : '' }}>Maestro</option>
-                        <option value="student" {{ old('role') == 'student' ? 'selected' : '' }}>Estudiante</option>
-                    </select>
-                    @if ($errors->has('role'))
-                        <div id="register-role-error" class="register-errors">
-                            @foreach ($errors->get('role') as $message)
                                 <p>{{ $message }}</p>
                             @endforeach
                         </div>
