@@ -278,8 +278,6 @@ class KahootController extends Controller
     {
         $session = GameSession::findOrFail($sessionId);
 
-        Gate::authorize('play', $session);
-
         $activity = $session->activity;
         $kahoot = $activity->kahoot;
 
@@ -297,6 +295,8 @@ class KahootController extends Controller
         if ($session->status !== GameSession::STATUS_PLAYING) {
             return redirect()->route('student.game-sessions.result', $session->id);
         }
+
+        Gate::authorize('play', $session);
 
         $answeredIds = KahootAnswer::where(
             'participation_id',
@@ -341,8 +341,6 @@ class KahootController extends Controller
 
         $session = GameSession::findOrFail((int) $validated['session_id']);
 
-        Gate::authorize('play', $session);
-
         $participation = $this->gameSessionService->participationOf(
             $session,
             $request->user()
@@ -359,6 +357,8 @@ class KahootController extends Controller
                 'max_score' => $session->activity->max_score,
             ]);
         }
+
+        Gate::authorize('play', $session);
 
         $questionId = $this->gameSessionService->currentKahootQuestionId($session);
 
@@ -436,8 +436,6 @@ class KahootController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            Gate::authorize('play', $session);
-
             $participation = $this->gameSessionService->participationOf(
                 $session,
                 $request->user()
@@ -458,6 +456,8 @@ class KahootController extends Controller
                     'participation_score' => $participation->fresh()->score,
                 ]);
             }
+
+            Gate::authorize('play', $session);
 
             $currentQuestionId = $this->gameSessionService->currentKahootQuestionId($session);
 

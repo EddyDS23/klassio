@@ -136,25 +136,31 @@ class AuthenticationTest extends TestCase
         ]);
     }
 
-    public function test_teacher_can_register(): void
+    public function test_registration_forces_student_role_despite_requested_role(): void
     {
-        $response = $this->post('/register', [
-            'name' => 'Test Teacher',
-            'email' => 'teacher@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-            'role' => 'teacher',
-        ]);
+        // Nadie puede autoproclamarse maestro o admin en el registro: cualquier
+        // role pedido terminará ignorado y la cuenta nace como alumno.
+        foreach (['teacher', 'admin'] as $requestedRole) {
+            $response = $this->post('/register', [
+                'name' => 'Intento de '.$requestedRole,
+                'email' => $requestedRole.'@test.com',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+                'role' => $requestedRole,
+            ]);
 
-        $response->assertRedirect(route('teacher.dashboard'));
+            $response->assertRedirect(route('student.dashboard'));
 
-        $this->assertAuthenticated();
+            $this->assertAuthenticated();
 
-        $this->assertDatabaseHas('users', [
-            'name' => 'Test Teacher',
-            'email' => 'teacher@test.com',
-            'role' => 'teacher',
-        ]);
+            $this->assertDatabaseHas('users', [
+                'name' => 'Intento de '.$requestedRole,
+                'email' => $requestedRole.'@test.com',
+                'role' => 'student',
+            ]);
+
+            $this->post('/logout');
+        }
     }
 
     public function test_registration_requires_valid_data(): void
@@ -164,14 +170,12 @@ class AuthenticationTest extends TestCase
             'email' => 'not-an-email',
             'password' => 'short',
             'password_confirmation' => 'different',
-            'role' => 'invalid-role',
         ]);
 
         $response->assertSessionHasErrors([
             'name',
             'email',
             'password',
-            'role',
         ]);
 
         $this->assertGuest();
@@ -188,7 +192,6 @@ class AuthenticationTest extends TestCase
             'email' => 'existing@test.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'role' => 'student',
         ]);
 
         $response->assertSessionHasErrors('email');

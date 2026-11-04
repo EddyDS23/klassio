@@ -295,8 +295,6 @@ class RouletteController extends Controller
     {
         $session = GameSession::findOrFail($sessionId);
 
-        Gate::authorize('play', $session);
-
         $activity = $session->activity;
         $roulette = $activity->roulette;
 
@@ -314,6 +312,8 @@ class RouletteController extends Controller
         if ($session->status !== GameSession::STATUS_PLAYING) {
             return redirect()->route('student.game-sessions.result', $session->id);
         }
+
+        Gate::authorize('play', $session);
 
         $answeredIds = RouletteAnswer::where(
             'participation_id',
@@ -360,8 +360,6 @@ class RouletteController extends Controller
             (int) $validated['session_id']
         );
 
-        Gate::authorize('play', $session);
-
         $participation = $this->gameSessionService->participationOf(
             $session,
             $request->user()
@@ -379,6 +377,8 @@ class RouletteController extends Controller
                 'max_score' => $session->activity->max_score,
             ]);
         }
+
+        Gate::authorize('play', $session);
 
         $itemId = $this->gameSessionService->currentRouletteItemId($session);
 
@@ -457,8 +457,6 @@ class RouletteController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            Gate::authorize('play', $session);
-
             $participation = $this->gameSessionService->participationOf(
                 $session,
                 $request->user()
@@ -479,6 +477,8 @@ class RouletteController extends Controller
                     'participation_score' => $participation->fresh()->score,
                 ]);
             }
+
+            Gate::authorize('play', $session);
 
             $pendingItemId = $this->gameSessionService->currentRouletteItemId($session);
 

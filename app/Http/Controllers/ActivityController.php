@@ -31,9 +31,13 @@ class ActivityController extends Controller
             $query->where('title', 'like', '%'.request('search').'%');
         }
 
-        $activities = $query->latest()->paginate(12)->withQueryString();
+        $activities = $query->with('unit')->latest()->paginate(12)->withQueryString();
 
-        return view('teacher.activities.index', compact('class', 'activities'));
+        return view('teacher.activities.index', [
+            'class' => $class,
+            'activities' => $activities,
+            'units' => $class->units,
+        ]);
     }
 
     public function teacherCreate(int $id): View
@@ -41,7 +45,10 @@ class ActivityController extends Controller
         $class = SchoolClass::findOrFail($id);
         Gate::authorize('create', [Activity::class, $class]);
 
-        return view('teacher.activities.create', compact('class'));
+        return view('teacher.activities.create', [
+            'class' => $class,
+            'units' => $class->units,
+        ]);
     }
 
     public function teacherStore(StoreActivityRequest $request, int $id): RedirectResponse
@@ -92,7 +99,10 @@ class ActivityController extends Controller
         $activity = Activity::findOrFail($id);
         Gate::authorize('update', $activity);
 
-        return view('teacher.activities.edit', compact('activity'));
+        return view('teacher.activities.edit', [
+            'activity' => $activity,
+            'units' => $activity->schoolClass->units,
+        ]);
     }
 
     public function teacherUpdate(UpdateActivityRequest $request, int $id): RedirectResponse
@@ -147,9 +157,13 @@ class ActivityController extends Controller
             $query->where('title', 'like', '%'.request('search').'%');
         }
 
-        $activities = $query->latest()->paginate(12)->withQueryString();
+        $activities = $query->with('unit')->latest()->paginate(12)->withQueryString();
 
-        return view('student.activities.index', compact('class', 'activities'));
+        return view('student.activities.index', [
+            'class' => $class,
+            'activities' => $activities,
+            'units' => $class->units,
+        ]);
     }
 
     public function studentShow(int $id): View

@@ -157,8 +157,11 @@
 
     </div>
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
+        window.KlassioSounds?.setup('kahoot');
         const sessionId = @json($session->id);
+        let soundedItemId = null;
         const myParticipationId = @json($participation->id);
         const csrfToken = @json(csrf_token());
         const totalItems = @json($totalItems);
@@ -485,6 +488,11 @@
             if (!currentItem) return;
 
             const itemId = currentItem.id;
+
+            if (soundedItemId !== itemId) {
+                soundedItemId = itemId;
+                window.KlassioSounds?.[isCorrect ? 'correcto' : 'error']();
+            }
             const feedback = document.getElementById('round-answer-feedback');
             const result = document.createElement('div');
             result.className = 'alert ' + (isCorrect ? 'alert-success' : 'alert-danger') + ' fw-bold mb-2';
@@ -565,6 +573,7 @@
 
         async function answer(optionId, btn) {
             if (answering || !currentItem) return;
+            window.KlassioSounds?.click();
             answering = true;
 
             Array.from(document.querySelectorAll('.opt-btn')).forEach((b) => b.disabled = true);
@@ -612,6 +621,7 @@
                 showRoundResult(data.is_correct, data.participation_score, correctText);
 
                 if (data.finished) {
+                    window.KlassioSounds?.completado();
                     redirectAfterFinalResult(2200);
                 }
             } catch (e) {

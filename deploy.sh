@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 cd /var/www/klassio
 
-compose=(docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml --profile realtime)
+compose=(docker compose --env-file .env -f docker-compose.yml --profile realtime)
 export IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 if [[ -n "$(git status --porcelain)" ]]; then

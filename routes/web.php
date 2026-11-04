@@ -56,6 +56,7 @@ Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'active', 'role:
     Route::get('/classes/create', [ClassController::class, 'create'])->name('classes.create');
     Route::post('/classes', [ClassController::class, 'store'])->name('classes.store');
     Route::get('/classes/{id}', [ClassController::class, 'show'])->where(['id' => '[1-9][0-9]*'])->name('classes.show');
+    Route::get('/classes/{id}/grading', [ClassController::class, 'grading'])->where(['id' => '[1-9][0-9]*'])->name('classes.grading');
     Route::get('/classes/{id}/edit', [ClassController::class, 'edit'])->where(['id' => '[1-9][0-9]*'])->name('classes.edit');
     Route::put('/classes/{id}', [ClassController::class, 'update'])->where(['id' => '[1-9][0-9]*'])->name('classes.update');
     Route::get('/classes/{id}/students', [ClassController::class, 'students'])->where(['id' => '[1-9][0-9]*'])->name('classes.students');

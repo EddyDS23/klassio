@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sopa de Letras — Multijugador</title>
+    @if ((bool) config('broadcasting.connections.reverb.enabled', false))
+        <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+        <script>
+            window.Echo = new Echo({
+                broadcaster: 'reverb',
+                key: @json(config('broadcasting.connections.reverb.key')),
+                wsHost: @json(config('broadcasting.connections.reverb.client_host', 'localhost')),
+                wsPort: @json(config('broadcasting.connections.reverb.options.port', 8080)),
+                forceTLS: @json(config('broadcasting.connections.reverb.options.scheme', 'http') === 'https'),
+                enabledTransports: ['ws', 'wss']
+            });
+        </script>
+    @endif
     <style>
         :root {
             --ws-ink: #183b3a;
@@ -184,7 +198,9 @@
         ])->values();
     @endphp
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
+        window.KlassioSounds?.setup('wordsearch');
         const MULTIPLAYER = true;
         const stateUrl = @json(route('student.game-sessions.state', $session->id));
         const sessionResultUrl = @json(route('student.game-sessions.result', $session->id));
@@ -297,6 +313,7 @@
                      * PALABRA CORRECTA
                      */
                     if (data.correct && !data.already_found) {
+                        window.KlassioSounds?.correcto();
 
                         // Marcar las celdas encontradas
                         data.cells.forEach(([r, c]) => {
@@ -340,6 +357,8 @@
                          * SI TERMINÓ LA SOPA
                          */
                         if (data.finished) {
+                            window.KlassioSounds?.completado();
+
                             const finish = document.getElementById('finish');
 
                             finish.textContent =
@@ -351,6 +370,8 @@
                          * PALABRA YA ENCONTRADA
                          */
                     } else if (data.already_found) {
+                        window.KlassioSounds?.error();
+
                         markCellsFound(data.cells);
                         const matchedWord = wordPositions.find((word) => word.word === data.word);
                         if (matchedWord) markWordFound(matchedWord.id);
@@ -364,6 +385,7 @@
                          * RESPUESTA INCORRECTA
                          */
                     } else {
+                        window.KlassioSounds?.error();
 
                         markWrong(
                             cellsBetween(startCell, endCell)
@@ -489,6 +511,7 @@
             cell.addEventListener('pointerdown', (event) => {
                 if (cell.dataset.found === '1') return;
                 event.preventDefault();
+                window.KlassioSounds?.click();
                 dragging = true;
                 start = cell;
                 end = cell;
@@ -594,8 +617,58 @@
             }
         }
 
-        pollState();
-        setInterval(pollState, 2000);
+        const reverbEnabled = @json((bool) config('broadcasting.connections.reverb.enabled', false));
+        if (window.Echo && reverbEnabled) {
+            window.Echo.private('game-session.{{ $session->id }}')
+                .listen('.ScoreUpdated', (e) => pollState())
+                .listen('.GameFinished', (e) => pollState())
+                .listen('.PlayerJoined', (e) => pollState())
+                .listen('.PlayerLeft', (e) => pollState());
+        }
+
+        function setupStateSync(refreshFn) {
+            let fallbackPolling = null;
+
+            const startFallback = () => {
+                if (fallbackPolling !== null) return;
+
+                refreshFn();
+                fallbackPolling = window.setInterval(refreshFn, 2000);
+            };
+
+            const stopFallback = () => {
+                if (fallbackPolling === null) return;
+
+                window.clearInterval(fallbackPolling);
+                fallbackPolling = null;
+            };
+
+            const connection = window.Echo?.connector?.pusher?.connection;
+
+            if (!connection) {
+                startFallback();
+                return;
+            }
+
+            connection.bind('state_change', ({
+                current
+            }) => {
+                if (current === 'connected') {
+                    stopFallback();
+                    refreshFn();
+                } else {
+                    startFallback();
+                }
+            });
+
+            if (connection.state === 'connected') {
+                refreshFn();
+            } else {
+                startFallback();
+            }
+        }
+
+        setupStateSync(pollState);
     </script>
 </body>
 

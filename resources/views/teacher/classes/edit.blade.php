@@ -61,16 +61,14 @@
         <div class="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2">
 
             <a href="{{ route('teacher.classes.show', $class->id) }}"
-                class="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 transition hover:text-emerald-900">
+                class="klassio-back-button">
 
                 <span class="text-lg">←</span>
                 Volver a la clase
             </a>
 
-            <span class="text-slate-300">|</span>
-
             <a href="{{ route('teacher.classes.index') }}"
-                class="text-sm font-bold text-slate-500 transition hover:text-slate-800">
+                class="klassio-back-button">
                 Volver a mis clases
             </a>
 
@@ -222,6 +220,56 @@
                 </div>
 
 
+                {{-- Unidades --}}
+                <div>
+
+                    <label class="mb-2 block text-sm font-black text-slate-700">
+                        Unidades de la clase
+                    </label>
+
+                    <div id="units-rows" class="space-y-3">
+                        @forelse (old('units', $class->units->map(fn ($unit) => ['id' => $unit->id, 'name' => $unit->name])->all()) as $rowUnit)
+                            <div class="unit-row flex items-center gap-3">
+                                @isset ($rowUnit['id'])
+                                    <input type="hidden" name="units[][id]" value="{{ $rowUnit['id'] }}">
+                                @endisset
+
+                                <span
+                                    class="w-28 shrink-0 text-xs font-black text-emerald-700"
+                                >Unidad {{ $loop->iteration }}</span>
+                                <input
+                                    type="text"
+                                    name="units[][name]"
+                                    value="{{ collect($rowUnit)->get('name') }}"
+                                    maxlength="150"
+                                    placeholder="Nombre de la unidad (opcional)"
+                                    class="flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                                >
+                                <button
+                                    type="button"
+                                    data-remove-unit
+                                    class="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                                >✕</button>
+                            </div>
+                        @empty
+                        @endforelse
+                    </div>
+
+                    <button
+                        type="button"
+                        id="add-unit"
+                        class="mt-3 rounded-xl border border-dashed border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+                    >
+                        + Agregar unidad
+                    </button>
+
+                    <p class="mt-2 text-xs font-medium text-slate-500">
+                        Puedes renombrar o agregar unidades. Solo puedes eliminar una unidad si no tiene actividades asociadas; si intentas eliminar una con actividades, te avisará al guardar. Máximo 8.
+                    </p>
+
+                </div>
+
+
                 {{-- Acciones --}}
                 <div class="border-t border-slate-200 pt-6">
 
@@ -261,6 +309,64 @@
         </div>
 
     </main>
+
+    <script>
+        const unitsRows = document.getElementById('units-rows');
+        const addUnit = document.getElementById('add-unit');
+        const MAX_UNITS = 8;
+
+        function unitRow() {
+            const row = document.createElement('div');
+            row.className = 'unit-row flex items-center gap-3';
+
+            const label = document.createElement('span');
+            label.className = 'w-28 shrink-0 text-xs font-black text-emerald-700';
+            label.textContent = 'Unidad';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'units[][name]';
+            input.maxLength = 150;
+            input.placeholder = 'Nombre de la unidad (opcional)';
+            input.className = 'flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100';
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.setAttribute('data-remove-unit', '');
+            remove.className = 'shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600';
+            remove.textContent = '✕';
+
+            row.append(label, input, remove);
+
+            return row;
+        }
+
+        function renumberUnits() {
+            unitsRows.querySelectorAll('.unit-row').forEach((row, index) => {
+                row.querySelector('span').textContent = 'Unidad ' + (index + 1);
+            });
+
+            addUnit.disabled = unitsRows.querySelectorAll('.unit-row').length >= MAX_UNITS;
+        }
+
+        addUnit?.addEventListener('click', () => {
+            if (unitsRows.querySelectorAll('.unit-row').length >= MAX_UNITS) return;
+
+            unitsRows.appendChild(unitRow());
+            renumberUnits();
+        });
+
+        unitsRows?.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-remove-unit]');
+
+            if (!button) return;
+
+            button.closest('.unit-row').remove();
+            renumberUnits();
+        });
+
+        renumberUnits();
+    </script>
 
 </body>
 

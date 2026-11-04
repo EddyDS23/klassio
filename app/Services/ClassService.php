@@ -5,13 +5,15 @@ namespace App\Services;
 use App\Models\Enrollment;
 use App\Models\SchoolClass;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use App\Support\PeriodResolver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ClassService
 {
-
     public function get(int $id)
     {
 
@@ -24,17 +26,16 @@ class ClassService
         return $classe;
     }
 
-    public function getClassesTeacher(): LengthAwarePaginator
+    public function periodsForTeacher(User $user): Collection
     {
-        /** @var User $user */
-        $user = Auth::user();
-
-        return SchoolClass::where('teacher_id', $user->id)
-            ->latest()
-            ->paginate(15);
+        return $this->groupClassesByPeriod(
+            SchoolClass::where('teacher_id', $user->id)
+                ->orderByDesc('created_at')
+                ->get()
+        );
     }
 
-    public function create(array $data): void
+    public function create(array $data, array $units = []): void
     {
 
         /** @var User $user */
@@ -46,14 +47,79 @@ class ClassService
         $data['code'] = $code;
         $data['teacher_id'] = $user->id;
 
-        SchoolClass::create($data);
+        DB::transaction(function () use ($data, $units): void {
+            $class = SchoolClass::create($data);
+
+            // Las filas sin nombre se descartan: el profesor las deja
+            // vacías al agregar y quitar unidades en el formulario.
+            $number = 1;
+
+            foreach (array_values($units) as $unit) {
+                $name = $unit['name'] ?? null;
+                $name = is_string($name) && trim($name) !== '' ? trim($name) : null;
+
+                if ($name === null) {
+                    continue;
+                }
+
+                $class->units()->create([
+                    'number' => $number++,
+                    'name' => $name,
+                ]);
+            }
+        });
     }
 
-
-    public function update(array $data, int $id): void
+    public function update(array $data, int $id, ?array $units = null): void
     {
-        $class = SchoolClass::findOrFail($id);
-        $class->update($data);
+        DB::transaction(function () use ($data, $id, $units): void {
+            $class = SchoolClass::findOrFail($id);
+            $class->update($data);
+
+            if ($units === null) {
+                return;
+            }
+
+            $this->syncUnits($class, $units);
+        });
+    }
+
+    /**
+     * Sincroniza las unidades de una clase con las filas del formulario:
+     * renombra las existentes (por id), agrega nuevas al final y elimina
+     * las que no llegan en el envío. La petición ya validó que ninguna
+     * unidad eliminada tenga actividades asociadas.
+     *
+     * @param  list<array{id?: int, name: ?string}>  $units
+     */
+    private function syncUnits(SchoolClass $class, array $units): void
+    {
+        $existing = $class->units->keyBy('id');
+        $nextNumber = (int) $existing->max('number') + 1;
+        $keptIds = [];
+
+        foreach (array_values($units) as $row) {
+            $unit = isset($row['id']) ? ($existing->get($row['id'])) : null;
+
+            if ($unit === null) {
+                $class->units()->create([
+                    'number' => $nextNumber++,
+                    'name' => $row['name'],
+                ]);
+
+                continue;
+            }
+
+            $keptIds[] = $unit->id;
+
+            if ($unit->name !== $row['name']) {
+                $unit->update(['name' => $row['name']]);
+            }
+        }
+
+        $existing->keys()
+            ->diff($keptIds)
+            ->each(fn ($id) => $existing->get($id)->delete());
     }
 
     public function archive(SchoolClass $class): void
@@ -77,7 +143,7 @@ class ClassService
         } while (SchoolClass::where('code', $code)->exists());
 
         $class->update([
-            'code' => $code
+            'code' => $code,
         ]);
     }
 
@@ -96,15 +162,14 @@ class ClassService
             ->where('status', 'active')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             abort(404, 'El alumno no pertenece a esta clase');
         }
 
         $enrollment->update([
-            'status' => 'removed'
+            'status' => 'removed',
         ]);
     }
-
 
     /**
      * @return array{class: SchoolClass, alreadyJoined: bool}
@@ -114,7 +179,7 @@ class ClassService
 
         $class = SchoolClass::where('code', $code)->first();
 
-        if (!$class) {
+        if (! $class) {
             abort(404, 'Clase no existe');
         }
 
@@ -135,7 +200,7 @@ class ClassService
 
             if ($enrollment->status === 'removed') {
                 $enrollment->update([
-                    'status' => 'active'
+                    'status' => 'active',
                 ]);
 
                 return ['class' => $class, 'alreadyJoined' => false];
@@ -150,15 +215,34 @@ class ClassService
         return ['class' => $class, 'alreadyJoined' => false];
     }
 
-    public function getClassesStudent(): LengthAwarePaginator
+    public function periodsForStudent(User $user): Collection
     {
-        /** @var User $user */
-        $user = Auth::user();
+        return $this->groupClassesByPeriod(
+            SchoolClass::whereHas('enrollments', function ($query) use ($user) {
+                $query->where('student_id', $user->id)->where('status', 'active');
+            })
+                ->where('status', 'active')
+                ->orderByDesc('created_at')
+                ->get()
+        );
+    }
 
-        return SchoolClass::whereHas('enrollments', function ($query) use ($user) {
-            $query->where('student_id', $user->id)
-                ->where('status', 'active');
-        })->where('status','active')->paginate(15);
+    /**
+     * Agrupa las clases por periodo "AAAA-Hn", ordenado del más reciente
+     * al más antiguo. Cada grupo mantiene el orden de las clases.
+     *
+     * @return Collection<string, mixed>
+     */
+    private function groupClassesByPeriod(Collection $classes): Collection
+    {
+        return $classes
+            ->groupBy(fn ($class) => PeriodResolver::forDate($class->created_at))
+            ->map(fn (Collection $group, string $code): array => [
+                'code' => $code,
+                'classes' => $group->values(),
+            ])
+            ->sortKeysDesc()
+            ->values();
     }
 
     public function getClassmates(SchoolClass $class): LengthAwarePaginator

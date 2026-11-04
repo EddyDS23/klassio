@@ -23,6 +23,12 @@
 @section('content')
     <div class="page-shell session-results">
 
+        <div class="mb-4">
+            <a href="{{ route('teacher.dashboard') }}" class="klassio-back-button">
+                <span aria-hidden="true">←</span> Volver al panel
+            </a>
+        </div>
+
         <div class="page-hero text-center">
             <h1 class="font-bold mb-1">Resultados de la partida</h1>
             <p class="mb-0 opacity-75">{{ $session->activity->title }} — Sala {{ $session->code }}</p>
@@ -139,9 +145,6 @@
         <div class="flex flex-wrap gap-2 result-actions">
             <a href="{{ route('teacher.activities.show', $session->activity_id) }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-cyan-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 disabled:cursor-not-allowed disabled:opacity-50">
                 Ver la actividad
-            </a>
-            <a href="{{ route('teacher.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">
-                Volver al panel
             </a>
         </div>
 

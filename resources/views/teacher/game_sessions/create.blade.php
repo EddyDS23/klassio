@@ -21,6 +21,12 @@
 @section('content')
     <div class="page-shell session-create">
 
+        <div class="mb-4">
+            <a href="{{ route('teacher.dashboard') }}" class="klassio-back-button">
+                <span aria-hidden="true">←</span> Volver al panel
+            </a>
+        </div>
+
         <div class="page-hero">
             <h1 class="font-bold mb-1">Crear sala multijugador</h1>
             <p class="mb-0 opacity-75">Elige una actividad publicada y comparte el código con tus estudiantes.</p>
@@ -53,9 +59,6 @@
                                 Aún no tienes actividades publicadas. Publica una actividad para crear una sala.
                             </div>
 
-                            <a href="{{ route('teacher.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">
-                                Volver al panel
-                            </a>
                         @else
                             <form method="POST" action="{{ route('teacher.game-sessions.store') }}">
                                 @csrf
@@ -79,7 +82,7 @@
 
                                 <label class="mb-2 block text-sm font-semibold" for="max_players">Máximo de jugadores</label>
                                 <select name="max_players" id="max_players" class="create-select w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-900 shadow-sm focus:border-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-100 mb-4">
-                                    @foreach ([2, 3, 4, 5, 6, 8] as $max)
+                                    @foreach ([2, 4, 6, 8, 12, 16, 24, 30, 40, 50] as $max)
                                         <option value="{{ $max }}" @selected($max === 4)>{{ $max }}</option>
                                     @endforeach
                                 </select>
@@ -96,10 +99,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="mt-4">
-            <a href="{{ route('teacher.dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700">Volver al panel</a>
         </div>
 
     </div>

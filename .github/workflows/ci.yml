@@ -62,7 +62,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Validate production image build
-        run: docker buildx build --platform "${{ matrix.platform }}" --target web --tag klassio-web:ci --load .
+        run: docker buildx build --file Dockerfile.prod --platform "${{ matrix.platform }}" --target web --tag klassio-web:ci --load .
 
   publish-production-images:
     name: Build and publish multi-architecture images
@@ -90,6 +90,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.prod
           target: app
           platforms: linux/amd64,linux/arm64
           push: true
@@ -101,6 +102,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.prod
           target: web
           platforms: linux/amd64,linux/arm64
           push: true

@@ -70,6 +70,14 @@ class GameSessionController extends Controller
         try {
             $this->gameSessionService->join($session, Auth::user());
         } catch (RuntimeException $e) {
+            if ($e->getMessage() === GameSessionService::ALREADY_IN_ROOM_MESSAGE) {
+                // El jugador ya es participante vivo de la sala: enviarlo
+                // a la sala no es un fallo del flujo de entrada.
+                return redirect()
+                    ->route('student.game-sessions.show', $session->id)
+                    ->with('success', $e->getMessage());
+            }
+
             return redirect()
                 ->back()
                 ->with('error', $e->getMessage());
@@ -136,7 +144,9 @@ class GameSessionController extends Controller
         $state['current_responder_name'] = $myPlayerState['current_responder_name'] ?? null;
         $state['answer_correct_current'] = $myPlayerState['answer_correct_current'] ?? null;
 
-        if ($participation?->team_id !== null) {
+        if ($participation !== null) {
+            // Progreso propio de quien consulta: sirve para reingresos
+            // (equipos e individual) y restaurar tableros al recargar.
             $state['team_progress'] = $this->gameSessionService->teamProgress($participation);
         }
 
@@ -149,6 +159,12 @@ class GameSessionController extends Controller
     public function play(int $id): RedirectResponse
     {
         $session = GameSession::findOrFail($id);
+
+        $session = $this->gameSessionService->closeRoundIfDue($session);
+
+        if ($session->status !== GameSession::STATUS_PLAYING) {
+            return redirect()->route('student.game-sessions.result', $session->id);
+        }
 
         Gate::authorize('play', $session);
 

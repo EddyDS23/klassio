@@ -18,7 +18,7 @@
 
 @section('content')
         <div class="mb-6">
-            <a href="{{ route('teacher.dashboard') }}" class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-900">
+            <a href="{{ route('teacher.dashboard') }}" class="klassio-back-button">
                 ← Volver al dashboard
             </a>
         </div>
@@ -101,185 +101,82 @@
         @endif
 
 
-        {{-- Título de sección --}}
-        <div class="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        {{-- Filtro por periodo --}}
+        <section class="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <form method="GET" action="{{ route('teacher.classes.index') }}"
+                class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                <div>
+                    <h3 class="text-2xl font-black text-slate-900">
+                        Clases creadas
+                    </h3>
 
-            <div>
-                <h3 class="text-2xl font-black text-slate-900">
-                    Clases creadas
-                </h3>
+                    <p class="mt-1 text-sm font-medium text-slate-500">
+                        Consulta y administra tus clases desde un solo lugar.
+                    </p>
+                </div>
 
-                <p class="mt-1 text-sm font-medium text-slate-500">
-                    Consulta y administra tus clases desde un solo lugar.
-                </p>
-            </div>
-
-            <div
-                class="inline-flex w-fit items-center rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-700">
-                {{ $classes->total() }} clases
-            </div>
-
-        </div>
-
-
-        {{-- Tarjetas de clases --}}
-        <section class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-
-            @forelse ($classes as $class)
-                <article
-                    class="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl">
-
-                    {{-- Cabecera de tarjeta --}}
-                    <div class="bg-gradient-to-br from-emerald-600 to-teal-600 p-6 text-white">
-
-                        <div class="flex items-start justify-between gap-4">
-
-                            <div
-                                class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-3xl shadow-inner backdrop-blur-sm">
-                                📚
-                            </div>
-
-                            @if ($class->status === 'active')
-                                <span
-                                    class="rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
-                                    Activa
-                                </span>
-                            @else
-                                <span
-                                    class="rounded-full bg-slate-900/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
-                                    Archivada
-                                </span>
-                            @endif
-
-                        </div>
-
-                        <h4 class="mt-5 break-words text-2xl font-black tracking-tight">
-                            {{ $class->name }}
-                        </h4>
-
+                <div class="flex items-end gap-3">
+                    <div>
+                        <label for="period" class="mb-1 block text-xs font-black uppercase tracking-wide text-slate-400">
+                            Periodo
+                        </label>
+                        <select id="period" name="period" data-auto-submit
+                            class="rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100">
+                            <option value="" @if ($selectedPeriod === null) selected @endif>Todos los periodos</option>
+                            @foreach ($availablePeriods as $periodCode)
+                                <option value="{{ $periodCode }}" @if ($periodCode === $selectedPeriod) selected @endif>
+                                    {{ \App\Support\PeriodResolver::label($periodCode) }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
-
-                    {{-- Contenido --}}
-                    <div class="flex flex-1 flex-col p-6">
-
-                        <p class="min-h-[72px] text-sm font-medium leading-6 text-slate-600">
-                            {{ $class->description ?: 'Sin descripción disponible para esta clase.' }}
-                        </p>
-
-
-                        {{-- Datos --}}
-                        <div class="mt-6 space-y-4">
-
-                            <div class="rounded-2xl bg-slate-50 p-4">
-
-                                <p class="text-xs font-black uppercase tracking-wide text-slate-400">
-                                    Código de acceso
-                                </p>
-
-                                <p class="mt-2 break-all text-xl font-black tracking-widest text-emerald-700">
-                                    {{ $class->code }}
-                                </p>
-
-                            </div>
+                    @if ($selectedPeriod !== null)
+                        <a href="{{ route('teacher.classes.index') }}"
+                            class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700">
+                            Limpiar
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </section>
 
 
-                            <div class="grid grid-cols-2 gap-3">
+        {{-- Acordeones por periodo (paginados) --}}
+        <section>
+            @php
+                $currentPeriod = \App\Support\PeriodResolver::current();
+            @endphp
 
-                                <div class="rounded-2xl border border-slate-100 p-3">
+            @forelse ($periods as $group)
+                <details class="mb-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60"
+                    @if ($group['code'] === $currentPeriod || ($selectedPeriod === null && $periods->onFirstPage()) || $selectedPeriod === $group['code']) open @endif
+                >
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 transition hover:bg-slate-50">
+                        <span class="flex min-w-0 items-center gap-3">
+                            <span class="text-xl">📅</span>
+                            <span class="truncate text-sm font-black uppercase tracking-widest text-emerald-700">
+                                {{ \App\Support\PeriodResolver::label($group['code']) }}
+                            </span>
 
-                                    <p class="text-xs font-black uppercase tracking-wide text-slate-400">
-                                        Estado
-                                    </p>
-
-                                    <p class="mt-1 text-sm font-black text-slate-800">
-                                        @if ($class->status === 'active')
-                                            Activa
-                                        @else
-                                            Archivada
-                                        @endif
-                                    </p>
-
-                                </div>
-
-
-                                <div class="rounded-2xl border border-slate-100 p-3">
-
-                                    <p class="text-xs font-black uppercase tracking-wide text-slate-400">
-                                        Creada
-                                    </p>
-
-                                    <p class="mt-1 text-sm font-black text-slate-800">
-                                        {{ $class->created_at->format('d/m/Y') }}
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- Acciones --}}
-                        <div class="mt-6 space-y-3 border-t border-slate-100 pt-6">
-
-                            <a href="{{ route('teacher.classes.show', $class->id) }}"
-                                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700">
-
-                                Ver clase
-                                <span>→</span>
-                            </a>
-
-
-                            @if ($class->status === 'active')
-                                <a href="{{ route('teacher.classes.edit', $class->id) }}"
-                                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700">
-
-                                    ✏️
-                                    Editar clase
-                                </a>
-
-
-                                <form action="{{ route('teacher.classes.archive', $class->id) }}" method="POST">
-
-                                    @csrf
-                                    @method('PATCH')
-
-                                    <button type="submit"
-                                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-black text-rose-700 transition hover:bg-rose-100">
-
-                                        📦
-                                        Archivar clase
-                                    </button>
-
-                                </form>
-                            @else
-                                <form action="{{ route('teacher.classes.unarchive', $class->id) }}" method="POST">
-
-                                    @csrf
-                                    @method('PATCH')
-
-                                    <button type="submit"
-                                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-black text-cyan-700 transition hover:bg-cyan-100">
-
-                                        ↩️
-                                        Desarchivar clase
-                                    </button>
-
-                                </form>
+                            @if ($group['code'] === $currentPeriod)
+                                <span class="shrink-0 rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                                    Periodo actual
+                                </span>
                             @endif
+                        </span>
+                        <span class="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
+                            {{ $group['classes']->count() }} {{ $group['classes']->count() === 1 ? 'clase' : 'clases' }}
+                        </span>
+                    </summary>
 
-                        </div>
-
+                    <div class="grid gap-6 border-t border-slate-100 px-4 py-5 sm:px-6 lg:grid-cols-2 xl:grid-cols-3">
+                        @each('partials.class-card-teacher', $group['classes'], 'class')
                     </div>
-
-                </article>
-
+                </details>
             @empty
-
-                {{-- Estado vacío --}}
                 <div
-                    class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center shadow-sm md:col-span-2 xl:col-span-3">
+                    class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center shadow-sm">
 
                     <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-4xl">
                         🏫
@@ -302,15 +199,20 @@
 
                 </div>
             @endforelse
-
         </section>
 
-         @if ($classes->hasPages())
-                <div class="mt-8">
-                    {{ $classes->links() }}
-                </div>
-            @endif
+        @if ($periods->hasPages())
+            <div class="mt-8">
+                {{ $periods->links() }}
+            </div>
+        @endif
 
+
+        <script>
+            document.querySelectorAll('[data-auto-submit]').forEach((input) => {
+                input.addEventListener('change', () => input.form?.submit());
+            });
+        </script>
 
 
 @endsection

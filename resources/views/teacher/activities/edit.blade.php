@@ -45,7 +45,7 @@
     <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
 
         <div class="mb-6">
-            <a href="{{ route('teacher.activities.index', $activity->class_id) }}" class="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 transition hover:text-emerald-900">
+            <a href="{{ route('teacher.activities.index', $activity->class_id) }}" class="klassio-back-button">
                 <span aria-hidden="true">←</span> Volver a actividades
             </a>
         </div>
@@ -393,6 +393,35 @@
 
                             <p class="mt-2 text-xs text-slate-500">
                                 Puedes dejar este campo vacío si la actividad no tiene fecha límite.
+                            </p>
+
+                        </div>
+
+                        <!-- Unidad -->
+                        <div class="sm:col-span-2">
+
+                            <label for="unit_id"
+                                   class="mb-2 block text-sm font-bold text-slate-700">
+                                Unidad
+                            </label>
+
+                            <select id="unit_id"
+                                    name="unit_id"
+                                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            >
+                                <option value="">Sin unidad</option>
+                                @forelse ($units as $unit)
+                                    <option value="{{ $unit->id }}"
+                                        @selected((string) old('unit_id', $activity->unit_id) === (string) $unit->id)>
+                                        Unidad {{ $unit->number }}{{ filled($unit->name) ? ' — '.$unit->name : '' }}
+                                    </option>
+                                @empty
+                                    <option value="" disabled>Esta clase no tiene unidades registradas</option>
+                                @endforelse
+                            </select>
+
+                            <p class="mt-2 text-xs text-slate-500">
+                                Puedes organizar la actividad en una unidad de la clase. Es opcional.
                             </p>
 
                         </div>

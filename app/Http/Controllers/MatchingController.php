@@ -182,8 +182,6 @@ class MatchingController extends Controller
     {
         $session = GameSession::findOrFail($sessionId);
 
-        Gate::authorize('play', $session);
-
         $activity = $session->activity;
         $matching = $activity->matching;
 
@@ -201,6 +199,8 @@ class MatchingController extends Controller
         if ($session->status !== GameSession::STATUS_PLAYING) {
             return redirect()->route('student.game-sessions.result', $session->id);
         }
+
+        Gate::authorize('play', $session);
 
         $items = $matching->items()->get();
 

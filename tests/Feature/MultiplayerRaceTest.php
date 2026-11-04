@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Events\ScoreUpdated;
 use App\Models\Activity;
 use App\Models\Crossword;
 use App\Models\Enrollment;
@@ -19,6 +20,7 @@ use App\Services\GameSessionService;
 use App\Services\MatchingService;
 use App\Services\WordsearchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -142,15 +144,18 @@ class MultiplayerRaceTest extends TestCase
     private function setupRace(
         string $type,
         ?int $timeLimit = null,
-        int $maxPlayers = 2
+        int $maxPlayers = 2,
+        int $students = 2
     ): array {
         $teacher = $this->teacher();
-        $s1 = $this->student('student1@example.com');
-        $s2 = $this->student('student2@example.com');
-
         $class = $this->createClass($teacher);
-        $this->enroll($class, $s1);
-        $this->enroll($class, $s2);
+
+        $list = [];
+        for ($index = 1; $index <= $students; $index++) {
+            $student = $this->student("student{$index}@example.com");
+            $this->enroll($class, $student);
+            $list[$index] = $student;
+        }
 
         $activity = $this->createActivity($class, $teacher, $type, $timeLimit);
         $this->buildContent($activity, $type);
@@ -165,18 +170,25 @@ class MultiplayerRaceTest extends TestCase
             ->latest('id')
             ->firstOrFail();
 
-        $this->actingAs($s1)
-            ->post(route('student.game-sessions.join'), ['code' => $session->code]);
-
-        $this->actingAs($s2)
-            ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+        foreach ($list as $student) {
+            $this->actingAs($student)
+                ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+        }
 
         $this->actingAs($teacher)
             ->post(route('teacher.game-sessions.start', $session->id));
 
         $session->refresh();
 
-        return compact('teacher', 's1', 's2', 'class', 'activity', 'session');
+        return [
+            'teacher' => $teacher,
+            'class' => $class,
+            'activity' => $activity,
+            'session' => $session,
+            's1' => $list[1],
+            's2' => $list[2],
+            'extras' => array_slice($list, 2, preserve_keys: true),
+        ];
     }
 
     private function participationOf(GameSession $session, User $student): Participation
@@ -368,6 +380,72 @@ class MultiplayerRaceTest extends TestCase
         $this->assertGreaterThan(0, $participation->score);
     }
 
+    public function test_multiplayer_race_answer_broadcasts_a_score_update(): void
+    {
+        Event::fake([ScoreUpdated::class]);
+
+        ['s1' => $s1, 'activity' => $activity, 'session' => $session] = $this->setupRace('matching');
+
+        $matching = $activity->matching;
+        $item = $matching->items()->where('left_text', 'HTTP')->firstOrFail();
+
+        $participation = $this->participationOf($session, $s1);
+
+        $this->actingAs($s1)
+            ->postJson(route('student.matching.answer'), [
+                'matching_id' => $matching->id,
+                'participation_id' => $participation->id,
+                'session_id' => $session->id,
+                'matching_item_id' => $item->id,
+                'response' => $item->right_text,
+            ])
+            ->assertOk()
+            ->assertJsonPath('correct', true);
+
+        Event::assertDispatched(ScoreUpdated::class, function (ScoreUpdated $event) use ($session, $participation) {
+            return $event->session->id === $session->id
+                && ($event->payload['participation_id'] ?? null) === $participation->id
+                && ($event->payload['score'] ?? null) > 0;
+        });
+    }
+
+    public function test_multiplayer_race_answer_without_score_change_does_not_broadcast(): void
+    {
+        Event::fake([ScoreUpdated::class]);
+
+        ['s1' => $s1, 'activity' => $activity, 'session' => $session] = $this->setupRace('matching');
+
+        $matching = $activity->matching;
+        $item = $matching->items()->where('left_text', 'HTTP')->firstOrFail();
+
+        $participation = $this->participationOf($session, $s1);
+
+        $this->actingAs($s1)
+            ->postJson(route('student.matching.answer'), [
+                'matching_id' => $matching->id,
+                'participation_id' => $participation->id,
+                'session_id' => $session->id,
+                'matching_item_id' => $item->id,
+                'response' => $item->right_text,
+            ])
+            ->assertOk()
+            ->assertJsonPath('correct', true);
+
+        // Respuesta repetida (ya encontrada): no cambia el score y no
+        // debe generar otro evento.
+        $this->actingAs($s1)
+            ->postJson(route('student.matching.answer'), [
+                'matching_id' => $matching->id,
+                'participation_id' => $participation->id,
+                'session_id' => $session->id,
+                'matching_item_id' => $item->id,
+                'response' => $item->right_text,
+            ])
+            ->assertOk();
+
+        Event::assertDispatchedTimes(ScoreUpdated::class, 1);
+    }
+
     public function test_wordsearch_answer_updates_the_session_participation(): void
     {
         ['s1' => $s1, 'activity' => $activity, 'session' => $session] = $this->setupRace('word_search');
@@ -421,6 +499,191 @@ class MultiplayerRaceTest extends TestCase
 
         $this->assertSame($session->id, $participation->game_session_id);
         $this->assertGreaterThan(0, $participation->score);
+    }
+
+    public function test_individual_rejoin_restores_score_and_progress(): void
+    {
+        ['s1' => $s1, 'activity' => $activity, 'session' => $session] = $this->setupRace('word_search');
+
+        $word = $activity->wordsearch->words()->firstOrFail();
+        [$startRow, $startColumn, $endRow, $endColumn] = $this->wordSelection($word);
+
+        $participation = $this->participationOf($session, $s1);
+
+        $this->actingAs($s1)->postJson(route('student.wordsearch.answer'), [
+            'wordsearch_id' => $activity->wordsearch->id,
+            'participation_id' => $participation->id,
+            'session_id' => $session->id,
+            'start_row' => $startRow,
+            'start_column' => $startColumn,
+            'end_row' => $endRow,
+            'end_column' => $endColumn,
+        ])->assertOk()->assertJsonPath('correct', true);
+
+        $scoreBefore = $participation->fresh()->score;
+        $this->assertGreaterThan(0, $scoreBefore);
+
+        // El estudiante pierde la conexión (la participación queda
+        // sin presencia viva) y reingresa por código.
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id))
+            ->assertSessionMissing('error');
+
+        $rejoined = $participation->fresh();
+        $this->assertSame('started', $rejoined->status);
+        $this->assertSame($scoreBefore, $rejoined->score);
+        $this->assertDatabaseHas('wordsearch_answers', [
+            'participation_id' => $participation->id,
+            'word_id' => $word->id,
+        ]);
+
+        // El endpoint de estado entrega el progreso propio para que la
+        // vista restaure el tablero al recargar.
+        $this->actingAs($s1)
+            ->getJson(route('student.game-sessions.state', $session->id))
+            ->assertOk()
+            ->assertJsonPath('team_progress.participation_id', $participation->id)
+            ->assertJsonPath('team_progress.score', (int) $scoreBefore)
+            ->assertJsonPath('team_progress.completed_item_ids.0', $word->id);
+    }
+
+    public function test_individual_rejoin_restores_score_after_leaving_mid_match(): void
+    {
+        ['s1' => $s1, 's2' => $s2, 'activity' => $activity, 'session' => $session] = $this->setupRace('matching', null, 3, 3);
+
+        $item = $activity->matching->items()->where('left_text', 'HTTP')->firstOrFail();
+        $participation = $this->participationOf($session, $s1);
+
+        $this->actingAs($s1)->postJson(route('student.matching.answer'), [
+            'matching_id' => $activity->matching->id,
+            'participation_id' => $participation->id,
+            'session_id' => $session->id,
+            'matching_item_id' => $item->id,
+            'response' => $item->right_text,
+        ])->assertOk()->assertJsonPath('correct', true);
+
+        $scoreBefore = $participation->fresh()->score;
+        $this->assertGreaterThan(0, $scoreBefore);
+
+        // Sale con el botón: quedan 2 grupos, la partida continúa.
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.leave', $session->id))
+            ->assertRedirect();
+
+        $this->assertSame('abandoned', $participation->fresh()->status);
+        $this->assertSame(GameSession::STATUS_PLAYING, $session->fresh()->status);
+
+        // Reingresa por código: conserva score y respuestas.
+        $this->actingAs($s1)
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id))
+            ->assertSessionMissing('error');
+
+        $rejoined = $participation->fresh();
+        $this->assertSame('started', $rejoined->status);
+        $this->assertSame($scoreBefore, $rejoined->score);
+        $this->assertDatabaseHas('matching_answers', [
+            'participation_id' => $participation->id,
+            'matching_item_id' => $item->id,
+        ]);
+    }
+
+    public function test_team_rejoin_restores_score(): void
+    {
+        $teacher = $this->teacher();
+        $class = $this->createClass($teacher);
+
+        $students = [
+            $this->student('team-a@example.com'),
+            $this->student('team-b@example.com'),
+            $this->student('team-c@example.com'),
+        ];
+
+        foreach ($students as $student) {
+            $this->enroll($class, $student);
+        }
+
+        $activity = Activity::create([
+            'class_id' => $class->id,
+            'teacher_id' => $teacher->id,
+            'title' => 'Carrera matching por equipos',
+            'description' => 'Multiplayer race team activity',
+            'type' => 'matching',
+            'mode' => 'team',
+            'max_score' => 100,
+            'time_limit' => null,
+            'attempts' => 1,
+            'due_at' => null,
+            'status' => 'published',
+        ]);
+        $this->buildContent($activity, 'matching');
+
+        $teams = [
+            Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Uno']),
+            Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Dos']),
+            Team::create(['activity_id' => $activity->id, 'name' => 'Equipo Tres']),
+        ];
+
+        foreach ($teams as $index => $team) {
+            TeamMember::create([
+                'team_id' => $team->id,
+                'student_id' => $students[$index]->id,
+            ]);
+        }
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.store'), [
+                'activity_id' => $activity->id,
+                'max_players' => 3,
+            ]);
+
+        $session = GameSession::where('activity_id', $activity->id)
+            ->latest('id')
+            ->firstOrFail();
+
+        foreach ($students as $student) {
+            $this->actingAs($student)
+                ->post(route('student.game-sessions.join'), ['code' => $session->code]);
+        }
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.game-sessions.start', $session->id));
+
+        $session->refresh();
+
+        $item = $activity->matching->items()->where('left_text', 'HTTP')->firstOrFail();
+        $teamParticipation = Participation::where('game_session_id', $session->id)
+            ->where('team_id', $teams[0]->id)
+            ->firstOrFail();
+
+        $this->actingAs($students[0])->postJson(route('student.matching.answer'), [
+            'matching_id' => $activity->matching->id,
+            'participation_id' => $teamParticipation->id,
+            'session_id' => $session->id,
+            'matching_item_id' => $item->id,
+            'response' => $item->right_text,
+        ])->assertOk()->assertJsonPath('correct', true);
+
+        $scoreBefore = $teamParticipation->fresh()->score;
+        $this->assertGreaterThan(0, $scoreBefore);
+
+        // El único integrante sale: quedan 2 equipos, la partida sigue.
+        $this->actingAs($students[0])
+            ->post(route('student.game-sessions.leave', $session->id))
+            ->assertRedirect();
+
+        $this->assertSame('abandoned', $teamParticipation->fresh()->status);
+
+        // Reingresa: conserva el score del equipo.
+        $this->actingAs($students[0])
+            ->post(route('student.game-sessions.join'), ['code' => $session->code])
+            ->assertRedirect(route('student.game-sessions.show', $session->id))
+            ->assertSessionMissing('error');
+
+        $rejoined = $teamParticipation->fresh();
+        $this->assertSame('started', $rejoined->status);
+        $this->assertSame($scoreBefore, $rejoined->score);
     }
 
     public function test_wordsearch_session_answer_does_not_write_to_regular_attempt(): void
@@ -640,7 +903,7 @@ class MultiplayerRaceTest extends TestCase
             'session_id' => $session->id,
             'crossword_word_id' => $word->id,
             'response' => $word->word,
-        ])->assertForbidden();
+        ])->assertStatus(409);
 
         $this->assertDatabaseMissing('crossword_answers', [
             'participation_id' => $participation->id,

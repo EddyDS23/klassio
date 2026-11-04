@@ -1,0 +1,56 @@
+# ======================[ Klassio · Dockerfile de DESARROLLO ]=======================
+# La imagen NO lleva el código: docker-compose.dev.yml monta el proyecto desde
+# tu PC como volumen, así que editas archivo y el cambio ya está en el
+# contenedor. Solo se copian composer.json/lock para sembrar el volumen de
+# vendor en el primer arranque.
+#
+# Uso:   docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --build
+# Imágenes (tags fijos, se reemplazan al re-buildear):
+#   klassio-app:development · klassio-web:development
+# =================================================================================
+
+# --- Base PHP (interna) -----------------------------------------------------------
+FROM php:8.3-fpm AS php-base
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcurl4-openssl-dev \
+    libexif-dev \
+    libonig-dev \
+    libzip-dev \
+    && docker-php-ext-install curl exif mbstring opcache pcntl pdo_mysql sockets zip \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+# --- Imagen de aplicación de desarrollo --------------------------------------------
+FROM php-base AS development
+
+# Dependencias (incluye las de desarrollo). El código se monta como volumen;
+# /vendor sembrará el volumen klassio-vendor en el primer arranque. Se omite
+# post-autoload porque en la imagen aún no existe el código de la app.
+COPY composer.json composer.lock ./
+
+RUN mkdir -p \
+        storage/app/private \
+        storage/app/public \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/testing \
+        storage/logs \
+    && composer install --no-scripts --no-interaction --prefer-dist --optimize-autoloader
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]
+
+# --- Imagen web de desarrollo (servida desde el código montado) ---------------------
+FROM nginx:alpine AS web
+
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+
+RUN nginx -t
