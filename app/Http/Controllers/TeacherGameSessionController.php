@@ -8,8 +8,9 @@ use App\Models\GameSession;
 use App\Models\SchoolClass;
 use App\Services\GameSessionService;
 use App\Services\ParticipationService;
-use Illuminate\Database\Eloquent\Builder;
+use App\Support\PeriodResolver;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,48 +26,80 @@ class TeacherGameSessionController extends Controller
     ) {}
 
     /**
-     * Formulario para crear una sala multijugador.
+     * Formulario para crear una sala multijugador. El profesor elige primero
+     * la clase (solo clases activas, agrupadas por periodo) y después una de
+     * las actividades publicadas de esa clase; nunca se listan actividades
+     * mezcladas de varias clases.
      *
-     * Con ?class_id=X muestra solo las actividades publicadas de esa clase del
-     * profesor; sin filtro, todas las publicadas del profesor (agrupadas por
-     * clase en la vista).
+     * Con ?activity_id=X se preselecciona la clase y la actividad (ej. el link
+     * desde una actividad). Un class_id ajeno o inexistente hace que no haya
+     * clase preseleccionada.
      */
     public function create(Request $request): View
     {
-        $selectedClassId = (int) $request->query('class_id', 0) ?: null;
-        $selectedActivityId = (int) $request->query('activity_id', 0) ?: null;
-
         $classes = SchoolClass::where('teacher_id', Auth::id())
+            ->where('status', 'active')
             ->orderBy('name')
             ->get();
 
+        $classGroups = $classes
+            ->groupBy(fn (SchoolClass $class) => PeriodResolver::forDate($class->created_at))
+            ->map(fn (Collection $group, string $code): array => [
+                'code' => $code,
+                'label' => PeriodResolver::label($code),
+                'isCurrent' => $code === PeriodResolver::current(),
+                'classes' => $group,
+            ])
+            ->sortByDesc(fn (array $group): array => [$group['isCurrent'], $group['code']])
+            ->values();
+
+        $selectedClassId = (int) $request->query('class_id', 0) ?: null;
+        $selectedActivityId = (int) $request->query('activity_id', 0) ?: null;
+
+        // Un activity_id válido define la clase directamente.
         $selectedClass = null;
 
-        if ($selectedClassId !== null) {
-            $selectedClass = $classes->firstWhere('id', $selectedClassId);
+        if ($selectedActivityId !== null) {
+            $activity = Activity::where('teacher_id', Auth::id())
+                ->where('status', 'published')
+                ->find($selectedActivityId);
 
-            if ($selectedClass === null) {
-                // Clase inexistente o ajena: se ignora el filtro.
-                $selectedClassId = null;
+            if ($activity !== null) {
+                $selectedClass = $activity->schoolClass;
+            } else {
+                $selectedActivityId = null;
             }
         }
 
-        $activities = Activity::with('schoolClass')
-            ->where('teacher_id', Auth::id())
-            ->where('status', 'published')
-            ->when($selectedClassId !== null, fn (Builder $query) => $query->where('class_id', $selectedClassId))
-            ->orderBy('title')
-            ->get();
+        if ($selectedClass === null && $selectedClassId !== null) {
+            $selectedClass = $classes->firstWhere('id', $selectedClassId);
+        }
 
-        if ($selectedActivityId !== null && $activities->doesntContain('id', $selectedActivityId)) {
+        if ($selectedClass === null) {
+            // Sin clase elegida (o clase ajena): no se lista ninguna actividad.
+            $selectedClassId = null;
             $selectedActivityId = null;
+        }
+
+        $activities = collect();
+
+        if ($selectedClass !== null) {
+            $activities = Activity::where('teacher_id', Auth::id())
+                ->where('status', 'published')
+                ->where('class_id', $selectedClass->id)
+                ->orderBy('title')
+                ->get();
+
+            if ($selectedActivityId !== null && $activities->doesntContain('id', $selectedActivityId)) {
+                $selectedActivityId = null;
+            }
         }
 
         return view('teacher.game_sessions.create', [
             'activities' => $activities,
+            'classGroups' => $classGroups,
             'classes' => $classes,
             'selectedClass' => $selectedClass,
-            'selectedClassId' => $selectedClassId,
             'selectedActivityId' => $selectedActivityId,
         ]);
     }

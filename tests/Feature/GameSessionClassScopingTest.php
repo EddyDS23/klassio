@@ -9,8 +9,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Crear sala desde la clase: el formulario se escopa a las actividades
- * publicadas de la clase pedida; un class_id ajeno o inexistente se ignora.
+ * Crear sala con flujo clase → actividad: el profesor elige la clase en un
+ * selector (solo clases activas, agrupadas por periodo) y después se listan
+ * únicamente las actividades publicadas de esa clase. Nunca se listan
+ * actividades mezcladas de varias clases.
  */
 class GameSessionClassScopingTest extends TestCase
 {
@@ -49,9 +51,60 @@ class GameSessionClassScopingTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('teacher.game-sessions.create', ['class_id' => $otherClass->id]))
             ->assertOk()
-            // El filtro ajeno se ignora: la propia actividad (de otra clase) sigue visible
-            ->assertSee('Actividad Propia')
+            // El class_id ajeno se ignora: vuelve al estado "elige una clase"
+            // y ninguna actividad (ni propia ni ajena) se lista.
+            ->assertSee('Elige primero una clase')
+            ->assertDontSee('Actividad Propia')
             ->assertDontSee('Actividad Ajena');
+    }
+
+    public function test_create_form_hides_activities_until_a_class_is_chosen(): void
+    {
+        $teacher = $this->teacher();
+        $classA = $this->createClass($teacher, 'Clase A');
+        $classB = $this->createClass($teacher, 'Clase B');
+        $this->createActivity($classA, $teacher, ['title' => 'Actividad A', 'status' => 'published']);
+        $this->createActivity($classB, $teacher, ['title' => 'Actividad B', 'status' => 'published']);
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.create'))
+            ->assertOk()
+            ->assertSee('Elige primero una clase')
+            // Ninguna actividad se lista sin clase elegida.
+            ->assertDontSee('Actividad A')
+            ->assertDontSee('Actividad B')
+            // El selector ofrece las clases activas por nombre.
+            ->assertSee('Clase A')
+            ->assertSee('Clase B');
+    }
+
+    public function test_archived_classes_are_not_offered_in_the_class_selector(): void
+    {
+        $teacher = $this->teacher();
+        $this->createClass($teacher, 'Clase Activa');
+        $this->createClass($teacher, 'Clase Archivada', ['status' => 'archived']);
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.create'))
+            ->assertOk()
+            ->assertSee('Clase Activa')
+            ->assertDontSee('Clase Archivada');
+    }
+
+    public function test_activity_id_preselects_its_class_and_the_activity(): void
+    {
+        $teacher = $this->teacher();
+        $classA = $this->createClass($teacher, 'Clase A');
+        $classB = $this->createClass($teacher, 'Clase B');
+        $activity = $this->createActivity($classA, $teacher, ['title' => 'Actividad Elegida', 'status' => 'published']);
+        $this->createActivity($classB, $teacher, ['title' => 'Actividad Otra', 'status' => 'published']);
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.game-sessions.create', ['activity_id' => $activity->id]))
+            ->assertOk()
+            ->assertSee('Crear sala · Clase A')
+            ->assertSee('Actividad Elegida')
+            ->assertDontSee('Actividad Otra');
     }
 
     public function test_create_form_shows_empty_state_when_class_has_no_published_activities(): void
@@ -95,15 +148,18 @@ class GameSessionClassScopingTest extends TestCase
         ]);
     }
 
-    private function createClass(User $teacher, string $name = 'Test Class'): SchoolClass
-    {
-        return SchoolClass::create([
+    private function createClass(
+        User $teacher,
+        string $name = 'Test Class',
+        array $attributes = []
+    ): SchoolClass {
+        return SchoolClass::create(array_merge([
             'teacher_id' => $teacher->id,
             'name' => $name,
             'description' => 'Scoping tests',
             'code' => strtoupper(fake()->unique()->bothify('SCOPE###')),
             'status' => 'active',
-        ]);
+        ], $attributes));
     }
 
     private function createActivity(
