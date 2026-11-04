@@ -502,15 +502,23 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
 
                 function visibleRows() {
                     var rows = leadRows.filter(matches);
+                    var byName = function (a, b) {
+                        return a.getAttribute('data-student-name')
+                            .localeCompare(b.getAttribute('data-student-name'), 'es', { sensitivity: 'base' });
+                    };
 
                     if (state.order === 'name') {
-                        rows = rows.sort(function (a, b) {
-                            return a.getAttribute('data-student-name')
-                                .localeCompare(b.getAttribute('data-student-name'), 'es', { sensitivity: 'base' });
-                        });
+                        rows = rows.sort(byName);
                     } else {
                         rows = rows.sort(function (a, b) {
-                            return numericFinal(b) - numericFinal(a);
+                            var diff = numericFinal(b) - numericFinal(a);
+
+                            if (diff !== 0) {
+                                return diff;
+                            }
+
+                            // Empate: desempata por nombre para un orden estable.
+                            return byName(a, b);
                         });
 
                         if (state.order === 'final_asc') {
@@ -563,6 +571,22 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
                         studentRow.classList.toggle('hidden', ! pageSet.has(studentRow));
                         collapseDetail(studentRow);
                     });
+
+                    // Reordenar físicamente las filas en el tbody según el orden
+                    // activo; cada detalle viaja pegado a su alumno.
+                    rows.forEach(function (studentRow) {
+                        var detailRow = body.querySelector(
+                            'tr[data-detail="' + studentRow.getAttribute('data-student') + '"]'
+                        );
+
+                        body.insertBefore(studentRow, emptyRow);
+
+                        if (detailRow) {
+                            body.insertBefore(detailRow, emptyRow);
+                        }
+                    });
+
+                    body.appendChild(emptyRow);
 
                     emptyRow.classList.toggle('hidden', rows.length !== 0);
 
