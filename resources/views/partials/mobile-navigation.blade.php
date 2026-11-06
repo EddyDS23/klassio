@@ -19,19 +19,20 @@
     <div class="fixed inset-0 bg-black/30 dark:bg-black/70 transition-opacity duration-300" id="mobile-nav-backdrop" aria-hidden="true"></div>
 
     {{-- Drawer panel --}}
-    <aside class="fixed inset-y-0 left-0 z-50 w-full max-w-sm transform transition-transform duration-300 ease-out translate-x-full md:hidden" id="mobile-nav-panel" role="document">
+    {{-- Panel lateral: se desliza desde la izquierda (hamburguesa a la izquierda) --}}
+    <aside class="fixed inset-y-0 left-0 z-50 w-full max-w-sm transform transition-transform duration-300 ease-out -translate-x-full md:hidden" id="mobile-nav-panel" role="document">
         <div class="flex flex-col h-full bg-white dark:bg-slate-900 shadow-xl overflow-x-hidden">
             {{-- Header --}}
-            <div class="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 px-4 py-4">
-                <a href="{{ url('/') }}" class="flex items-center gap-3" aria-label="{{ $brandTitle }} - Inicio">
-                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl {{ $brandIconBg }} text-xl font-black text-white shadow-lg">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 px-[1rem] py-[1rem]">
+                <a href="{{ url('/') }}" class="flex min-w-0 items-center gap-3" aria-label="{{ $brandTitle }} - Inicio">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl {{ $brandIconBg }} text-xl font-black text-white shadow-lg">
                         {{ $brandIcon }}
                     </div>
-                    <div>
-                        <p class="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                    <div class="min-w-0">
+                        <p class="truncate text-xl font-black tracking-tight text-slate-900 dark:text-white">
                             {{ $brandTitle }}
                         </p>
-                        <p class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                        <p class="truncate text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                             {{ $brandSubtitle }}
                         </p>
                     </div>
@@ -39,7 +40,7 @@
 
                 <button
                     type="button"
-                    class="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     id="mobile-nav-close"
                     aria-label="Cerrar menú"
                 >
@@ -50,19 +51,21 @@
             </div>
 
 {{-- Navigation items --}}
-            <nav class="flex-1 overflow-y-auto px-3 py-4" aria-label="Navegación principal">
+            <nav class="flex-1 overflow-y-auto px-[0.75rem] py-[1rem]" aria-label="Navegación principal">
                 <ul class="space-y-1.5" role="list">
                     @foreach ($navItems as $item)
                         @php
                             $isExact = $item['exact'] ?? false;
+                            $isFragment = ($item['fragment'] ?? '') !== '';
                             $routeMatches = $isExact
                                 ? request()->routeIs($item['pattern'])
                                 : request()->routeIs($item['pattern'] . '*');
-                            $isActive = $routeMatches;
+                            // Un solo elemento activo: los enlaces con fragment se activan solo por hash (JS).
+                            $isActive = $routeMatches && ! $isFragment;
                         @endphp
                         <li>
-                            <a href="{{ route($item['route']) }}{{ ($item['fragment'] ?? '') ? '#' . ($item['fragment'] ?? '') : '' }}"
-                               class="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-bold transition
+                            <a href="{{ route($item['route']) }}{{ $isFragment ? '#' . ($item['fragment'] ?? '') : '' }}"
+                               class="flex items-center gap-3 rounded-xl px-[1rem] py-[0.875rem] text-sm font-bold transition
                                          {{ $isActive ? 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
                                aria-current="{{ $isActive ? 'page' : 'false' }}"
                                data-fragment="{{ $item['fragment'] ?? '' }}">
@@ -75,21 +78,21 @@
             </nav>
 
             {{-- User info and logout --}}
-            <div class="border-t border-slate-200 dark:border-slate-700 px-4 py-4">
+            <div class="shrink-0 border-t border-slate-200 dark:border-slate-700 px-[1rem] py-[1rem]">
                 <div class="mb-3 flex items-center gap-3">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $avatarBg }} font-bold text-white">
                         {{ $avatarLetter }}
                     </div>
                     <div class="min-w-0">
                         <p class="truncate text-sm font-bold text-slate-900 dark:text-white">{{ $userName }}</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ $userRole }}</p>
+                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $userRole }}</p>
                     </div>
                 </div>
 
                 <form action="{{ $logoutUrl }}" method="POST">
                     @csrf
                     <button type="submit"
-                            class="flex w-full items-center gap-3 rounded-xl bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm font-bold text-red-600 dark:text-red-400 transition hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300">
+                            class="flex w-full items-center gap-3 rounded-xl bg-red-50 dark:bg-red-900/20 px-[1rem] py-[0.75rem] text-sm font-bold text-red-600 dark:text-red-400 transition hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300">
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -167,7 +170,7 @@
         drawer.classList.remove('hidden');
         // Forzar reflow para la animación
         void drawer.offsetWidth;
-        panel.classList.remove('translate-x-full');
+        panel.classList.remove('-translate-x-full');
         document.body.style.overflow = 'hidden';
         openBtn.setAttribute('aria-expanded', 'true');
 
@@ -182,7 +185,7 @@
     function close() {
         if (!isOpen) return;
         isOpen = false;
-        panel.classList.add('translate-x-full');
+        panel.classList.add('-translate-x-full');
         document.body.style.overflow = '';
         openBtn.setAttribute('aria-expanded', 'false');
         removeTrapFocus(panel);

@@ -47,7 +47,7 @@
                                     </p>
 
                                     <p class="mt-1 text-sm font-black capitalize text-slate-900">
-                                        {{ $activity->type }}
+                                        @include('partials.game-type-label', ['type' => $activity->type])
                                     </p>
                                 </div>
 

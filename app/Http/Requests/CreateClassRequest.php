@@ -24,9 +24,32 @@ class CreateClassRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:150'],
-            'description' => ['sometimes', 'string', 'max:255'],
+            // 'nullable' permite enviar el campo sin texto: la opción
+            // ConvertEmptyStringsToNull lo entrega como null y una regla
+            // 'string' simple lo rechazaría ("must be a string").
+            'description' => ['nullable', 'string', 'max:255'],
             'units' => ['nullable', 'array', 'max:8'],
             'units.*.name' => ['nullable', 'string', 'max:150'],
+        ];
+    }
+
+    /**
+     * Mensajes de validación en español para este formulario.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'El nombre de la clase es obligatorio.',
+            'name.string' => 'El nombre de la clase debe ser un texto.',
+            'name.max' => 'El nombre no puede exceder :max caracteres.',
+            'description.string' => 'La descripción debe ser un texto.',
+            'description.max' => 'La descripción no puede exceder :max caracteres.',
+            'units.array' => 'Las unidades no tienen un formato válido.',
+            'units.max' => 'Puedes crear hasta :max unidades.',
+            'units.*.name.string' => 'Cada unidad debe ser un nombre de texto.',
+            'units.*.name.max' => 'Cada unidad no puede exceder :max caracteres.',
         ];
     }
 

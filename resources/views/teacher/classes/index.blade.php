@@ -59,47 +59,8 @@
 
         </section>
 
-
-        {{-- Mensajes --}}
-        @if (session('success'))
-            <div
-                class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 shadow-sm">
-
-                <span class="text-xl">✓</span>
-
-                <div>
-                    <p class="font-black">
-                        ¡Operación exitosa!
-                    </p>
-
-                    <p class="text-sm font-medium">
-                        {{ session('success') }}
-                    </p>
-                </div>
-
-            </div>
-        @endif
-
-
-        @if (session('error'))
-            <div
-                class="mb-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-800 shadow-sm">
-
-                <span class="text-xl">!</span>
-
-                <div>
-                    <p class="font-black">
-                        Ocurrió un problema
-                    </p>
-
-                    <p class="text-sm font-medium">
-                        {{ session('error') }}
-                    </p>
-                </div>
-
-            </div>
-        @endif
-
+        {{-- Los mensajes flash (éxito/error) los renderiza la barra del
+             layout compartido teacher.layouts.app: aquí no se repiten. --}}
 
         {{-- Filtro por periodo --}}
         <section class="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">

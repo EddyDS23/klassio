@@ -82,25 +82,25 @@
         </aside>
 
         <!-- CONTENIDO PRINCIPAL -->
-        <main class="flex-1">
+        <main class="min-w-0 flex-1">
 
-            <!-- HEADER -->
-            <header class="sticky top-4 z-20 mx-4 mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:mx-6 sm:px-8">
+            <!-- HEADER (compacto) -->
+            <header class="sticky top-4 z-20 mx-3! mt-3! rounded-2xl border border-slate-200 bg-white px-4! py-3! shadow-sm sm:mx-4! sm:px-6! sm:py-4!">
 
-                <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
+                <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-2">
 
-                    <div>
-                        <p class="text-sm font-semibold text-indigo-600">
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-0!">
                             Mi clase
                         </p>
 
-                        <h2 class="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
+                        <h2 class="mt-0.5! text-xl! font-black text-slate-900 sm:text-2xl!">
                             {{ $class->name }}
                         </h2>
                     </div>
 
                     <a href="{{ route('student.classes.index') }}"
-                       class="klassio-back-button">
+                       class="klassio-back-button shrink-0">
                         ← Volver
                     </a>
 
@@ -108,33 +108,33 @@
 
             </header>
 
-            <div class="mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8">
+            <div class="mx-auto max-w-7xl space-y-5 px-4! py-6 sm:px-6! lg:px-8!">
 
-                <!-- BANNER DE LA CLASE -->
-                <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 p-6 text-white shadow-xl sm:p-8">
+                <!-- BANNER DE LA CLASE (compacto, consistente con el encabezado) -->
+                <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 p-5! text-white shadow-xl sm:p-6!">
 
                     <div class="relative z-10 max-w-3xl">
 
-                        <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur">
+                        <div class="mb-3! inline-flex items-center gap-2 rounded-full bg-white/20 px-3! py-1.5 text-xs font-bold backdrop-blur">
                             📘 ¡Mi clase!
                         </div>
 
-                        <h1 class="text-3xl font-black sm:text-4xl">
+                        <h1 class="text-2xl font-black sm:text-3xl">
                             {{ $class->name }} 🎉
                         </h1>
 
-                        <p class="mt-3 max-w-2xl text-base font-medium leading-6 text-indigo-100 sm:text-lg">
+                        <p class="mt-2 max-w-2xl text-sm font-medium leading-6 text-indigo-100 sm:text-base">
                             Mira tus juegos y juega con tus amigos. 🚀
                         </p>
 
                     </div>
 
-                    <div class="absolute -right-8 -top-10 text-[150px] opacity-20">
+                    <div class="absolute -right-8 -top-10 hidden text-[110px] opacity-20 sm:block">
                         🎓
                     </div>
 
-                    <div class="absolute -bottom-16 right-24 h-40 w-40 rounded-full bg-white/10"></div>
-                    <div class="absolute -right-20 bottom-0 h-56 w-56 rounded-full bg-white/10"></div>
+                    <div class="pointer-events-none absolute -bottom-16 right-24 h-40 w-40 rounded-full bg-white/10"></div>
+                    <div class="pointer-events-none absolute -right-20 bottom-0 h-56 w-56 rounded-full bg-white/10"></div>
 
                 </section>
 

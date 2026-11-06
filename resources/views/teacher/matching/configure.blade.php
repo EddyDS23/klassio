@@ -1,65 +1,13 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+@extends('teacher.layouts.app')
 
-    <title>
-        {{ $editing ? 'Editar' : 'Configurar' }} Unir Conceptos | Klassio
-    </title>
+@section('title', $editing ? 'Editar Unir Conceptos' : 'Configurar Unir Conceptos')
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+@section('page-title', $editing ? 'Editar Unir Conceptos' : 'Configurar Unir Conceptos')
 
-<body class="min-h-screen bg-slate-100 text-slate-800">
+@section('content')
 
-    <!-- Fondo decorativo -->
-    <div class="fixed inset-0 -z-10 overflow-hidden">
-        <div class="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
-        <div class="absolute right-0 top-20 h-96 w-96 rounded-full bg-cyan-200/30 blur-3xl"></div>
-        <div class="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-teal-200/20 blur-3xl"></div>
-    </div>
-
-    <!-- Barra superior -->
-    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 shadow-sm backdrop-blur">
-        <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-
-            <a href="{{ route('teacher.activities.show', $activity->id) }}"
-               class="flex items-center gap-3">
-
-                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-lg shadow-emerald-500/20">
-                    K
-                </div>
-
-                <div>
-                    <p class="text-xl font-black tracking-tight text-slate-900">
-                        Klassio
-                    </p>
-                    <p class="text-xs font-medium text-slate-500">
-                        Panel del profesor
-                    </p>
-                </div>
-            </a>
-
-            <div class="hidden items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 sm:flex">
-                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                Configuración de actividad
-            </div>
-
-            <form method="POST" action="{{ url('/logout') }}">
-                @csrf
-
-                <button
-                    type="submit"
-                    class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-                >
-                    Cerrar sesión
-                </button>
-            </form>
-        </div>
-    </header>
-
-    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {{-- El encabezado (marca, sesión y hamburguesa móvil) lo aporta el
+             layout compartido teacher.layouts.app. --}}
 
         <div class="mb-6">
             <a href="{{ route('teacher.activities.show', $activity->id) }}" class="klassio-back-button">
@@ -125,21 +73,8 @@
             </div>
         </section>
 
-        <!-- Mensaje de éxito -->
-        @if ($message = session('success') ?? session('status'))
-            <div id="save-feedback" role="status" class="fixed right-4 top-4 z-50 flex max-w-md items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-xl shadow-emerald-900/15">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                    ✓
-                </div>
-
-                <div>
-                    <p class="font-bold">Operación realizada</p>
-                    <p class="mt-1 text-sm">
-                        {{ $message }}
-                    </p>
-                </div>
-            </div>
-        @endif
+        {{-- El flash de guardado lo renderiza el layout compartido
+             teacher.layouts.app: aquí no se duplica. --}}
 
         <!-- Errores -->
         @if ($errors->any())
@@ -507,8 +442,9 @@
             </section>
         @endif
 
-    </main>
+@endsection
 
+@push('scripts')
     <script>
         const body = document.getElementById('pairs-body');
         const mobileBody = document.getElementById('mobile-pairs');
@@ -536,11 +472,6 @@
             submitButton.classList.add('cursor-wait', 'opacity-75');
             submitButton.innerHTML = '<span>⏳</span> Guardando…';
         });
-
-        const saveFeedback = document.getElementById('save-feedback');
-        if (saveFeedback) {
-            setTimeout(() => saveFeedback.remove(), 5000);
-        }
 
         let index = body.querySelectorAll('tr.row-form').length;
 
@@ -731,6 +662,4 @@
             }
         });
     </script>
-
-</body>
-</html>
+@endpush

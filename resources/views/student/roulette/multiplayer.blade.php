@@ -1493,8 +1493,6 @@
             if (answering || !currentItem) return;
             answering = true;
 
-            window.KlassioSounds?.startMusic();
-
             Array.from(document.querySelectorAll('.round-option-btn')).forEach((b) => b.disabled = true);
             btn.classList.add('disabled');
 
@@ -1535,7 +1533,11 @@
                 showRoundResult(data.is_correct, data.participation_score, data.correct_text);
 
                 if (data.finished) {
-                    window.KlassioSounds?.completado();
+                    /*
+                     * Música ambiental detenida (endWith del módulo); el
+                     * jingle depende de la puntuación final de la sesión.
+                     */
+                    window.KlassioSounds?.[(Number(data.participation_score) || 0) > 0 ? 'completado' : 'expirado']();
                     redirectAfterFinalResult(2200);
                 }
             } catch (e) {
@@ -1545,7 +1547,6 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            window.KlassioSounds?.startMusic();
             tick();
             refreshState();
 
@@ -1572,6 +1573,10 @@
 
     <script src="/js/klassio-sounds.js"></script>
     <script>
+        // Música ambiental de la ruleta (juegoruleta.mp3, 20% de volumen):
+        // suena en bucle durante TODA la sesión, girada o en respuesta.
+        // En esta vista el profesor gira; los eventos correcto / error /
+        // completado del script principal disparan los efectos.
         window.KlassioSounds?.setup('roulette');
     </script>
 

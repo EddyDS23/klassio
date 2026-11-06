@@ -6,6 +6,9 @@
  *   matching   -> /sounds/conectalospuntos.mp3
  *   crossword  -> /sounds/crucigrama.mp3
  *   kahoot     -> /sounds/kahoot.mp3
+ *   roulette   -> /sounds/juegoruleta.mp3 (ambiental 1:49, volumen 20%;
+ *                 suena toda la actividad, no se corta al girar ni al
+ *                 responder; al FINALIZAR la actividad se detiene)
  *
  * Efectos:
  *   click      -> /sounds/clik.mp3            (toques y botones)
@@ -45,14 +48,24 @@
 
     var MUSIC_VOLUME = 0.3;
 
+    /*
+     * Volumen por juego (el resto usa MUSIC_VOLUME).
+     * La ruleta usa música ambiental suave del 20%.
+     */
+    var MUSIC_VOLUMES = {
+        roulette: 0.2,
+    };
+
     var muted = false;
     try { muted = localStorage.getItem('klassio-sound') === 'off'; } catch (e) {}
 
     var game = null;
     var music = null;
+    var musicBase = null;
     var musicStarted = false;
     var sfxCache = {};
     var ended = false;
+    var duckTimer = null;
 
     // --- Web Audio: efectos decodificados en memoria (latencia ~10ms) ---
     var actx = null;
@@ -174,10 +187,31 @@
             music = new Audio(MUSIC[game]);
             music.loop = true;
             music.preload = 'auto';
-            music.volume = MUSIC_VOLUME;
+            musicBase = MUSIC_VOLUMES[game] || MUSIC_VOLUME;
+            music.volume = musicBase;
         }
         music.muted = muted;
         return music;
+    }
+
+    /*
+     * Ducking: baja temporalmente el volumen de la música ambiental
+     * para que el efecto (correcto / error / cierre) se escuche, y
+     * lo restaura a su base al terminar el efecto. Sin instancias nuevas.
+     */
+    function duckMusic(durationMs) {
+        if (!music || muted || !musicBase) return;
+        try { clearTimeout(duckTimer); } catch (e) {}
+        try {
+            if (!music.paused) music.volume = Math.max(0.02, musicBase * 0.35);
+        } catch (e) {}
+        duckTimer = setTimeout(function () {
+            duckTimer = null;
+            if (!music) return;
+            try {
+                if (!muted) music.volume = musicBase;
+            } catch (e) {}
+        }, durationMs);
     }
 
     function playMusic() {
@@ -198,6 +232,18 @@
 
     function sfx(name) {
         if (muted || !SFX[name]) return;
+        /*
+         * Duck de la música ambiental durante el efecto:
+         * se restaura sola a su volumen base en cuanto dura el efecto.
+         */
+        var durMs = null;
+        if (sfxBuffers[name] && sfxBuffers[name].duration) {
+            durMs = sfxBuffers[name].duration * 1000;
+        } else if (sfxCache[name] && sfxCache[name].duration) {
+            durMs = sfxCache[name].duration * 1000;
+        }
+        duckMusic(Math.max(1200, (durMs || 1800) + 200));
+
         // Vía rápida: buffer ya decodificado (casi sin latencia).
         if (playBuffer(name)) return;
         try {
@@ -215,7 +261,9 @@
         } catch (e) {}
     }
 
-    // Final del juego: frena la música y suena el cierre (una sola vez).
+    // Final del juego: DETIENE la música ambiental, expone el cierre
+    // (correcto/error/completado/expirado) una sola vez por partida y
+    // libera el audio (stopMusic también resetea el track al inicio).
     function endWith(kind) {
         if (ended) return;
         ended = true;
@@ -229,7 +277,7 @@
             ensureMusic();
             preloadAll();
             addButton();
-            // Intenta iniciar la música de fondo inmediatamente al cargar el juego.
+            // Intenta iniciar la música ambiental inmediatamente al cargar el juego.
             // Si el navegador bloquea el autoplay, fallará silenciosamente y el
             // listener global de 'pointerdown' lo reintentará en el primer clic.
             if (!muted) {
@@ -287,6 +335,10 @@
             return {
                 game: game, muted: muted, musicStarted: musicStarted,
                 musicPlaying: !!(music && !music.paused && !music.ended),
+                musicSrc: music ? music.src : null,
+                musicTime: music ? music.currentTime : null,
+                musicVolume: music ? music.volume : null,
+                ended: ended,
                 decoded: Object.keys(sfxBuffers),
             };
         },
@@ -302,6 +354,9 @@
 
     // La música arranca con el primer gesto (lo exige el navegador).
     document.addEventListener('pointerdown', function () { playMusic(); }, { capture: true });
+
+    // Seguridad: al salir de la página o cerrar la partida, cortar la música.
+    window.addEventListener('pagehide', function () { stopMusic(); });
 
     document.addEventListener('click', function (e) {
         var t = e.target && e.target.closest ? e.target.closest('[data-sound-toggle]') : null;

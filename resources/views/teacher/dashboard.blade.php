@@ -97,45 +97,7 @@
     </section>
 
 
-    <!-- Mensaje de éxito -->
-    @if(session('success'))
-        <div class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
-
-            <span class="text-xl">✓</span>
-
-            <div>
-                <p class="font-bold">
-                    ¡Operación exitosa!
-                </p>
-
-                <p class="text-sm">
-                    {{ session('success') }}
-                </p>
-            </div>
-
-        </div>
-    @endif
-
-
-    <!-- Mensaje de error -->
-    @if(session('error'))
-        <div class="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm">
-
-            <span class="text-xl">⚠️</span>
-
-            <div>
-                <p class="font-bold">
-                    Ocurrió un problema
-                </p>
-
-                <p class="text-sm">
-                    {{ session('error') }}
-                </p>
-            </div>
-
-        </div>
-    @endif
-
+    <!-- Los mensajes de sesión (éxito/error) los muestra el layout unificado. -->
 
     <!-- Tarjetas principales -->
     <section class="mb-8 grid gap-6 md:grid-cols-2">

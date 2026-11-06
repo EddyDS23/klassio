@@ -730,7 +730,7 @@
             // Comprobar si se completó todo el crucigrama
             // Comprobar si se completó todo el crucigrama
             if (result.completed) {
-                window.KlassioSounds?.completado();
+                window.KlassioSounds?.[totalScore > 0 ? 'completado' : 'expirado']();
 
                 const completed = document.createElement('p');
 

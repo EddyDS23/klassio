@@ -4,50 +4,48 @@
 @section('page-heading', 'Mis clases')
 
 @section('content')
-            <div class="mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
+            <div class="mx-auto max-w-7xl space-y-5 px-4! py-5! sm:px-6! sm:py-6! lg:px-8!">
 
-
+                {{-- El título «Mis clases» ya lo muestra el encabezado del layout
+                     compartido (page-heading): aquí solo va el_intro compacto. --}}
 
                 <!-- ENCABEZADO -->
-
                 <section
-                    class="relative overflow-hidden rounded-3xl bg-indigo-600 px-6 py-8 text-white shadow-sm sm:px-10 sm:py-10">
+                    class="relative overflow-hidden rounded-2xl bg-indigo-600 px-5! py-4! text-white shadow-sm sm:px-6! sm:py-5!">
 
+                    <div class="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
-                    <div class="relative z-10 max-w-2xl">
+                        <div class="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
 
+                            <span
+                                class="inline-flex w-fit shrink-0 rounded-full bg-white/15 px-3! py-1 text-[11px] font-bold uppercase tracking-widest text-indigo-100">
 
-                        <span
-                            class="inline-flex rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-100">
+                                🎒 Mi mochila
 
-                            🎒 Mi mochila
+                            </span>
 
-                        </span>
+                            <p class="text-sm font-semibold text-white mb-0! sm:text-base">
+                                Aquí están tus clases. ¡Toca una para jugar! 👇
+                            </p>
 
+                        </div>
 
-                        <h1 class="mt-5 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+                        <a href="{{ route('student.dashboard') }}"
+                            class="klassio-back-button w-fit shrink-0">
 
-                            Mis clases 📚
+                            ← Volver al dashboard
 
-                        </h1>
-
-
-                        <p class="mt-4 max-w-lg text-base font-medium leading-7 text-indigo-100 sm:text-lg">
-                            Aquí están tus clases. ¡Toca una para jugar! 👇
-
-                        </p>
+                        </a>
 
                     </div>
 
+                    <!-- DECORACIONES (ocultas en móvil para no ensanchar la tarjeta) -->
 
+                    <div class="absolute -right-16 -top-16 hidden h-44 w-44 rounded-full border border-white/15 sm:block"></div>
 
-                    <!-- DECORACIONES -->
+                    <div class="absolute -bottom-20 right-16 hidden h-52 w-52 rounded-full border border-white/10 sm:block"></div>
 
-                    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full border border-white/15"></div>
-
-                    <div class="absolute -bottom-28 right-24 h-72 w-72 rounded-full border border-white/10"></div>
-
-                    <div class="absolute right-10 top-10 hidden text-7xl opacity-20 sm:block">
+                    <div class="absolute right-8 top-2 hidden text-5xl opacity-20 sm:block">
 
                         ✦
 
@@ -108,7 +106,7 @@
 
                 <!-- TÍTULO DE SECCIÓN -->
 
-                <section class="space-y-5">
+                <section class="space-y-4">
 
 
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -117,21 +115,14 @@
                         <div>
 
 
-                            <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
-
-                                🎒 Mis clases
-
-                            </p>
-
-
-                            <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900">
+                            <h2 class="text-xl! mb-0! font-extrabold tracking-tight text-slate-900">
 
                                 ¿A qué jugamos hoy?
 
                             </h2>
 
 
-                            <p class="mt-2 text-base font-medium text-slate-500">
+                            <p class="mt-1! text-sm font-medium text-slate-500">
                                 Toca tu clase 👇
 
                             </p>
@@ -139,28 +130,20 @@
                         </div>
 
 
-                        <a href="{{ route('student.dashboard') }}"
-                            class="klassio-back-button">
+                        {{-- Filtro compacto: etiqueta encima del selector, a la derecha
+                             en escritorio y a todo el ancho en móvil. La acción, el
+                             parámetro GET y los valores se conservan sin cambios. --}}
 
-                            ← Volver al dashboard
-
-                        </a>
-
-                    </div>
-
-
-                    <!-- FILTRO POR PERIODO -->
-
-                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <form method="GET" action="{{ route('student.classes.index') }}"
-                            class="flex flex-col justify-end gap-3 sm:flex-row sm:items-end">
-                            <div class="sm:w-64">
+                            class="flex flex-col items-start gap-2 sm:flex-row sm:items-end">
+
+                            <div class="w-full sm:w-56">
                                 <label for="period"
                                     class="mb-1 block text-[11px] font-bold uppercase tracking-widest text-slate-400">
                                     Periodo
                                 </label>
                                 <select id="period" name="period" data-auto-submit
-                                    class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100">
+                                    class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3! py-2 text-sm font-bold text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100">
                                     <option value="" @if ($selectedPeriod === null) selected @endif>Todos los periodos</option>
                                     @foreach ($availablePeriods as $periodCode)
                                         <option value="{{ $periodCode }}" @if ($periodCode === $selectedPeriod) selected @endif>
@@ -172,12 +155,13 @@
 
                             @if ($selectedPeriod !== null)
                                 <a href="{{ route('student.classes.index') }}"
-                                    class="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-indigo-50 hover:text-indigo-600">
+                                    class="inline-flex items-center justify-center rounded-xl bg-white px-3! py-2 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-indigo-50 hover:text-indigo-600">
                                     Limpiar
                                 </a>
                             @endif
                         </form>
-                    </section>
+
+                    </div>
 
 
                     <!-- ACORDEONES POR PERIODO (paginados) -->

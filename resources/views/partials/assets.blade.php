@@ -39,24 +39,6 @@
         body { background-color: #f6f7fb; background-image: radial-gradient(circle at top right, rgb(15 23 42 / .07), transparent 32rem); }
         .page-hero { background: linear-gradient(135deg, #0f172a, #1e293b 55%, #334155); }
     @endif
-    /* Modo negro: solo Bootstrap + Tailwind CDN, sin Vite. Se activa con html[data-theme="dark"]. */
-    html[data-theme="dark"] body { background-color: #0f172a !important; background-image: none !important; color: #e2e8f0 !important; }
-    html[data-theme="dark"] .bg-white { background-color: #1e293b !important; }
-    html[data-theme="dark"] .bg-slate-50 { background-color: #1e293b !important; }
-    html[data-theme="dark"] .bg-slate-100 { background-color: #334155 !important; }
-    html[data-theme="dark"] .text-slate-900, html[data-theme="dark"] .text-slate-800 { color: #f1f5f9 !important; }
-    html[data-theme="dark"] .text-slate-600, html[data-theme="dark"] .text-slate-500 { color: #cbd5e1 !important; }
-    html[data-theme="dark"] .border-slate-200, html[data-theme="dark"] .border-slate-100 { border-color: #334155 !important; }
-    html[data-theme="dark"] header, html[data-theme="dark"] aside { background-color: #1e293b !important; border-color: #334155 !important; }
-    html[data-theme="dark"] .surface-card, html[data-theme="dark"] .student-activity > section, html[data-theme="dark"] section { background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #334155 !important; }
-    html[data-theme="dark"] .student-activity { color: #e2e8f0 !important; }
-    html[data-theme="dark"] .student-activity > h1 { color: #38bdf8 !important; }
-    html[data-theme="dark"] input, html[data-theme="dark"] select, html[data-theme="dark"] textarea { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #475569 !important; }
-    html[data-theme="dark"] table { color: #e2e8f0 !important; }
-    html[data-theme="dark"] .page-hero { box-shadow: 0 1rem 2.5rem rgb(0 0 0 / .4); }
-    .klassio-theme-btn { border: 1px solid #cbd5e1; border-radius: .75rem; background: #fff; padding: .5rem .75rem; font-size: .85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    html[data-theme="dark"] .klassio-theme-btn { background: #0f172a; color: #f1f5f9; border-color: #475569; }
-
     /* === UTILIDAD GLOBAL DE BOTONES === */
     /* Radio consistente = botón "Negro" (0.75rem = 12px) */
     .btn-klassio-rounded,
@@ -97,9 +79,6 @@
     }
     a.klassio-back-button:hover { background: #f8fafc; border-color: #94a3b8; color: #334155; }
     a.klassio-back-button:focus-visible { outline: 2px solid #6366f1; outline-offset: 3px; }
-    html[data-theme="dark"] a.klassio-back-button { background: #1e293b; border-color: #64748b; color: #e2e8f0; }
-    html[data-theme="dark"] a.klassio-back-button:hover { background: #334155; border-color: #94a3b8; }
-
     ::selection { background: rgb(99 91 255 / .25); }
     :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -108,41 +87,13 @@
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 <script>
-    // Aplica modo guardado antes de pintar (claro por defecto). Sin Vite, solo Bootstrap + Tailwind CDN.
-    try {
-        if (localStorage.getItem('klassio-theme') === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            document.documentElement.classList.add('dark');
-        }
-    } catch (e) {}
-</script>
-<script>
-    // Botón junto a "Cerrar sesión" para que maestro y alumno elijan negro/blanco. Sin Vite.
-    document.addEventListener('DOMContentLoaded', function () {
-        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        function label() { return isDark ? '☀️ Claro' : '🌙 Negro'; }
-        function toggle() {
-            isDark = !isDark;
-            if (isDark) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.removeAttribute('data-theme');
-                document.documentElement.classList.remove('dark');
-            }
-            try { localStorage.setItem('klassio-theme', isDark ? 'dark' : 'light'); } catch (e) {}
-            document.querySelectorAll('.klassio-theme-btn').forEach(function (b) { b.textContent = label(); });
-        }
-        document.querySelectorAll('form[action*="logout"]').forEach(function (form) {
-            if (form.parentElement && form.parentElement.querySelector('.klassio-theme-btn')) return;
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'klassio-theme-btn';
-            btn.textContent = label();
-            btn.addEventListener('click', toggle);
-            btn.style.marginRight = '0.5rem';
-            form.parentElement.insertBefore(btn, form);
-            form.style.display = 'inline-block';
-        });
-    });
+    // KLASSIO usa únicamente el tema claro. Se eliminó el selector de modo oscuro.
+    // Este script limpia preferencias antiguas para que nunca vuelvan a activar el modo oscuro.
+    (function () {
+        try {
+            document.documentElement.removeAttribute('data-theme');
+            document.documentElement.classList.remove('dark');
+            localStorage.removeItem('klassio-theme');
+        } catch (e) {}
+    })();
 </script>

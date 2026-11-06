@@ -1,48 +1,12 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('title', 'Editar actividad')
 
-    <title>Editar actividad | Klassio</title>
+@section('page-title', 'Editar actividad')
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+@section('content')
 
-<body class="min-h-screen bg-slate-100 text-slate-800">
-
-    <!-- Barra superior -->
-    <header class="sticky top-0 z-30 border-b border-emerald-100 bg-white shadow-sm">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-
-            <a href="{{ route('teacher.activities.index', $activity->class_id) }}"
-               class="flex items-center gap-3">
-
-                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
-                    K
-                </div>
-
-                <div>
-                    <p class="text-xl font-black tracking-tight text-slate-900">
-                        Klassio
-                    </p>
-
-                    <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">
-                        Panel del profesor
-                    </p>
-                </div>
-            </a>
-
-            <span class="hidden rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
-                Profesor
-            </span>
-        </div>
-    </header>
-
-
-    <!-- Contenido principal -->
-    <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-5xl">
 
         <div class="mb-6">
             <a href="{{ route('teacher.activities.index', $activity->class_id) }}" class="klassio-back-button">
@@ -77,24 +41,6 @@
 
             </div>
         </section>
-
-
-        <!-- Mensaje de éxito -->
-        @if(session('success'))
-            <div class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
-                <div class="text-xl">✓</div>
-
-                <div>
-                    <p class="font-bold">
-                        ¡Cambios guardados!
-                    </p>
-
-                    <p class="text-sm">
-                        {{ session('success') }}
-                    </p>
-                </div>
-            </div>
-        @endif
 
 
         <!-- Errores -->
@@ -229,7 +175,7 @@
                                 </div>
 
                                 <span class="w-fit rounded-full bg-cyan-100 px-4 py-2 text-sm font-black capitalize text-cyan-700">
-                                    {{ $activity->type }}
+                                    @include('partials.game-type-label', ['type' => $activity->type])
                                 </span>
 
                             </div>
@@ -454,9 +400,6 @@
 
         </section>
 
+    </div>
 
-    </main>
-
-</body>
-
-</html>
+@endsection

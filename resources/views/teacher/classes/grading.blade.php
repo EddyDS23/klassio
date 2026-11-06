@@ -1,61 +1,10 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('title', 'Calificación general · '.e($class->name))
 
-    <title>Calificación general · {{ $class->name }} | Klassio</title>
+@section('page-title', 'Calificaciones')
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-
-<body class="min-h-screen bg-slate-100 text-slate-800">
-
-    {{-- Barra superior --}}
-    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
-        <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-
-            <a href="{{ route('teacher.dashboard') }}" class="flex items-center gap-3">
-
-                <div
-                    class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
-                    K
-                </div>
-
-                <div>
-                    <h1 class="text-xl font-black tracking-tight text-slate-900">
-                        Klassio
-                    </h1>
-
-                    <p class="text-xs font-medium text-slate-500">
-                        Panel del profesor
-                    </p>
-                </div>
-            </a>
-
-            <div class="flex items-center gap-3">
-
-                <span class="hidden text-sm font-semibold text-slate-600 sm:block">
-                    {{ auth()->user()->name }}
-                </span>
-
-                <form action="{{ url('/logout') }}" method="POST">
-                    @csrf
-
-                    <button type="submit"
-                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
-                        Cerrar sesión
-                    </button>
-                </form>
-
-            </div>
-
-        </div>
-    </header>
-
-
-    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+@section('content')
 
         {{-- Navegación --}}
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -461,9 +410,9 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
             (completada, abandonada o expirada); la actividad vencida sin jugada cuenta como 0.
         </p>
 
-    </main>
+@endsection
 
-
+@push('scripts')
     @if (! empty($units) && ! empty($studentRows))
         {{-- Buscador, orden y paginación de la tabla (del lado del cliente) --}}
         <script>
@@ -657,7 +606,4 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
             })();
         </script>
     @endif
-
-</body>
-
-</html>
+@endpush

@@ -1,63 +1,28 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('teacher.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('title', (isset($crossword) ? 'Editar' : 'Configurar').' crucigrama')
 
-    <title>
-        {{ isset($crossword) ? 'Editar' : 'Configurar' }} crucigrama
-    </title>
+@section('page-title', isset($crossword) ? 'Editar crucigrama' : 'Configurar crucigrama')
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+@section('page-actions')
+        <a
+            href="{{ route('teacher.activities.index', $activity->class_id) }}"
+            class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700"
+        >
+            Actividades
+        </a>
+@endsection
 
-<body class="min-h-screen bg-slate-100 text-slate-800">
+@section('content')
 
-    <!-- Encabezado -->
-    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
-        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
+        {{-- El encabezado (marca, sesión y hamburguesa móvil) lo aporta el
+             layout compartido teacher.layouts.app. --}}
 
-            <a
-                href="{{ route('teacher.activities.show', $activity->id) }}"
-                class="flex items-center gap-3"
-            >
-                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-xl font-black text-white shadow-lg shadow-emerald-200">
-                    K
-                </div>
-
-                <div>
-                    <p class="text-xl font-black tracking-tight text-slate-900">
-                        Klassio
-                    </p>
-
-                    <p class="text-xs font-medium text-slate-500">
-                        Configuración de actividades
-                    </p>
-                </div>
+        <div class="mb-6">
+            <a href="{{ route('teacher.activities.show', $activity->id) }}" class="klassio-back-button">
+                <span aria-hidden="true">←</span> Volver a la actividad
             </a>
-
-            <div class="flex flex-wrap items-center gap-2">
-
-                <a
-                    href="{{ route('teacher.activities.show', $activity->id) }}"
-                    class="klassio-back-button"
-                >
-                    <span aria-hidden="true">←</span> Volver a la actividad
-                </a>
-
-                <a
-                    href="{{ route('teacher.activities.index', $activity->class_id) }}"
-                    class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700"
-                >
-                    Actividades
-                </a>
-
-            </div>
         </div>
-    </header>
-
-    <main class="mx-auto max-w-7xl space-y-8 px-5 py-8 lg:px-8">
 
         <!-- Hero -->
         <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-7 text-white shadow-xl shadow-emerald-200 md:p-10">
@@ -72,10 +37,6 @@
                     {{ isset($crossword) ? 'Editar actividad' : 'Nueva actividad' }}
                 </div>
 
-                <h1 class="text-3xl font-black tracking-tight md:text-4xl">
-                    {{ isset($crossword) ? 'Editar crucigrama' : 'Configurar crucigrama' }}
-                </h1>
-
                 <p class="mt-3 text-base font-semibold text-emerald-50 md:text-lg">
                     {{ $activity->title }}
                 </p>
@@ -88,24 +49,8 @@
             </div>
         </section>
 
-        <!-- Mensaje de éxito -->
-        @if(session('success'))
-            <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">
-                    ✓
-                </div>
-
-                <div>
-                    <p class="font-bold">
-                        Operación completada
-                    </p>
-
-                    <p class="mt-1 text-sm">
-                        {{ session('success') }}
-                    </p>
-                </div>
-            </div>
-        @endif
+        {{-- El flash de guardado lo renderiza el layout compartido
+             teacher.layouts.app: aquí no se duplica. --}}
 
         <!-- Errores -->
         @if($errors->any())
@@ -432,8 +377,9 @@
 
         </section>
 
-    </main>
+@endsection
 
+@push('scripts')
     <script>
         let rowIndex = {{ $isEditing ? $words->count() : 2 }};
 
@@ -541,7 +487,4 @@
 
         updateWordCount();
     </script>
-
-</body>
-
-</html>
+@endpush

@@ -79,26 +79,22 @@
         </aside>
 
 <main class="min-w-0 flex-1">
-            <header class="sticky top-4 z-20 mx-4 mt-2 flex flex-col sm:h-auto rounded-2xl border border-slate-200 bg-white px-5 shadow-sm sm:mx-6 sm:px-8">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Mi espacio académico</p>
-                        <h2 class="mt-1 text-lg font-bold text-slate-800">@yield('page-heading', 'Inicio')</h2>
-                    </div>
+            <header class="sticky top-4 z-20 mx-4 mt-2 flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-[1rem] py-3 shadow-sm sm:mx-6 sm:px-[1.5rem]">
+                {{-- Botón hamburguesa móvil (esquina superior izquierda) --}}
+                <button type="button"
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:hidden"
+                        id="mobile-nav-open"
+                        aria-label="Abrir menú de navegación"
+                        aria-expanded="false"
+                        aria-controls="mobile-nav-panel">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
 
-                    <div class="flex items-center gap-3">
-                        {{-- Botón hamburguesa móvil --}}
-                        <button type="button"
-                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:hidden"
-                                id="mobile-nav-open"
-                                aria-label="Abrir menú de navegación"
-                                aria-expanded="false"
-                                aria-controls="mobile-nav-panel">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
-                    </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Mi espacio académico</p>
+                    <h2 class="mt-1 text-lg font-bold text-slate-800">@yield('page-heading', 'Inicio')</h2>
                 </div>
             </header>
 

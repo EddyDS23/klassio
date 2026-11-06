@@ -82,9 +82,21 @@
 
             <!-- Barra superior -->
             <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
-                <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+                <div class="mx-auto flex max-w-7xl items-center justify-between px-[1rem] py-4 sm:px-[1.5rem] lg:px-8">
 
                     <div class="flex items-center gap-3">
+                        {{-- Botón hamburguesa móvil (esquina superior izquierda, solo < 768 px) --}}
+                        <button type="button"
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 md:hidden"
+                                id="mobile-nav-open"
+                                aria-label="Abrir menú de navegación"
+                                aria-expanded="false"
+                                aria-controls="mobile-nav-panel">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+
                         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-lg font-black text-amber-400 shadow-lg shadow-slate-200">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
@@ -99,18 +111,6 @@
                             </p>
                         </div>
                     </div>
-
-                    {{-- Botón hamburguesa móvil --}}
-                    <button type="button"
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:hidden"
-                            id="mobile-nav-open"
-                            aria-label="Abrir menú de navegación"
-                            aria-expanded="false"
-                            aria-controls="mobile-nav-panel">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
 
                 </div>
             </header>

@@ -27,10 +27,32 @@ class ModifyClassRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:150'],
-            'description' => ['sometimes', 'string', 'max:255'],
+            // 'nullable': la descripción puede quedar vacía (texto nulo) sin
+            // fallar la validación; con texto se valida como string normal.
+            'description' => ['nullable', 'string', 'max:255'],
             'units' => ['nullable', 'array', 'max:8'],
             'units.*.id' => ['nullable', 'integer'],
             'units.*.name' => ['nullable', 'string', 'max:150'],
+        ];
+    }
+
+    /**
+     * Mensajes de validación en español para este formulario.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.string' => 'El nombre de la clase debe ser un texto.',
+            'name.max' => 'El nombre no puede exceder :max caracteres.',
+            'description.string' => 'La descripción debe ser un texto.',
+            'description.max' => 'La descripción no puede exceder :max caracteres.',
+            'units.array' => 'Las unidades no tienen un formato válido.',
+            'units.max' => 'Puedes manejar hasta :max unidades.',
+            'units.*.id.integer' => 'La identificación de la unidad no es válida.',
+            'units.*.name.string' => 'Cada unidad debe ser un nombre de texto.',
+            'units.*.name.max' => 'Cada unidad no puede exceder :max caracteres.',
         ];
     }
 

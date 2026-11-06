@@ -1033,6 +1033,13 @@
                 gameStatusEl.textContent = 'Tiempo agotado';
                 spinBtn.disabled = true;
 
+                /*
+                 * La actividad terminó por tiempo: mismo comportamiento que
+                 * Crucigrama (expirado()). El módulo detiene la música
+                 * ambiental y suena el efecto una sola vez.
+                 */
+                window.KlassioSounds?.expirado();
+
                 document.getElementById('expire-form').submit();
 
                 return;
@@ -1201,7 +1208,6 @@
                 button.addEventListener(
                     'click',
                     function () {
-                        window.KlassioSounds?.startMusic();
                         answerQuestion(
                             button,
                             option.key,
@@ -1454,9 +1460,13 @@
                 );
 
                 if (data.completed) {
-                    window.KlassioSounds?.completado();
                     closeQuestionModal();
 
+                    /*
+                     * El sonido de cierre lo elige finishGame() según la
+                     * puntuación (completado vs expirado). Evitamos un
+                     * segundo disparo aquí.
+                     */
                     finishGame();
 
                     return;
@@ -1680,7 +1690,12 @@
         ========================================================== */
 
         function finishGame() {
-            window.KlassioSounds?.completado();
+            /*
+             * La música ambiental se detiene aquí (endWith del módulo)
+             * y el jingle de cierre depende de la puntuación:
+             * con 0 puntos suena 'expirado'; con más de 0, 'completado'.
+             */
+            window.KlassioSounds?.[points > 0 ? 'completado' : 'expirado']();
 
             spinning = false;
             awaitingAnswer = false;
@@ -1718,7 +1733,6 @@
         spinBtn.addEventListener(
             'click',
             function () {
-                window.KlassioSounds?.startMusic();
                 spin();
             }
         );
@@ -1779,12 +1793,12 @@
 
     <script src="/js/klassio-sounds.js"></script>
     <script>
+        // Música ambiental de la ruleta (juegoruleta.mp3, 20% de volumen):
+        // suena en bucle durante TODA la actividad. Si el navegador exige
+        // interacción, arranca en el primer toque (listener del módulo).
+        // Los efectos correcto / error / completado se disparan desde los
+        // eventos reales del juego dentro del script principal.
         window.KlassioSounds?.setup('roulette');
-        // Desbloquear música de fondo en el primer gesto del usuario,
-        // igual que en kahoot, wordsearch y crossword.
-        document.addEventListener('DOMContentLoaded', function () {
-            window.KlassioSounds?.startMusic();
-        });
     </script>
 
 </body>

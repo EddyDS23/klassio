@@ -60,7 +60,7 @@
                 </div>
 
                 <span class="w-fit rounded-full bg-emerald-100 px-4 py-2 text-xs font-black capitalize text-emerald-700">
-                    {{ $activity->type }}
+                    @include('partials.game-type-label', ['type' => $activity->type])
                 </span>
 
             </div>
@@ -74,7 +74,7 @@
                     </p>
 
                     <p class="mt-1 text-base font-black capitalize text-slate-900">
-                        {{ $activity->type }}
+                        @include('partials.game-type-label', ['type' => $activity->type])
                     </p>
                 </div>
 
@@ -176,27 +176,27 @@
                         <thead class="bg-slate-100 text-xs uppercase tracking-wider text-slate-500">
 
                             <tr>
-                                <th class="whitespace-nowrap px-6 py-4 font-black">
+                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
                                     Alumno
                                 </th>
 
-                                <th class="whitespace-nowrap px-6 py-4 font-black">
+                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
                                     Correo
                                 </th>
 
-                                <th class="whitespace-nowrap px-6 py-4 font-black">
+                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
                                     Estado
                                 </th>
 
-                                <th class="whitespace-nowrap px-6 py-4 font-black">
+                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
                                     Intento
                                 </th>
 
-                                <th class="whitespace-nowrap px-6 py-4 font-black">
+                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
                                     Puntuación
                                 </th>
 
-                                <th class="whitespace-nowrap px-6 py-4 font-black">
+                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
                                     Tiempo
                                 </th>
                             </tr>
@@ -211,20 +211,20 @@
                                 <tr class="transition hover:bg-emerald-50/40">
 
                                     <!-- Alumno -->
-                                    <td class="whitespace-nowrap px-6 py-5">
+                                    <td class="whitespace-nowrap px-4 py-3.5 sm:px-5">
 
                                         <div class="flex items-center gap-3">
 
-                                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 font-black text-emerald-700">
+                                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-black text-emerald-700">
                                                 {{ strtoupper(substr($result['student']->name, 0, 1)) }}
                                             </div>
 
-                                            <div>
-                                                <p class="font-black text-slate-900">
+                                            <div class="min-w-0">
+                                                <p class="mb-0 font-black text-slate-900">
                                                     {{ $result['student']->name }}
                                                 </p>
 
-                                                <p class="text-xs text-slate-500">
+                                                <p class="mb-0 text-xs text-slate-500">
                                                     Estudiante
                                                 </p>
                                             </div>
@@ -235,19 +235,19 @@
 
 
                                     <!-- Correo -->
-                                    <td class="whitespace-nowrap px-6 py-5 text-slate-600">
+                                    <td class="whitespace-nowrap px-4 py-3.5 text-slate-600 sm:px-5">
                                         {{ $result['student']->email }}
                                     </td>
 
 
                                     <!-- Estado -->
-                                    <td class="whitespace-nowrap px-6 py-5">
+                                    <td class="whitespace-nowrap px-4 py-3.5 sm:px-5">
 
                                         @switch($result['status'])
 
                                             @case('completed')
 
-                                                <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
+                                                <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-700">
                                                     Completado
                                                 </span>
 
@@ -255,7 +255,7 @@
 
                                             @case('abandoned')
 
-                                                <span class="inline-flex rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">
+                                                <span class="inline-flex rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-black text-orange-700">
                                                     Abandonado
                                                 </span>
 
@@ -263,7 +263,7 @@
 
                                             @case('expired')
 
-                                                <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">
+                                                <span class="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-black text-red-700">
                                                     Expirado
                                                 </span>
 
@@ -271,7 +271,7 @@
 
                                             @case('started')
 
-                                                <span class="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-black text-cyan-700">
+                                                <span class="inline-flex rounded-full bg-cyan-100 px-2.5 py-0.5 text-xs font-black text-cyan-700">
                                                     En progreso
                                                 </span>
 
@@ -279,7 +279,7 @@
 
                                             @default
 
-                                                <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                                                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-600">
                                                     Sin realizar
                                                 </span>
 
@@ -289,13 +289,13 @@
 
 
                                     <!-- Intento -->
-                                    <td class="whitespace-nowrap px-6 py-5 font-bold text-slate-700">
+                                    <td class="whitespace-nowrap px-4 py-3.5 font-bold text-slate-700 sm:px-5">
                                         {{ $result['attempt'] ?? '—' }}
                                     </td>
 
 
                                     <!-- Puntuación -->
-                                    <td class="whitespace-nowrap px-6 py-5">
+                                    <td class="whitespace-nowrap px-4 py-3.5 sm:px-5">
 
                                         @if ($result['score'] !== null)
 
@@ -319,11 +319,11 @@
 
 
                                     <!-- Tiempo -->
-                                    <td class="whitespace-nowrap px-6 py-5 font-bold text-slate-700">
+                                    <td class="whitespace-nowrap px-4 py-3.5 font-bold text-slate-700 sm:px-5">
 
                                         @if ($result['elapsed_seconds'] !== null)
 
-                                            <span class="rounded-xl bg-slate-100 px-3 py-1">
+                                            <span class="rounded-lg bg-slate-100 px-2.5 py-0.5">
                                                 {{ sprintf(
                                                     '%02d:%02d',
                                                     intdiv($result['elapsed_seconds'], 60),

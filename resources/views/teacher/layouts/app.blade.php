@@ -8,6 +8,8 @@
     <title>@yield('title', 'Panel del profesor') | Klassio</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    @stack('styles')
 </head>
 
 <body class="min-h-screen bg-slate-100 text-slate-800">
@@ -36,7 +38,8 @@
 
             </a>
 
-            <nav class="flex-1 space-y-1 overflow-y-auto px-4 py-6">
+            <div class="flex min-h-0 flex-1 flex-col">
+                <nav class="flex-1 space-y-1 overflow-y-auto px-4 py-6">
 
                 @php
                     $navItems = [
@@ -55,19 +58,31 @@
                     </a>
                 @endforeach
 
-            </nav>
+                </nav>
+            </div>
 
-            <div class="border-t border-emerald-100 px-4 py-5">
-                <p class="mb-3 truncate px-4 text-xs font-bold text-slate-400">
-                    {{ auth()->user()->name }}
-                </p>
+            <div class="shrink-0 border-t border-emerald-100 p-4">
+                <!-- Tarjeta del usuario -->
+                <div class="mb-4 flex items-center gap-3 rounded-xl bg-emerald-50 p-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                    </div>
 
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-bold text-slate-800">{{ auth()->user()->name }}</p>
+                        <p class="text-xs text-slate-400">Maestro</p>
+                    </div>
+                </div>
+
+                <!-- Cerrar sesión -->
                 <form action="{{ url('/logout') }}" method="POST">
                     @csrf
 
                     <button type="submit"
-                            class="flex w-full items-center gap-3 rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 hover:text-emerald-900">
-                        <span>↪</span>
+                            class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-slate-500 transition hover:bg-rose-50 hover:text-rose-600">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 17l5-5-5-5M15 12H3M21 3v18" />
+                        </svg>
                         Cerrar sesión
                     </button>
                 </form>
@@ -78,29 +93,13 @@
         <!-- Contenido -->
         <div class="flex min-w-0 flex-1 flex-col md:ml-64">
 
-            <!-- Barra superior -->
-            <header class="sticky top-0 z-20 border-b border-emerald-100 bg-white/90 backdrop-blur">
-                <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+            <!-- Barra superior (solo móvil; en escritorio la marca vive en el sidebar) -->
+            <header class="sticky top-0 z-20 border-b border-emerald-100 bg-white/90 backdrop-blur md:hidden">
+                <div class="flex items-center gap-2.5 px-[1rem] py-3 sm:px-[1.5rem]">
 
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-lg font-black text-white shadow-lg shadow-emerald-200">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                        </div>
-
-                        <div class="hidden sm:block">
-                            <p class="text-sm font-bold text-slate-800">
-                                {{ auth()->user()->name }}
-                            </p>
-
-                            <p class="text-xs font-bold uppercase tracking-widest text-emerald-600">
-                                Maestro
-                            </p>
-                        </div>
-                    </div>
-
-                    {{-- Botón hamburguesa móvil --}}
+                    {{-- Botón hamburguesa móvil (esquina superior izquierda) --}}
                     <button type="button"
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-emerald-50 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 md:hidden"
+                            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 md:hidden"
                             id="mobile-nav-open"
                             aria-label="Abrir menú de navegación"
                             aria-expanded="false"
@@ -109,6 +108,22 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
+
+                    <a href="{{ route('teacher.dashboard') }}" class="flex min-w-0 items-center gap-2.5">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-lg font-black text-white shadow-lg shadow-emerald-200">
+                            K
+                        </div>
+
+                        <div class="min-w-0">
+                            <p class="truncate text-base font-black tracking-tight text-slate-900">
+                                Klassio
+                            </p>
+
+                            <p class="truncate text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+                                Panel del maestro
+                            </p>
+                        </div>
+                    </a>
 
                 </div>
             </header>
