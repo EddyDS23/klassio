@@ -93,14 +93,14 @@
                      ACCIONES PRINCIPALES
                  ====================================== -->
 
-                <section class="grid gap-5 md:grid-cols-2">
+                <section class="grid gap-[1rem] md:grid-cols-2">
 
 
                     <!-- MIS CLASES -->
 
                     <a
                         href="{{ route('student.classes.index') }}"
-                        class="group relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-6 transition hover:-translate-y-1 hover:shadow-lg"
+                        class="group relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-[1.25rem] sm:p-[1.5rem] transition hover:-translate-y-1 hover:shadow-lg"
                     >
 
                         <div class="flex items-start justify-between">
@@ -121,18 +121,18 @@
                         </div>
 
 
-                        <h3 class="mt-5 text-xl font-extrabold text-indigo-950">
+                        <h3 class="mt-[0.875rem]! text-xl font-extrabold text-indigo-950">
                             Mis clases
                         </h3>
 
 
-                        <p class="mt-2 text-sm leading-6 text-indigo-700">
+                        <p class="mt-[0.375rem]! mb-[0.5rem]! text-sm leading-6 text-indigo-700">
                             Consulta las materias en las que estás inscrito
                             y revisa tu espacio académico.
                         </p>
 
 
-                        <span class="mt-5 inline-block text-sm font-bold text-indigo-600">
+                        <span class="mt-[1rem] inline-block text-sm font-bold text-indigo-600">
                             Ver mis clases →
                         </span>
 
@@ -143,7 +143,7 @@
 
                     <a
                         href="#juegos"
-                        class="group relative overflow-hidden rounded-2xl border border-teal-100 bg-teal-50 p-6 transition hover:-translate-y-1 hover:shadow-lg"
+                        class="group relative overflow-hidden rounded-2xl border border-teal-100 bg-teal-50 p-[1.25rem] sm:p-[1.5rem] transition hover:-translate-y-1 hover:shadow-lg"
                     >
 
                         <div class="flex items-start justify-between">
@@ -161,18 +161,18 @@
                         </div>
 
 
-                        <h3 class="mt-5 text-xl font-extrabold text-teal-950">
+                        <h3 class="mt-[0.875rem]! text-xl font-extrabold text-teal-950">
                             Juegos educativos
                         </h3>
 
 
-                        <p class="mt-2 text-sm leading-6 text-teal-700">
+                        <p class="mt-[0.375rem]! mb-[0.5rem]! text-sm leading-6 text-teal-700">
                             Diviértete mientras aprendes con retos,
                             actividades y juegos interactivos.
                         </p>
 
 
-                        <span class="mt-5 inline-block text-sm font-bold text-teal-600">
+                        <span class="mt-[1rem] inline-block text-sm font-bold text-teal-600">
                             Explorar juegos →
                         </span>
 
@@ -182,7 +182,7 @@
 
                     <a
                         href="{{ route('student.game-sessions.join-page') }}"
-                        class="group relative overflow-hidden rounded-2xl border border-amber-100 bg-amber-50 p-6 transition hover:-translate-y-1 hover:shadow-lg md:col-span-2"
+                        class="group relative overflow-hidden rounded-2xl border border-amber-100 bg-amber-50 p-[1.25rem] sm:p-[1.5rem] transition hover:-translate-y-1 hover:shadow-lg md:col-span-2"
                     >
 
                         <div class="flex items-start justify-between">
@@ -200,18 +200,18 @@
                         </div>
 
 
-                        <h3 class="mt-5 text-xl font-extrabold text-amber-950">
+                        <h3 class="mt-[0.875rem]! text-xl font-extrabold text-amber-950">
                             Unirse a una sala multijugador
                         </h3>
 
 
-                        <p class="mt-2 text-sm leading-6 text-amber-700">
+                        <p class="mt-[0.375rem]! mb-[0.5rem]! text-sm leading-6 text-amber-700">
                             ¿Tu profesor te compartió un código de sala?
                             Entra y juega en tiempo real con tus compañeros.
                         </p>
 
 
-                        <span class="mt-5 inline-block text-sm font-bold text-amber-600">
+                        <span class="mt-[1rem] inline-block text-sm font-bold text-amber-600">
                             Entrar con código →
                         </span>
 

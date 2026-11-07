@@ -137,13 +137,13 @@
                         <form method="GET" action="{{ route('student.classes.index') }}"
                             class="flex flex-col items-start gap-2 sm:flex-row sm:items-end">
 
-                            <div class="w-full sm:w-56">
+                            <div class="w-full sm:w-72">
                                 <label for="period"
                                     class="mb-1 block text-[11px] font-bold uppercase tracking-widest text-slate-400">
                                     Periodo
                                 </label>
                                 <select id="period" name="period" data-auto-submit
-                                    class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3! py-2 text-sm font-bold text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100">
+                                    class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3! py-2 text-sm! font-bold text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100">
                                     <option value="" @if ($selectedPeriod === null) selected @endif>Todos los periodos</option>
                                     @foreach ($availablePeriods as $periodCode)
                                         <option value="{{ $periodCode }}" @if ($periodCode === $selectedPeriod) selected @endif>
