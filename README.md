@@ -327,7 +327,14 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml 
 
 # 12. Usuarios y roles
 
-Klassio maneja tres roles principales.
+Klassio maneja tres roles principales. El registro público del sitio crea siempre usuarios con rol `student`; los docentes y administradores se crean desde el panel administrativo o, en un despliegue fresco, el primer administrador se crea con el comando:
+
+```bash
+docker compose --env-file .env -f docker-compose.yml run --rm --no-deps \
+  app php artisan klassio:create-admin --name="Administrador" --email=admin@tu-dominio.com
+```
+
+El comando es interactivo si se omiten las opciones, valida los datos y es idempotente (si el email ya existe, promueve ese usuario a `admin` en lugar de duplicarlo). Detalles en la sección de producción.
 
 ## Administrador
 
@@ -1904,7 +1911,14 @@ docker compose --env-file .env.dev --profile realtime \
 
 Compose construye las imágenes locales, espera a MariaDB, ejecuta las migraciones y levanta la aplicación, Reverb, worker y scheduler. Abrir `http://localhost:200`.
 
-Para producción, completar `.env` a partir de `.env.prod.example` en el VPS y usar `./deploy.sh`; ese flujo descarga las imágenes publicadas, ejecuta migraciones y verifica la salud de Nginx.
+Para producción, completar `.env` a partir de `.env.prod.example` en el VPS y usar `./deploy.sh`; ese flujo descarga las imágenes publicadas, ejecuta migraciones y verifica la salud de Nginx. Después crear el primer administrador:
+
+```bash
+docker compose --env-file .env -f docker-compose.yml run --rm --no-deps \
+  app php artisan klassio:create-admin --name="Administrador" --email=admin@tu-dominio.com
+```
+
+y entrar como admin al panel para crear los docentes. El flujo completo y los requisitos de Traefik están en la sección de producción.
 
 Para ejecutar las pruebas en desarrollo:
 
