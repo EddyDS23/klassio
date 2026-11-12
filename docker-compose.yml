@@ -89,7 +89,7 @@ services:
         networks:
             app-network: {}
             realtime-network: {}
-            proxy_network:
+            proxy:
                 aliases:
                     - klassio-web
         depends_on:
@@ -119,6 +119,7 @@ services:
             - ./storage:/var/www/html/storage
         networks:
             - realtime-network
+            - database-network
         depends_on:
             app:
                 condition: service_started
@@ -171,7 +172,7 @@ networks:
     app-network:
     database-network:
     realtime-network:
-    proxy_network:
+    proxy:
         external: true
 
 volumes:

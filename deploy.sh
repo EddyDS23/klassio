@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-cd /var/www/klassio
+# Ejecutable desde la carpeta donde se haya clonado el proyecto.
+cd "$(dirname "$0")"
 
 compose=(docker compose --env-file .env -f docker-compose.yml --profile realtime)
 export IMAGE_TAG="${IMAGE_TAG:-latest}"

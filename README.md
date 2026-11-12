@@ -1406,33 +1406,90 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml 
 
 ## Producción (Docker Compose + Docker Hub)
 
-El entorno de producción (`docker-compose.yml`) es auto-contenido: MariaDB, app, Nginx, Reverb (`--profile realtime`), worker y scheduler. **No buildea nada en el servidor**: descarga las imágenes construidas en el CI desde Docker Hub.
+El entorno de producción (`docker-compose.yml`) es auto-contenido: MariaDB, app, Nginx, Reverb (`--profile realtime`), worker y scheduler. **No buildea nada en el servidor**: descarga de Docker Hub las imágenes publicadas con `Dockerfile.prod` (a mano, o por el CI si lo tienes configurado).
 
 Requisitos en el servidor (replicable a cualquier host, sin nada fijado en el código):
 
-1. Crear `.env` a partir de la plantilla y completar, entre otras:
+1. Docker y Docker Compose instalados, puertos 80/443 libres y accesibles desde internet, y el dominio apuntando al servidor con un registro DNS **A**.
+
+2. Reverse proxy **Traefik** corriendo y conectado a la red externa `proxy` (la que espera `docker-compose.yml`). Configuración de referencia de `traefik.yml`:
+
+   ```yaml
+   providers:
+     docker:
+       endpoint: "unix:///var/run/docker.sock"
+       exposedByDefault: false   # solo enruta contenedores con labels
+       network: proxy
+   entryPoints:
+     web:
+       address: ":80"
+       http:
+         redirections:
+           entryPoint:
+             to: websecure
+             scheme: https
+     websecure:
+       address: ":443"
+   certificatesResolvers:
+     letsencrypt:
+       acme:
+         email: tu-email@example.com
+         storage: /letsencrypt/acme.json
+         httpChallenge:
+           entryPoint: web
+   ```
+
+   Si tu resolver de certificados se llama distinto a `letsencrypt`, ajusta la label `traefik.http.routers.klassio.tls.certresolver` de `docker-compose.yml`. Igualmente, si tu red de Traefik no se llama `proxy`, renombra la red externa en las dos partes donde aparece en `docker-compose.yml` (la sección `networks` de nginx y la declaración externa al final del archivo).
+
+   > Tip: si Traefik responde 404 aunque las labels del contenedor sean correctas (típico al levantar un stack nuevo), un `docker restart traefik` fuerza el re-escaneo del provider de Docker.
+
+3. Crear `.env` a partir de la plantilla y completar:
 
    ```env
-   APP_DOMAIN=tu-dominio.example       # lo resuelve Traefik (labels de docker-compose.yml)
+   APP_DOMAIN=tu-dominio.example       # sin esquema ni puerto; lo usan las labels de Traefik
    APP_URL=https://tu-dominio.example
    DOCKERHUB_USERNAME=tu-usuario       # cuenta de Docker Hub de las imágenes
    IMAGE_TAG=latest                    # tag a desplegar; deploy.sh lo usa
+   APP_KEY=<php artisan key:generate --show>
    DB_*                                # credenciales de MariaDB
+
+   REVERB_APP_KEY=$(openssl rand -hex 16)      # SOLO alfanuméricos
+   REVERB_APP_SECRET=$(openssl rand -hex 16)   # NUNCA base64 (contiene / + =)
+   REVERB_HOST=tu-dominio.example
+   REVERB_BACKEND_HOST=tu-dominio.example
+   REVERB_PORT=443
+   REVERB_SCHEME=https
    ```
 
-2. Red externa `proxy_network` creada y con el reverse proxy (Traefik) conectado: `docker network create proxy_network` si todavía no existe.
+   **Advertencia crítica sobre las keys de Reverb:** la `REVERB_APP_KEY` viaja en la ruta del WebSocket (`/app/{key}`), por lo que debe ser **alfanumérica** (hex, base62, etc.). Un valor estilo base64 con `/`, `+` o `=` rompe la ruta, Reverb responde 404 al handshake y Echo nunca conecta: la app queda atrapada en el fallback de polling.
 
-Flujo normal de despliegue (recomendado):
+El código de la aplicación **viaja dentro de las imágenes** (`Dockerfile.prod` hace `COPY . .`), por lo que el servidor no necesita el código del repo para ejecutar la app: el clone solo aporta `docker-compose.yml`, `deploy.sh` y las plantillas `.env`. El flujo de despliegue es:
 
-```bash
-git push origin master   # el CI construye y sube a Docker Hub:
-                         #   docker.io/<usuario>/klassio:<sha>-app / -web  (versionado)
-                         #   docker.io/<usuario>/klassio:latest-app / -web (última)
-# y en el VPS:
-./deploy.sh              # o ./deploy.sh con IMAGE_TAG=<sha> para una versión concreta
+```text
+git clone (solo orquestación)
+   ↓
+cp .env.prod.example .env  → completar dominio, APP_KEY, DB_* y secrets de Reverb
+   ↓
+./deploy.sh                → único comando necesario
 ```
 
-`deploy.sh` valida el commit limpio del VPS, actualiza `master`, verifica el Compose, descarga las imágenes ("latest" por defecto), ejecuta las migraciones, levanta todo y espera los healthchecks de MariaDB y Nginx.
+Sin CI/CD, las imágenes se publican **a mano** cuando cambia la app (ver "Build y push manuales" más abajo); quien despliega nunca buildea, solo descarga.
+
+## ¿Qué hace `deploy.sh`?
+
+Secuencia que ejecuta, en orden:
+
+1. Se ubica en la carpeta donde esté el propio script (`cd "$(dirname "$0")"`), por lo que funciona desde cualquier ruta de clonado.
+2. **Aborta si hay cambios locales sin commitear** en el servidor (protege ajustes manuales de ser pisados).
+3. `git fetch` + `merge --ff-only origin/master`: actualiza la orquestación (compose, script, plantillas).
+4. Valida la configuración con `docker compose config --quiet` (falla temprano si el `.env` está incompleto).
+5. Descarga las imágenes de Docker Hub (`pull` de app, nginx, reverb, worker y scheduler) con `IMAGE_TAG` (por defecto `latest`).
+6. Levanta **solo MariaDB** y espera su healthcheck (hasta ~90 s) antes de continuar.
+7. Ejecuta las migraciones: `php artisan migrate --force` en un contenedor efímero.
+8. Levanta el resto del stack (app, nginx, reverb, worker, scheduler) con `--remove-orphans`.
+9. Espera el healthcheck de Nginx (golpea `/up` internamente) y muestra el estado final con `ps`.
+
+Si algún healthcheck no llega, el script muestra los últimos logs de los contenedores implicados y termina con error.
 
 Comandos equivalentes de Operación en el VPS:
 
@@ -1443,11 +1500,26 @@ docker compose --env-file .env -f docker-compose.yml --profile realtime ps
 docker compose --env-file .env -f docker-compose.yml logs -f app
 ```
 
-Build y push manuales (sin pasar por el CI), en cualquier PC con credenciales de Docker Hub:
+Build y push manuales (el camino normal sin CI/CD), en cualquier PC con credenciales de Docker Hub:
 
 ```bash
-docker build -f Dockerfile.prod --target app -t <tu-usuario>/klassio:latest-app . && docker push <tu-usuario>/klassio:latest-app
-docker build -f Dockerfile.prod --target web -t <tu-usuario>/klassio:latest-web . && docker push <tu-usuario>/klassio:latest-web
+docker login
+
+# --no-cache para una imagen totalmente fresca (el target web reutiliza assets del app)
+docker build -f Dockerfile.prod --target app --no-cache -t <tu-usuario>/klassio:latest-app .
+docker build -f Dockerfile.prod --target web --no-cache -t <tu-usuario>/klassio:latest-web .
+
+docker push <tu-usuario>/klassio:latest-app
+docker push <tu-usuario>/klassio:latest-web
+```
+
+Tras un push de imágenes, quien despliega solo vuelve a correr `./deploy.sh` (descarga la versión nueva y reinicia).
+
+**Los cambios de `.env`, `docker-compose.yml` o certificados NO requieren rebuild de imágenes** (el código y la config viajan por separado: la config llega por `env_file`/variables en tiempo de ejecución). Ojo: Compose no detecta cambios en el contenido de los archivos `env_file`; tras editar el `.env` hay que recrear forzosamente los contenedores afectados:
+
+```bash
+docker compose --env-file .env -f docker-compose.yml --profile realtime \
+  up -d --force-recreate app worker scheduler
 ```
 
 Cada build reemplaza la imagen anterior con el mismo tag; las imágenes viejas quedan sin etiqueta y se limpian con `docker image prune -f`. En desarrollo, la imagen vive con build local sobre `Dockerfile.dev` (`klassio-app:development` / `klassio-web:development`) y el código se monta desde tu PC como volumen: no requiere build continuo al editar.
@@ -1525,6 +1597,70 @@ Ejecutar:
 
 ```bash
 docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml exec app php artisan view:clear
+```
+
+---
+
+# 33.1 Solución rápida de problemas en producción
+
+Los siguientes comandos usan el prefijo de producción; defínelo una vez por sesión:
+
+```bash
+c="docker compose --env-file .env -f docker-compose.yml --profile realtime"
+```
+
+## El WebSocket no conecta y la app hace polling
+
+Síntomas: en DevTools (pestaña Network) la conexión `wss://` aparece pero no pasa a `connected`, y la app repite `GET /.../state` cada segundo (fallback de polling).
+
+Verificar en orden:
+
+1. Reverb vivo y escuchando:
+
+   ```bash
+   $c logs --tail=50 reverb
+   # Esperado: "Starting server on 0.0.0.0:2001"
+   ```
+
+2. Qué responde el handshake en nginx (los navegadores intentan `/app/<KEY>`):
+
+   ```bash
+   $c logs nginx | grep "/app/"
+   ```
+
+   - `404`: la key que usa el frontend no coincide con `REVERB_APP_KEY`, o contiene `/`, `+` o `=` (rompen la ruta `/app/{key}`). Regenerar con `openssl rand -hex 16` y recrear los contenedores (punto 4).
+   - `502`: Reverb caído (ver punto 1).
+
+3. Tras cambiar `REVERB_APP_KEY` / `REVERB_APP_SECRET`, **recrear los contenedores** con:
+
+   ```bash
+   $c up -d --force-recreate app worker scheduler
+   ```
+
+   (`env_file` no se re-lee solo: sin `--force-recreate` seguirán con la key anterior).
+
+## Reverb crashea al arrancar
+
+Síntoma en logs de `reverb`: `SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo for mariadb failed`. Causa: el servicio `reverb` no está en la red `database-network` y, con `CACHE_STORE=database`, necesita alcanzar MariaDB (incluso para leer la señal de `reverb:restart`). Ya corregido en `docker-compose.yml` actual; si se despliega una versión anterior, añadir `- database-network` a los `networks` del servicio `reverb`.
+
+## Eventos encolados pero no se publican
+
+Síntoma: las acciones quedan en la cola (tabla `jobs` de la BD) pero el canal no recibe nada. Revisar el worker buscando errores `Pusher`:
+
+```bash
+$c logs worker | grep -i "pusher\|curl"
+```
+
+- `cURL error 7 (Failed to connect a <dominio>:443)`: el contenedor worker no alcanza el dominio público (DNS o firewall).
+- `cURL error 60 (SSL certificate problem)`: el contenedor no confía en el certificado del dominio (solo ocurre con certificados no públicos como auto-firmados/mkcert).
+
+En un despliegue real (dominio público + Let's Encrypt) ninguno de los dos debería ocurrir: el worker publica vía `https://$REVERB_BACKEND_HOST/apps/<id>/events` a través de nginx. Verificación end-to-end:
+
+```bash
+$c exec worker php artisan tinker --execute \
+  'broadcast(new App\Events\PlayerJoined(App\Models\GameSession::find(1), ["test" => true]));'
+$c logs --tail=20 nginx | grep "/apps/"
+# Esperado: POST /apps/klassio/events?... -> 200
 ```
 
 ---
@@ -1768,8 +1904,9 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml 
 | Logs | `docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml logs -f` |
 | Migraciones (dev) | Automáticas al iniciar desarrollo mediante el servicio `migrate` |
 | Estado producción | `docker compose --env-file .env -f docker-compose.yml --profile realtime ps` |
-| Producción (normal) | `git push origin master` (CI sube imágenes) y `./deploy.sh` en el VPS |
-| Producción (build manual) | `docker build -f Dockerfile.prod --target app -t <tu-usuario>/klassio:latest-app . && docker push ...` |
+| Recrear tras cambiar `.env` | `docker compose --env-file .env -f docker-compose.yml --profile realtime up -d --force-recreate app worker scheduler` |
+| Producción (normal) | Publicar imágenes con build manual y `./deploy.sh` en el servidor |
+| Producción (build manual) | `docker build -f Dockerfile.prod --target app --no-cache -t <tu-usuario>/klassio:latest-app . && docker push ...` |
 | Migraciones (prod) | `deploy.sh` las ejecuta automáticamente; manual: `docker compose --env-file .env -f docker-compose.yml run --rm --no-deps app php artisan migrate --force` |
 
 ---
