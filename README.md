@@ -1471,7 +1471,27 @@ git clone (solo orquestación)
 cp .env.prod.example .env  → completar dominio, APP_KEY, DB_* y secrets de Reverb
    ↓
 ./deploy.sh                → único comando necesario
+   ↓
+php artisan klassio:create-admin  → primer administrador (solo la primera vez)
 ```
+
+El registro público siempre crea usuarios `student` (el rol se fuerza en el backend, ignorando lo que llegue del cliente). En un despliegue fresco no existe ningún administrador, por lo que el primer admin se crea con:
+
+```bash
+docker compose --env-file .env -f docker-compose.yml run --rm --no-deps \
+  app php artisan klassio:create-admin \
+  --name="Administrador" --email=admin@tu-dominio.com --password="UnaClaveSegura123"
+
+# Si los contenedores ya están corriendo, equivalente con exec:
+docker compose --env-file .env -f docker-compose.yml exec app \
+  php artisan klassio:create-admin --name="Administrador" --email=admin@tu-dominio.com
+```
+
+- Sin opciones, el comando pide los datos de forma interactiva (contraseña oculta).
+- Valida email y contraseña (mínimo 8 caracteres).
+- Es idempotente: si el email ya existe (por ejemplo, un docente o estudiante registrado), **lo promueve a `admin`** en vez de duplicar el usuario.
+
+Una vez con el primer admin, los demás usuarios se gestionan desde el panel administrativo: el admin crea los docentes, los docentes gestionan sus clases y los estudiantes se autorregistran. También existe `AdminSeeder` (credenciales configurables vía `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`) para entornos de demostración.
 
 Sin CI/CD, las imágenes se publican **a mano** cuando cambia la app (ver "Build y push manuales" más abajo); quien despliega nunca buildea, solo descarga.
 
@@ -1908,6 +1928,7 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml 
 | Producción (normal) | Publicar imágenes con build manual y `./deploy.sh` en el servidor |
 | Producción (build manual) | `docker build -f Dockerfile.prod --target app --no-cache -t <tu-usuario>/klassio:latest-app . && docker push ...` |
 | Migraciones (prod) | `deploy.sh` las ejecuta automáticamente; manual: `docker compose --env-file .env -f docker-compose.yml run --rm --no-deps app php artisan migrate --force` |
+| Primer admin (prod) | `docker compose --env-file .env -f docker-compose.yml run --rm --no-deps app php artisan klassio:create-admin --name="Admin" --email=admin@dominio.com` |
 
 ---
 

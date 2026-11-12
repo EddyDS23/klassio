@@ -11,13 +11,13 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'admin@aulaplay.com'],
+            ['email' => env('ADMIN_EMAIL', 'admin@aulaplay.com')],
             [
-                'name' => 'Administrador',
-                'password' => Hash::make('password'),
+                'name' => env('ADMIN_NAME', 'Administrador'),
+                'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
                 'role' => 'admin',
                 'status' => 'active',
-            ]
+            ],
         );
     }
 }
