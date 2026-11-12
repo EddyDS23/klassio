@@ -1455,7 +1455,7 @@ Requisitos en el servidor (replicable a cualquier host, sin nada fijado en el c�
    ```env
    APP_DOMAIN=tu-dominio.example       # sin esquema ni puerto; lo usan las labels de Traefik
    APP_URL=https://tu-dominio.example
-   DOCKERHUB_USERNAME=tu-usuario       # cuenta de Docker Hub de las imágenes
+   DOCKERHUB_USERNAME=tu-usuario       # cuenta de Docker Hub de las imágenes (tuyas o del autor; ver "Mantener tus propias imágenes")
    IMAGE_TAG=latest                    # tag a desplegar; deploy.sh lo usa
    APP_KEY=<php artisan key:generate --show>
    DB_*                                # credenciales de MariaDB
@@ -1559,6 +1559,60 @@ docker compose --env-file .env -f docker-compose.yml --profile realtime \
 ```
 
 Cada build reemplaza la imagen anterior con el mismo tag; las imágenes viejas quedan sin etiqueta y se limpian con `docker image prune -f`. En desarrollo, la imagen vive con build local sobre `Dockerfile.dev` (`klassio-app:development` / `klassio-web:development`) y el código se monta desde tu PC como volumen: no requiere build continuo al editar.
+
+## Mantener tus propias imágenes (sin depender de las del autor)
+
+El despliegue **no está atado** a las imágenes de `eddyds23` en Docker Hub: el compose resuelve el repositorio con la variable `DOCKERHUB_USERNAME` del `.env`. Cualquiera puede construir sus propias imágenes desde este mismo código y desplegarlas desde su propia cuenta — incluso en un repositorio privado.
+
+### 1. Construir y subir tus imágenes
+
+Se necesita el **código completo** (a diferencia de quien solo despliega, que clona solo la orquestación). En cualquier máquina con Docker y tu cuenta de Docker Hub:
+
+```bash
+docker login     # con TU usuario
+git clone https://github.com/EddyDS23/klassio.git
+cd klassio
+
+# --no-cache para una imagen totalmente fresca
+docker build -f Dockerfile.prod --target app --no-cache -t TU_USUARIO/klassio:latest-app .
+docker build -f Dockerfile.prod --target web --no-cache -t TU_USUARIO/klassio:latest-web .
+
+docker push TU_USUARIO/klassio:latest-app
+docker push TU_USUARIO/klassio:latest-web
+```
+
+Opcionalmente, etiquetar también con el commit (útil para hacer rollback con `IMAGE_TAG=<sha>`):
+
+```bash
+SHA=$(git rev-parse --short HEAD)
+docker build -f Dockerfile.prod --target app --no-cache -t TU_USUARIO/klassio:latest-app -t TU_USUARIO/klassio:${SHA}-app .
+docker build -f Dockerfile.prod --target web --no-cache -t TU_USUARIO/klassio:latest-web -t TU_USUARIO/klassio:${SHA}-web .
+docker push TU_USUARIO/klassio:latest-app && docker push TU_USUARIO/klassio:${SHA}-app
+docker push TU_USUARIO/klassio:latest-web && docker push TU_USUARIO/klassio:${SHA}-web
+```
+
+### 2. Apuntar el servidor a TU repositorio
+
+En el `.env` del servidor cambia solo estas dos variables:
+
+```env
+DOCKERHUB_USERNAME=TU_USUARIO
+IMAGE_TAG=latest        # o el <sha> si etiquetaste con commit
+```
+
+Todo lo demás (labels, redes, healthchecks) funciona igual: `./deploy.sh` descargará las imágenes de TU cuenta.
+
+### 3. Si tus imágenes son privadas
+
+El servidor necesita credenciales para descargarlas:
+
+```bash
+docker login    # en el servidor, con TU usuario
+```
+
+### 4. Mantenerlas al día
+
+Cada vez que la app cambie (nuevo commit del código), repite el paso 1 (build + push) y en el servidor `./deploy.sh`. Los cambios de `.env`/compose no requieren rebuild: solo recrear contenedores.
 
 ## Despliegue en Windows Server
 
