@@ -1,21 +1,25 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Ejecutable desde la carpeta donde se haya clonado el proyecto.
+# Ejecutable desde la carpeta donde se haya clonado o descomprimido el proyecto.
 cd "$(dirname "$0")"
 
 compose=(docker compose --env-file .env -f docker-compose.yml --profile realtime)
 export IMAGE_TAG="${IMAGE_TAG:-latest}"
 
-if [[ -n "$(git status --porcelain)" ]]; then
-    echo "ERROR: Hay cambios locales en el VPS. No se actualizará el código para protegerlos." >&2
-    git status --short >&2
-    exit 1
-fi
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if [[ -n "$(git status --porcelain)" ]]; then
+        echo "ERROR: Hay cambios locales en el VPS. No se actualizará el código para protegerlos." >&2
+        git status --short >&2
+        exit 1
+    fi
 
-echo "==> Actualizando referencias de master..."
-git fetch origin master
-git merge --ff-only origin/master
+    echo "==> Actualizando referencias de master..."
+    git fetch origin master
+    git merge --ff-only origin/master
+else
+    echo "==> Carpeta sin git (despliegue desde ZIP o copia): se omite la actualización automática."
+fi
 
 echo "==> Validando configuración de producción..."
 "${compose[@]}" config --quiet

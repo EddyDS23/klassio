@@ -1482,7 +1482,7 @@ Requisitos en el servidor (replicable a cualquier host, sin nada fijado en el c�
 El código de la aplicación **viaja dentro de las imágenes** (`Dockerfile.prod` hace `COPY . .`), por lo que el servidor no necesita el código del repo para ejecutar la app: el clone solo aporta `docker-compose.yml`, `deploy.sh` y las plantillas `.env`. El flujo de despliegue es:
 
 ```text
-git clone (solo orquestación)
+git clone (solo orquestación)   — o descomprimir un ZIP (ver "Despliegue desde ZIP")
    ↓
 cp .env.prod.example .env  → completar dominio, APP_KEY, DB_* y secrets de Reverb
    ↓
@@ -1511,19 +1511,66 @@ Una vez con el primer admin, los demás usuarios se gestionan desde el panel adm
 
 Sin CI/CD, las imágenes se publican **a mano** cuando cambia la app (ver "Build y push manuales" más abajo); quien despliega nunca buildea, solo descarga.
 
+## Despliegue desde ZIP (sin git)
+
+Si quien despliega no tiene (o no quiere) acceso al repositorio, el proyecto se puede entregar como ZIP: la orquestación completa funciona igual y `deploy.sh` detecta que no hay git y continúa sin la actualización automática.
+
+### 1. Crear el ZIP (forma recomendada: `git archive`)
+
+Desde tu copia del repositorio:
+
+```bash
+git archive --format=zip -o klassio.zip master
+```
+
+Este comando respeta el `.gitattributes` (saltos de línea LF garantizados) y **excluye automáticamente todo lo ignorado por git**, por lo que el ZIP:
+
+- ✅ incluye los archivos de plantilla: `.env.example`, `.env.prod.example` y `.env.dev.example`
+- ❌ **no incluye** ningún `.env` real (tus claves, `APP_KEY` y contraseñas no viajan)
+- ❌ no incluye `docker-compose.local.yml` (override del entorno del autor) ni `.git`
+
+### 2. Evitar el ZIP a mano
+
+Comprimir la carpeta con el explorador de archivos (clic derecho → comprimir) incluye **todo**, también lo sensible:
+
+| Archivo | Riesgo si viaja en el ZIP |
+|---|---|
+| `.env` | Expone `APP_KEY`, credenciales de la BD y de Reverb |
+| `.env.dev` | Credenciales del entorno de desarrollo |
+| `docker-compose.local.yml` | Override con rutas y CA del equipo del autor; confunde el despliegue |
+
+Si por alguna razón comprimes a mano, excluye esos archivos (con `zip -x` en Linux o borrándolos de la copia antes de comprimir).
+
+### 3. Desplegar desde el ZIP
+
+Idéntico al flujo con clone — solo cambia el primer paso:
+
+```bash
+unzip klassio.zip && cd klassio
+cp .env.prod.example .env      # dominio, APP_KEY propio, DB_*, keys de Reverb (hex!)
+./deploy.sh                    # detecta que no hay git: omite fetch/merge y sigue normal
+docker compose --env-file .env -f docker-compose.yml run --rm --no-deps \
+  app php artisan klassio:create-admin
+```
+
+Cada despliegue genera su propio `APP_KEY` y sus propios secretos: el ZIP nunca precisa (ni debe) llevar credenciales dentro.
+
+### 4. Actualizaciones
+
+Sin git no hay `git pull`: cuando la app cambie, entregas un ZIP nuevo y el receptor repite `./deploy.sh` (el resto del flujo es igual). Si el receptor hizo ajustes propios en archivos de la orquestación, los tendrá que re-aplicar — otra razón para preferir clone cuando sea posible: actualiza solo con `./deploy.sh`.
+
 ## ¿Qué hace `deploy.sh`?
 
 Secuencia que ejecuta, en orden:
 
-1. Se ubica en la carpeta donde esté el propio script (`cd "$(dirname "$0")"`), por lo que funciona desde cualquier ruta de clonado.
-2. **Aborta si hay cambios locales sin commitear** en el servidor (protege ajustes manuales de ser pisados).
-3. `git fetch` + `merge --ff-only origin/master`: actualiza la orquestación (compose, script, plantillas).
-4. Valida la configuración con `docker compose config --quiet` (falla temprano si el `.env` está incompleto).
-5. Descarga las imágenes de Docker Hub (`pull` de app, nginx, reverb, worker y scheduler) con `IMAGE_TAG` (por defecto `latest`).
-6. Levanta **solo MariaDB** y espera su healthcheck (hasta ~90 s) antes de continuar.
-7. Ejecuta las migraciones: `php artisan migrate --force` en un contenedor efímero.
-8. Levanta el resto del stack (app, nginx, reverb, worker, scheduler) con `--remove-orphans`.
-9. Espera el healthcheck de Nginx (golpea `/up` internamente) y muestra el estado final con `ps`.
+1. Se ubica en la carpeta donde esté el propio script (`cd "$(dirname "$0")"`), por lo que funciona desde cualquier ruta de clonado o descompresión.
+2. **Si la carpeta es un repositorio git**: aborta si hay cambios locales sin commitear (protege ajustes manuales de ser pisados) y actualiza la orquestación (`git fetch` + `merge --ff-only origin/master`: compose, script y plantillas). **Si no lo es (despliegue desde ZIP)**: salta este paso con un aviso; las actualizaciones se aplican entregando un ZIP nuevo.
+3. Valida la configuración con `docker compose config --quiet` (falla temprano si el `.env` está incompleto).
+4. Descarga las imágenes de Docker Hub (`pull` de app, nginx, reverb, worker y scheduler) con `IMAGE_TAG` (por defecto `latest`).
+5. Levanta **solo MariaDB** y espera su healthcheck (hasta ~90 s) antes de continuar.
+6. Ejecuta las migraciones: `php artisan migrate --force` en un contenedor efímero, tras ajustar la propiedad de `storage` y `bootstrap/cache` para `www-data`.
+7. Levanta el resto del stack (app, nginx, reverb, worker, scheduler) con `--remove-orphans`.
+8. Espera el healthcheck de Nginx (golpea `/up` internamente) y muestra el estado final con `ps`.
 
 Si algún healthcheck no llega, el script muestra los últimos logs de los contenedores implicados y termina con error.
 
