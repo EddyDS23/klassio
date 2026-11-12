@@ -1470,6 +1470,15 @@ Requisitos en el servidor (replicable a cualquier host, sin nada fijado en el c�
 
    **Advertencia crítica sobre las keys de Reverb:** la `REVERB_APP_KEY` viaja en la ruta del WebSocket (`/app/{key}`), por lo que debe ser **alfanumérica** (hex, base62, etc.). Un valor estilo base64 con `/`, `+` o `=` rompe la ruta, Reverb responde 404 al handshake y Echo nunca conecta: la app queda atrapada en el fallback de polling.
 
+4. **Permisos de `storage` y `bootstrap/cache`**: el compose monta `./storage` desde el host, lo que tapa el `chown www-data` que hace el Dockerfile dentro de la imagen. Tras un clone fresco, el usuario que ejecuta PHP-FPM en el contenedor (`www-data`, uid 33) necesita escribir ahí (vistas compiladas, uploads, logs). `deploy.sh` lo ajusta automáticamente en cada despliegue (tolerante a montajes donde `chown` no aplica). Si levantas el stack **manualmente** sin `deploy.sh`, ejecútalo una vez:
+
+   ```bash
+   docker compose --env-file .env -f docker-compose.yml run --rm --no-deps \
+     app sh -c 'chown -R www-data:www-data storage bootstrap/cache; chmod -R u+rwX storage bootstrap/cache'
+   ```
+
+   En hosts Arch Linux, el usuario del sistema `http` también es **uid 33** (`www-data` del contenedor): `chown -R http:http storage bootstrap/cache` equivale, y con `sudo usermod -aG http <tu-usuario>` ambos (contenedor y tu usuario) pueden escribir con permisos `775`.
+
 El código de la aplicación **viaja dentro de las imágenes** (`Dockerfile.prod` hace `COPY . .`), por lo que el servidor no necesita el código del repo para ejecutar la app: el clone solo aporta `docker-compose.yml`, `deploy.sh` y las plantillas `.env`. El flujo de despliegue es:
 
 ```text
@@ -1550,6 +1559,24 @@ docker compose --env-file .env -f docker-compose.yml --profile realtime \
 ```
 
 Cada build reemplaza la imagen anterior con el mismo tag; las imágenes viejas quedan sin etiqueta y se limpian con `docker image prune -f`. En desarrollo, la imagen vive con build local sobre `Dockerfile.dev` (`klassio-app:development` / `klassio-web:development`) y el código se monta desde tu PC como volumen: no requiere build continuo al editar.
+
+## Despliegue en Windows Server
+
+El stack está compuesto por **imágenes Linux** (`php:8.3-fpm`, `nginx`, `mariadb`), por lo que en Windows Server los "contenedores Windows" nativos no sirven. Requisitos y recomendaciones:
+
+1. **Docker Desktop en Windows Server** con backend **WSL2** (o alternativa: una VM Linux con Docker). Los comandos de Docker/Compose y las labels de Traefik funcionan idénticos.
+
+2. **Clonar y operar desde dentro de la distro WSL** (p. ej. Ubuntu): ahí `deploy.sh` (bash), `docker compose` y los permisos de `storage` se comportan como en Linux puro. Evita operar desde Git Bash/PowerShell sobre `C:\...`: la traducción de rutas y los montajes DrvFS complican permisos y scripts.
+
+3. **Permisos de `storage`**: 
+   - Clone dentro de WSL → se aplica el punto 4 de los requisitos (chown normal).
+   - Clone en ruta de Windows (`/mnt/c/...` vista desde WSL) → los montajes DrvFS suelen ser **777**: la escritura funciona sin chown, y el paso de `deploy.sh` lo tolera (no aborta el despliegue si `chown` no aplica).
+
+4. **Saltos de línea**: el repo fuerza `eol=lf` vía `.gitattributes`, así que `entrypoint.sh` y `deploy.sh` llegan con LF aunque se clone en Windows. Si editas el `.env` a mano en Windows, guárdalo con saltos de línea LF (VS Code respeta el `.editorconfig`; con otro editor, `sed -i 's/\r$//' .env`).
+
+5. **Traefik** corre en su contenedor Linux igual que en Linux (provider Docker + labels, puertos 80/443 del host Windows publicados por Docker Desktop). El firewall de Windows Server debe permitir 80/443.
+
+En resumen: el despliegue en Windows Server es válido, pero **trata Windows como el host de Docker y la distro WSL como tu "VPS"** — todo el flujo (clone, `.env`, `deploy.sh`) se ejecuta dentro de WSL.
 
 ---
 
@@ -1689,6 +1716,21 @@ $c exec worker php artisan tinker --execute \
 $c logs --tail=20 nginx | grep "/apps/"
 # Esperado: POST /apps/klassio/events?... -> 200
 ```
+
+## Error 500 / `Permission denied` en storage
+
+Síntoma: la app responde 500 intermitente al compilar vistas, subir archivos o escribir logs; logs de `app` con `Permission denied` en `storage/framework/views`, `storage/logs` o `storage/app`.
+
+Causa: el bind mount `./storage` del host **tapa** el `chown www-data` que hace el Dockerfile dentro de la imagen, y el usuario del host dueño de la carpeta no es uid 33 (`www-data` del contenedor). Típico tras un clone fresco ejecutado por root.
+
+Solución (lo hace `deploy.sh` automáticamente en cada despliegue):
+
+```bash
+$c run --rm --no-deps app \
+  sh -c 'chown -R www-data:www-data storage bootstrap/cache; chmod -R u+rwX storage bootstrap/cache'
+```
+
+En Arch Linux el usuario del sistema `http` es uid 33: `sudo chown -R http:http storage bootstrap/cache` es equivalente.
 
 ---
 
@@ -1943,6 +1985,7 @@ docker compose --env-file .env.dev --profile realtime -f docker-compose.dev.yml 
 | Producción (build manual) | `docker build -f Dockerfile.prod --target app --no-cache -t <tu-usuario>/klassio:latest-app . && docker push ...` |
 | Migraciones (prod) | `deploy.sh` las ejecuta automáticamente; manual: `docker compose --env-file .env -f docker-compose.yml run --rm --no-deps app php artisan migrate --force` |
 | Primer admin (prod) | `docker compose --env-file .env -f docker-compose.yml run --rm --no-deps app php artisan klassio:create-admin --name="Admin" --email=admin@dominio.com` |
+| Permisos de storage (manual) | `docker compose --env-file .env -f docker-compose.yml run --rm --no-deps app sh -c 'chown -R www-data:www-data storage bootstrap/cache; chmod -R u+rwX storage bootstrap/cache'` |
 
 ---
 

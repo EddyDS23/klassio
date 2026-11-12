@@ -43,6 +43,11 @@ if [[ "$database_status" != "healthy" ]]; then
 fi
 
 echo "==> Ejecutando migraciones de forma explícita..."
+# Garantiza que www-data (uid 33) pueda escribir en el storage montado desde el
+# host. Tolerante a fallos: en montajes de Windows (DrvFS/WSL) chown puede no
+# aplicar, pero esos montajes suelen ser 777 y la escritura funciona igual.
+"${compose[@]}" run --rm --no-deps app sh -c \
+    'chown -R www-data:www-data storage bootstrap/cache 2>/dev/null; chmod -R u+rwX storage bootstrap/cache 2>/dev/null; true'
 "${compose[@]}" run --rm --no-deps app php artisan migrate --force
 
 echo "==> Levantando la aplicación, Reverb, colas, scheduler y Nginx..."
