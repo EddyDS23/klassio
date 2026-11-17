@@ -137,7 +137,7 @@
 
                 {{-- Barra de acciones de la página (encima del contenido) --}}
                 @hasSection('page-actions')
-                    <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
+                    <div class="mb-6 flex flex-col items-end gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
                         @yield('page-actions')
                     </div>
                 @endif

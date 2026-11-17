@@ -4,187 +4,135 @@
 @section('page-title', 'Inicio')
 
 @section('content')
-            <div class="mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
-
+    <div class="space-y-8">
 
                 <!-- =====================================
                      BIENVENIDA
                  ====================================== -->
 
-                <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-500 px-6 py-10 text-white shadow-xl shadow-indigo-200 sm:px-10 sm:py-12">
+                <section class="rounded-2xl bg-orange-600 p-6 text-white shadow-xl shadow-orange-200 sm:p-8">
 
-                    <div class="relative z-10 max-w-2xl">
+                    <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
 
-                        <span class="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-xs font-black uppercase tracking-widest text-white">
-                            🏆 ¡Hora de jugar!
-                        </span>
+                        <div class="max-w-2xl">
 
+                            <span class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white ring-1 ring-white/20">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                                </svg>
+                                ¡Listo para jugar!
+                            </span>
 
-                        <h1 class="mt-5 text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+                            <h2 class="text-2xl font-bold tracking-tight sm:text-4xl">
+                                ¡Hola, {{ auth()->user()->name }}!
+                            </h2>
 
-                            ¡Hola,
-                            {{ auth()->user()->name }}! 👋
+                            <p class="mt-3 text-sm leading-6 text-orange-50 sm:text-base">
+                                Bienvenido a tu espacio. Únete a una sala con el código
+                                de tu profesor o revisa tus clases para empezar a jugar.
+                            </p>
 
-                        </h1>
+                        </div>
 
-
-                        <p class="mt-4 max-w-lg text-base font-medium leading-7 text-indigo-100 sm:text-lg">
-
-                            ¿Qué vamos a jugar hoy? 🚀 Elige un juego y diviértete.
-
-                        </p>
-
-                        <div class="mt-7 flex flex-wrap gap-3">
-                            <a href="#juegos" class="inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 text-base font-black text-indigo-700 shadow-lg transition hover:scale-105 active:scale-95">¡A jugar! 🏆</a>
-                            <a href="{{ route('student.classes.index') }}" class="inline-flex items-center gap-2 rounded-2xl bg-white/15 px-7 py-4 text-base font-black text-white ring-2 ring-white/30 transition hover:scale-105 hover:bg-white/25 active:scale-95">Mis clases 📚</a>
+                        <div class="hidden h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 md:flex">
+                            <svg class="h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.867.344-.31.698-.729.698-1.22 0-.977-.894-1.5-1.849-1.5-1.32 0-2.14.665-2.758 1.435-.135.166-.35.283-.576.283h-.683a.75.75 0 0 1 0-1.5h.683c.737 0 1.193-.378 1.7-.87.67-.65 1.603-1.348 3.134-1.348 1.695 0 3.349 1.04 3.349 3 0 .914-.475 1.565-1.01 2.033a2.727 2.727 0 0 0-.59.867c-.078.294-.05.63.05.92.05.22.12.43.2.63a.75.75 0 0 1-1.38.565 6.5 6.5 0 0 1-.25-.78 3.18 3.18 0 0 1-.11-.92c0-.44.132-.832.31-1.09Zm-2.5-3.09a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1 0-1.5h.5Zm-6 5.25c0 3.724 1.295 6.475 3.06 8.42a.75.75 0 0 1 1.265.75 8.25 8.25 0 0 1-1.32 1.946 8.25 8.25 0 0 0 3.495-.975.75.75 0 0 1 .75 1.299 9.75 9.75 0 0 1-5.25 1.234 9.75 9.75 0 0 1-5.25-1.234.75.75 0 0 1 .75-1.299 8.25 8.25 0 0 0 3.495.975 8.25 8.25 0 0 1-1.32-1.946C6.295 14.222 5 11.471 5 7.747a.75.75 0 0 1 1.5 0Zm9.75 3.66a.75.75 0 0 1 1.5 0c0 3.725-1.295 6.476-3.06 8.421a.75.75 0 0 1-1.266-.75 8.25 8.25 0 0 0 1.32-1.946c1.506-1.945 1.506-4.725 1.506-5.725Z" />
+                            </svg>
                         </div>
 
                     </div>
 
-
-                    <!-- Decoraciones -->
-
-                    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full border border-white/15"></div>
-
-                    <div class="absolute -bottom-28 right-24 h-72 w-72 rounded-full border border-white/10"></div>
-
-                    <div class="absolute right-10 top-10 hidden text-7xl opacity-20 sm:block">
-                        ✦
-                    </div>
-
                 </section>
-
-
 
                 <!-- =====================================
                      ACCIONES PRINCIPALES
                  ====================================== -->
 
-                <section class="grid gap-[1rem] md:grid-cols-2">
-
+                <section class="grid gap-4 md:grid-cols-2">
 
                     <!-- MIS CLASES -->
 
-                    <a
-                        href="{{ route('student.classes.index') }}"
-                        class="group relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-[1.25rem] sm:p-[1.5rem] transition hover:-translate-y-1 hover:shadow-lg"
-                    >
+                    <a href="{{ route('student.classes.index') }}"
+                       class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2">
 
-                        <div class="flex items-start justify-between">
+                        <div class="mb-5 flex items-start justify-between">
 
-                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-700 ring-1 ring-orange-100 transition group-hover:bg-orange-600 group-hover:text-white group-hover:ring-orange-600">
 
-                                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5zM8 7h8M8 11h8M8 15h5"/>
+                                <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.628 48.628 0 0 1 12 20.904a48.628 48.628 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
                                 </svg>
 
                             </div>
 
-
-                            <span class="text-2xl text-indigo-300 transition group-hover:translate-x-1">
-                                →
+                            <span class="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700 ring-1 ring-orange-100">
+                                Ver clases
                             </span>
 
                         </div>
 
-
-                        <h3 class="mt-[0.875rem]! text-xl font-extrabold text-indigo-950">
+                        <h3 class="text-2xl font-bold text-slate-900">
                             Mis clases
                         </h3>
 
-
-                        <p class="mt-[0.375rem]! mb-[0.5rem]! text-sm leading-6 text-indigo-700">
-                            Consulta las materias en las que estás inscrito
-                            y revisa tu espacio académico.
+                        <p class="mt-2 text-sm leading-6 text-slate-500">
+                            Consulta las materias en las que estás inscrito y
+                            revisa tu espacio académico.
                         </p>
 
-
-                        <span class="mt-[1rem] inline-block text-sm font-bold text-indigo-600">
-                            Ver mis clases →
-                        </span>
+                        <div class="mt-6 flex items-center gap-2 text-sm font-bold text-orange-700">
+                            Ver mis clases
+                            <svg class="h-4 w-4 transition group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </div>
 
                     </a>
 
+                    <!-- UNIRSE A UNA SALA MULTIJUGADOR -->
 
-                    <!-- JUEGOS EDUCATIVOS -->
+                    <a href="{{ route('student.game-sessions.join-page') }}"
+                       class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-pink-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-600 focus-visible:ring-offset-2">
 
-                    <a
-                        href="#juegos"
-                        class="group relative overflow-hidden rounded-2xl border border-teal-100 bg-teal-50 p-[1.25rem] sm:p-[1.5rem] transition hover:-translate-y-1 hover:shadow-lg"
-                    >
+                        <div class="mb-5 flex items-start justify-between">
 
-                        <div class="flex items-start justify-between">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-50 text-pink-700 ring-1 ring-pink-100 transition group-hover:bg-pink-600 group-hover:text-white group-hover:ring-pink-600">
 
-                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-500 text-white">
-                                <span class="text-3xl leading-none">🧩</span>
+                                <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                                </svg>
 
                             </div>
 
-
-                            <span class="text-2xl text-teal-300 transition group-hover:translate-x-1">
-                                →
+                            <span class="rounded-full bg-pink-50 px-3 py-1 text-xs font-bold text-pink-700 ring-1 ring-pink-100">
+                                Multijugador
                             </span>
 
                         </div>
 
-
-                        <h3 class="mt-[0.875rem]! text-xl font-extrabold text-teal-950">
-                            Juegos educativos
-                        </h3>
-
-
-                        <p class="mt-[0.375rem]! mb-[0.5rem]! text-sm leading-6 text-teal-700">
-                            Diviértete mientras aprendes con retos,
-                            actividades y juegos interactivos.
-                        </p>
-
-
-                        <span class="mt-[1rem] inline-block text-sm font-bold text-teal-600">
-                            Explorar juegos →
-                        </span>
-
-                    </a>
-
-                <!-- UNIRSE A UNA SALA -->
-
-                    <a
-                        href="{{ route('student.game-sessions.join-page') }}"
-                        class="group relative overflow-hidden rounded-2xl border border-amber-100 bg-amber-50 p-[1.25rem] sm:p-[1.5rem] transition hover:-translate-y-1 hover:shadow-lg md:col-span-2"
-                    >
-
-                        <div class="flex items-start justify-between">
-
-                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-white">
-                                <span class="text-3xl leading-none">👥</span>
-
-                            </div>
-
-
-                            <span class="text-2xl text-amber-300 transition group-hover:translate-x-1">
-                                →
-                            </span>
-
-                        </div>
-
-
-                        <h3 class="mt-[0.875rem]! text-xl font-extrabold text-amber-950">
+                        <h3 class="text-2xl font-bold text-slate-900">
                             Unirse a una sala multijugador
                         </h3>
 
-
-                        <p class="mt-[0.375rem]! mb-[0.5rem]! text-sm leading-6 text-amber-700">
-                            ¿Tu profesor te compartió un código de sala?
-                            Entra y juega en tiempo real con tus compañeros.
+                        <p class="mt-2 text-sm leading-6 text-slate-500">
+                            ¿Tu profesor te compartió un código de sala? Entra y
+                            juega en tiempo real con tus compañeros.
                         </p>
 
-
-                        <span class="mt-[1rem] inline-block text-sm font-bold text-amber-600">
-                            Entrar con código →
-                        </span>
+                        <div class="mt-6 flex items-center gap-2 text-sm font-bold text-pink-700">
+                            Entrar con código
+                            <svg class="h-4 w-4 transition group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </div>
 
                     </a>
 
                 </section>
+
+                <!-- =====================================
+                     UNIRSE A UNA CLASE
+                 ====================================== -->
 
                 <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
 
@@ -194,18 +142,17 @@
 
                             <div class="flex items-center gap-3">
 
-                                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
 
-                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16M4 12h16"/>
+                                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16M4 12h16" />
                                     </svg>
 
                                 </div>
 
-
                                 <div>
 
-                                    <h2 class="text-xl font-extrabold text-slate-900">
+                                    <h2 class="text-lg font-bold text-slate-900">
                                         Unirse a una clase
                                     </h2>
 
@@ -216,7 +163,6 @@
                                 </div>
 
                             </div>
-
 
                             <p class="mt-4 text-sm leading-6 text-slate-500">
 
@@ -254,16 +200,20 @@
                                     maxlength="6"
                                     required
                                     placeholder="Ej. ABC123"
-                                    class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold uppercase tracking-widest text-slate-900 outline-none transition placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                                    class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold uppercase tracking-widest text-slate-900 outline-none transition placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-100"
                                 >
 
 
                                 <button
                                     type="submit"
-                                    class="rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-200"
+                                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-orange-700 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-orange-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2"
                                 >
 
-                                    Unirse →
+                                    Unirse
+
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
 
                                 </button>
 
@@ -272,140 +222,13 @@
 
                             @error('code')
 
-                                <p class="mt-2 text-sm font-medium text-rose-600">
+                                <p class="mt-2 text-sm font-medium text-red-600" role="alert">
                                     {{ $message }}
                                 </p>
 
                             @enderror
 
                         </form>
-
-                    </div>
-
-                </section>
-
-
-                <!-- =====================================
-                     JUEGOS EDUCATIVOS
-                 ====================================== -->
-
-                <section id="juegos" class="scroll-mt-6 space-y-5">
-
-                    <div class="flex items-end justify-between gap-4">
-
-                        <div>
-
-                            <p class="text-sm font-black uppercase tracking-widest text-indigo-600">
-                                🏆 ¡A jugar!
-                            </p>
-
-                            <h2 class="mt-2 text-3xl font-black tracking-tight text-slate-900">
-                                ¡Elige tu juego! ⭐
-                            </h2>
-
-                            <p class="mt-2 text-sm text-slate-500">
-                                Descubre los retos que Klassio tiene para ti.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-
-                        <!-- SOPA DE LETRAS -->
-
-                        <div class="group rounded-3xl border-b-8 border-rose-300 bg-white p-6 text-center shadow-md transition hover:-translate-y-1 hover:shadow-xl">
-
-                            <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-rose-100 text-5xl">
-                                🔎
-                            </div>
-
-                            <h3 class="mt-4 text-xl font-black text-slate-900">
-                                Sopa de letras
-                            </h3>
-
-                            <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
-                                ¡Busca las palabras!
-                            </p>
-
-                            <span class="mt-4 inline-block text-xs font-bold text-rose-500">
-                                Juego educativo
-                            </span>
-
-                        </div>
-
-
-                        <!-- CRUCIGRAMA -->
-
-                        <div class="group rounded-3xl border-b-8 border-amber-300 bg-white p-6 text-center shadow-md transition hover:-translate-y-1 hover:shadow-xl">
-
-                            <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-100 text-5xl">
-                                🧩
-                            </div>
-
-                            <h3 class="mt-4 text-xl font-black text-slate-900">
-                                Crucigrama
-                            </h3>
-
-                            <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
-                                ¡Adivina con las pistas!
-                            </p>
-
-                            <span class="mt-4 inline-block text-xs font-bold text-amber-600">
-                                Juego educativo
-                            </span>
-
-                        </div>
-
-
-                        <!-- CONECTA LOS PUNTOS -->
-
-                        <div class="group rounded-3xl border-b-8 border-teal-300 bg-white p-6 text-center shadow-md transition hover:-translate-y-1 hover:shadow-xl">
-
-                            <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-teal-100 text-5xl">
-                                ✨
-                            </div>
-
-                            <h3 class="mt-4 text-xl font-black text-slate-900">
-                                Conecta los puntos
-                            </h3>
-
-                            <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
-                                ¡Une parejas y gana puntos!
-                            </p>
-
-                            <span class="mt-4 inline-block text-xs font-bold text-teal-600">
-                                Juego educativo
-                            </span>
-
-                        </div>
-
-
-                        <!-- KAHOOT -->
-
-                        <div class="group rounded-3xl border-b-8 border-indigo-300 bg-white p-6 text-center shadow-md transition hover:-translate-y-1 hover:shadow-xl">
-
-                            <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-100 text-5xl">
-                                🏆
-                            </div>
-
-                            <h3 class="mt-4 text-xl font-black text-slate-900">
-                                Quiz tipo Kahoot
-                            </h3>
-
-                            <p class="mt-2 text-sm font-medium leading-6 text-slate-500">
-                                ¡Responde rapidísimo!
-                            </p>
-
-                            <span class="mt-4 inline-block text-xs font-bold text-indigo-600">
-                                Juego educativo
-                            </span>
-
-                        </div>
-
 
                     </div>
 
