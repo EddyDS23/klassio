@@ -1,254 +1,146 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('student.layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@section('title', 'Compañeros')
 
-    <title>Compañeros | Klassio</title>
+@section('page-title', 'Compañeros')
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+@section('page-actions')
+    <a href="{{ route('student.class.show', $class->id) }}"
+       class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2">
+        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+        Volver a la clase
+    </a>
+@endsection
 
-<body class="min-h-screen bg-slate-100 text-slate-800 student-kids">
+@section('content')
 
-    <div class="flex min-h-screen">
+    <div class="mx-auto max-w-7xl">
 
-        <!-- SIDEBAR -->
-        <aside class="hidden w-72 shrink-0 flex-col bg-white shadow-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
+        {{-- Encabezado --}}
+        <section class="rounded-2xl bg-orange-600 p-4 text-white shadow-xl shadow-orange-200 sm:p-8">
 
-            <div class="flex items-center gap-3 border-b border-slate-200 px-6 py-6">
+            <div class="flex items-start justify-between gap-4">
 
-                <div
-                    class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-2xl font-black text-white shadow-lg">
-                    K
+                <div class="min-w-0">
+
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white ring-1 ring-white/20">
+                        <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                        </svg>
+                        ¡Mi salón!
+                    </span>
+
+                    <h2 class="mt-2 break-words text-xl font-bold tracking-tight sm:mt-3 sm:text-3xl">
+                        Compañeros
+                    </h2>
+
+                    <p class="mt-1 text-sm text-orange-100 sm:mt-2 sm:text-base">
+                        Mira quién juega contigo en {{ $class->name }}.
+                    </p>
+
                 </div>
 
-                <div>
-                    <h1 class="text-2xl font-black tracking-tight text-indigo-700">
-                        Klassio
-                    </h1>
-
-                    <p class="text-xs font-medium text-slate-500">
-                        Aprende jugando
-                    </p>
+                <div class="hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 md:flex">
+                    <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                    </svg>
                 </div>
 
             </div>
 
-            <nav class="flex-1 space-y-2 px-4 py-6">
+        </section>
 
-                <a href="{{ route('student.dashboard') }}"
-                    class="flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700">
-                    <span class="text-xl">🏠</span>
-                    Inicio
-                </a>
+        {{-- Lista de compañeros --}}
+        <section class="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
 
-                <a href="{{ route('student.classes.index') }}"
-                    class="flex items-center gap-3 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md">
-                    <span class="text-xl">📚</span>
-                    Mis clases
-                </a>
+            <div class="flex flex-wrap items-center justify-between gap-3">
 
-                <a href="{{ route('student.classes.index') }}"
-                    class="flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700">
-                    <span class="text-xl">🎮</span>
-                    Juegos educativos
-                </a>
+                <div class="flex items-center gap-2.5">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-700 ring-1 ring-orange-100">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                        </svg>
+                    </div>
 
-            </nav>
+                    <div class="min-w-0">
+                        <h3 class="text-base font-bold text-slate-900 sm:text-lg">
+                            Mis compañeros
+                        </h3>
 
-            <div class="border-t border-slate-200 p-4">
-
-                <div class="mb-4 rounded-2xl bg-indigo-50 p-4">
-
-                    <p class="text-xs font-semibold uppercase tracking-wide text-indigo-500">
-                        Estudiante
-                    </p>
-
-                    <p class="mt-1 truncate font-bold text-indigo-800">
-                        {{ auth()->user()->name }}
-                    </p>
-
+                        <p class="text-sm text-slate-500">
+                            Todos los estudiantes de la clase.
+                        </p>
+                    </div>
                 </div>
 
-                <form method="POST" action="{{ url('/logout') }}">
-                    @csrf
-
-                    <button type="submit"
-                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 font-semibold text-red-600 transition hover:bg-red-50">
-                        <span>↪</span>
-                        Cerrar sesión
-                    </button>
-                </form>
+                @if ($students->isNotEmpty())
+                    <span class="inline-flex rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+                        {{ $students->total() }} en total
+                    </span>
+                @endif
 
             </div>
 
-        </aside>
+            @if ($students->isEmpty())
 
-        <!-- CONTENIDO PRINCIPAL -->
-        <main class="flex-1">
+                {{-- Estado vacío --}}
+                <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
 
-            <!-- HEADER -->
-            <header class="sticky top-4 z-20 mx-4 mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:mx-6 sm:px-8">
-
-                <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
-
-                    <div>
-                        <p class="text-sm font-semibold text-indigo-600">
-                            Comunidad de la clase
-                        </p>
-
-                        <h2 class="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
-                            Compañeros
-                        </h2>
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 text-orange-400">
+                        <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a12 12 0 0 1-1.5 3.062m3.75-3.062a12 12 0 0 0-2.812 6.875m-4.5-1.5a12 12 0 0 1-1.5 5.5M3 9.75a2.25 2.25 0 0 1 2.25-2.25h1.5a2.25 2.25 0 0 1 2.25 2.25v2.25a2.25 2.25 0 0 0 2.25 2.25h1.5a2.25 2.25 0 0 0 2.25-2.25V9.75a2.25 2.25 0 0 1 2.25-2.25h1.5a2.25 2.25 0 0 1 2.25 2.25c0 6.55-3.448 10.5-9.75 10.5S3 16.3 3 9.75Z" />
+                        </svg>
                     </div>
 
-                    <a href="{{ route('student.class.show', $class->id) }}"
-                        class="klassio-back-button">
-                        ← Volver a la clase
-                    </a>
+                    <h4 class="mt-4 text-lg font-bold text-slate-800">
+                        Todavía no hay compañeros
+                    </h4>
 
-                    @if ($students->hasPages())
-                        <div class="mt-8">
-                            {{ $students->links() }}
-                        </div>
-                    @endif
+                    <p class="mt-2 text-sm text-slate-500">
+                        Cuando se unan estudiantes a la clase, aparecerán aquí.
+                    </p>
 
                 </div>
 
-            </header>
+            @else
 
-            <div class="mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8">
+                {{-- Tarjetas --}}
+                <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 
-                <!-- BANNER -->
-                <section
-                    class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 p-6 text-white shadow-xl sm:p-8">
+                    @foreach ($students as $enrollment)
+                        <article class="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-1 hover:border-orange-200 hover:bg-white hover:shadow-md">
 
-                    <div class="relative z-10 max-w-3xl">
-
-                        <div
-                            class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold backdrop-blur">
-                            👥 ¡Mi salón!
-                        </div>
-
-                        <h1 class="text-3xl font-black sm:text-4xl">
-                            Mis amigos de {{ $class->name }} 🎉
-                        </h1>
-
-                        <p class="mt-3 text-base font-medium leading-6 text-indigo-100 sm:text-lg">
-                            Mira quién juega contigo. 👋
-                        </p>
-
-                    </div>
-
-                    <div class="absolute -right-8 -top-10 text-[150px] opacity-20">
-                        🎓
-                    </div>
-
-                    <div class="absolute -bottom-16 right-24 h-40 w-40 rounded-full bg-white/10"></div>
-                    <div class="absolute -right-20 bottom-0 h-56 w-56 rounded-full bg-white/10"></div>
-
-                </section>
-
-                <!-- LISTA DE COMPAÑEROS -->
-                <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-
-                    <div class="mb-6 flex items-center gap-3">
-
-                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
-                            🧑‍🎓
-                        </div>
-
-                        <div>
-                            <h2 class="text-xl font-black text-slate-900 sm:text-2xl">
-                                Mis amigos
-                            </h2>
-
-                            <p class="text-base font-medium text-slate-500">
-                                Todos los de tu clase.
-                            </p>
-                        </div>
-
-                    </div>
-
-                    @if ($students->isEmpty())
-
-                        <!-- ESTADO VACÍO -->
-                        <div
-                            class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
-
-                            <div class="text-5xl">
-                                👤
+                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-600 text-lg font-black text-white shadow-sm transition group-hover:bg-orange-700">
+                                {{ strtoupper(substr($enrollment->student->name, 0, 1)) }}
                             </div>
 
-                            <h3 class="mt-4 text-lg font-black text-slate-800">
-                                ¡Todavía no hay nadie! 🎈
-                            </h3>
+                            <div class="min-w-0">
+                                <h4 class="truncate font-bold text-slate-800">
+                                    {{ $enrollment->student->name }}
+                                </h4>
 
-                            <p class="mt-2 text-base font-medium text-slate-500">
-                                Cuando lleguen tus amigos, salen aquí.
-                            </p>
+                                <p class="mt-0.5 truncate text-sm text-slate-500">
+                                    {{ $enrollment->student->email }}
+                                </p>
+                            </div>
 
-                        </div>
-                    @else
-                        <!-- CONTADOR -->
-                        <div
-                            class="mb-5 inline-flex rounded-full bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700">
-                            👥 {{ $students->count() }} compañero(s)
-                        </div>
+                        </article>
+                    @endforeach
 
-                        <!-- TARJETAS -->
-                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                </div>
 
-                            @foreach ($students as $enrollment)
-                                <article
-                                    class="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md">
+                @if ($students->hasPages())
+                    <div class="mt-6 border-t border-slate-200 pt-4">
+                        {{ $students->links('vendor.pagination.student') }}
+                    </div>
+                @endif
 
-                                    <div class="flex items-center gap-4">
+            @endif
 
-                                        <div
-                                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-xl font-black text-white shadow-md">
-                                            {{ strtoupper(substr($enrollment->student->name, 0, 1)) }}
-                                        </div>
-
-                                        <div class="min-w-0">
-
-                                            <h3 class="truncate font-black text-slate-800 group-hover:text-indigo-800">
-                                                {{ $enrollment->student->name }}
-                                            </h3>
-
-                                            <p class="mt-1 break-all text-sm text-slate-500">
-                                                {{ $enrollment->student->email }}
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                    <div class="mt-4 border-t border-slate-200 pt-3">
-
-                                        <span class="text-xs font-bold uppercase tracking-wide text-indigo-600">
-                                            Estudiante de Klassio
-                                        </span>
-
-                                    </div>
-
-                                </article>
-                            @endforeach
-
-                        </div>
-
-                    @endif
-
-                </section>
-
-            </div>
-
-        </main>
+        </section>
 
     </div>
 
-</body>
-
-</html>
+@endsection

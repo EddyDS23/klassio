@@ -1,303 +1,143 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Actividades · {{ $class->name }}</title>
-    
-    <!-- Fuentes Google Gamificadas -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome Iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+@extends('student.layouts.app')
 
-    @include('partials.assets', ['theme' => 'student'])
+@section('title', 'Actividades')
 
-    <style>
-        :root {
-            --bg-main: #f4f7fe;
-            --card-bg: #ffffff;
-            --primary: #6c5ce7;
-            --primary-hover: #5b4bc4;
-            --success: #05cd99;
-            --warning: #ffb547;
-            --danger: #ee5d50;
-            --text-dark: #2b3674;
-            --text-muted: #707ebe;
-            --border: #e9edf7;
-            --radius-lg: 20px;
-            --radius-md: 14px;
-            --shadow-md: 0px 10px 20px rgba(112, 144, 176, 0.07);
-        }
+@section('page-title', 'Actividades')
 
-        * { box-sizing: border-box; }
+@section('page-actions')
+    <a href="{{ route('student.class.show', $class->id) }}"
+       class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2">
+        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+        Volver a la clase
+    </a>
+@endsection
 
-        body.student-kids {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-dark);
-            min-height: 100vh;
-        }
+@section('content')
 
-        .page-shell {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 32px 16px;
-        }
+    <div class="mx-auto max-w-7xl">
 
-        /* Botón Volver */
-        .klassio-back-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            border-radius: var(--radius-md);
-            font-size: 14px;
-            font-weight: 700;
-            text-decoration: none;
-            background-color: #ffffff;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            transition: all 0.2s ease;
-        }
-        .klassio-back-button:hover {
-            background-color: #f8fafc;
-            color: var(--text-dark);
-            transform: translateX(-3px);
-        }
+        {{-- Encabezado --}}
+        <section class="rounded-2xl bg-orange-600 p-4 text-white shadow-xl shadow-orange-200 sm:p-8">
 
-        /* Hero Header Gamificado */
-        .page-hero {
-            background: linear-gradient(135deg, #6c5ce7 0%, #4318ff 100%);
-            border-radius: var(--radius-lg);
-            padding: 32px 36px;
-            color: #ffffff;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 25px rgba(108, 92, 231, 0.25);
-            position: relative;
-            overflow: hidden;
-        }
+            <div class="flex items-start justify-between gap-4">
 
-        .hero-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(8px);
-            padding: 4px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-        }
+                <div class="min-w-0">
 
-        .hero-title {
-            font-family: 'Fredoka', cursive;
-            font-size: 36px;
-            margin-bottom: 6px;
-        }
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white ring-1 ring-white/20">
+                        <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L12 2.25l-.259 1.035a3.375 3.375 0 0 0-2.455 2.456L9 6l1.036.259a3.375 3.375 0 0 0 2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                        </svg>
+                        ¡A jugar!
+                    </span>
 
-        .hero-sub {
-            font-size: 16px;
-            opacity: 0.9;
-        }
+                    <h2 class="mt-2 break-words text-xl font-bold tracking-tight sm:mt-3 sm:text-3xl">
+                        Actividades
+                    </h2>
 
-        /* Tarjeta de Filtros */
-        .surface-card {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-md);
-        }
+                    <p class="mt-1 text-sm text-orange-100 sm:mt-2 sm:text-base">
+                        Elige un reto de {{ $class->name }}.
+                    </p>
 
-        .filter-card {
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .filter-label {
-            font-family: 'Fredoka', cursive;
-            font-size: 16px;
-            color: var(--text-dark);
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .form-control-custom, .form-select-custom {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-dark);
-            background-color: #f8fafc;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        .form-control-custom:focus, .form-select-custom:focus {
-            border-color: var(--primary);
-            background-color: #ffffff;
-            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
-        }
-
-        .btn-klassio {
-            background-color: var(--primary);
-            color: #ffffff;
-            border: none;
-            border-radius: var(--radius-md);
-            padding: 12px 24px;
-            font-family: 'Fredoka', cursive;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
-        }
-        .btn-klassio:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-2px);
-        }
-
-        .btn-outline-custom {
-            background-color: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 12px 20px;
-            font-weight: 700;
-            text-decoration: none;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-        }
-        .btn-outline-custom:hover {
-            background-color: #f8fafc;
-            color: var(--text-dark);
-        }
-
-        /* Acordeones / Unidades (<details>) */
-        details.unit-accordion {
-            margin-bottom: 20px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        summary.unit-summary {
-            padding: 18px 24px;
-            cursor: pointer;
-            list-style: none;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            user-select: none;
-            background: #ffffff;
-            transition: background 0.2s ease;
-        }
-        summary.unit-summary::-webkit-details-marker { display: none; }
-        summary.unit-summary:hover { background: #fcfdfe; }
-
-        .unit-title-wrap {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-family: 'Fredoka', cursive;
-            font-size: 18px;
-            color: var(--primary);
-        }
-
-        .unit-badge {
-            background: #eef2ff;
-            color: var(--primary);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .unit-content {
-            border-top: 1px solid var(--border);
-            padding: 20px;
-            background: #fafbfc;
-        }
-
-        /* Estado Vacío */
-        .empty-card {
-            padding: 48px 24px;
-            text-align: center;
-        }
-        .empty-icon {
-            font-size: 54px;
-            margin-bottom: 12px;
-        }
-        .empty-title {
-            font-family: 'Fredoka', cursive;
-            font-size: 24px;
-            color: var(--text-dark);
-            margin-bottom: 6px;
-        }
-    </style>
-</head>
-<body class="student-kids">
-    <main class="page-shell">
-        
-        {{-- Botón Volver --}}
-        <div class="mb-4">
-            <a href="{{ route('student.class.show', $class->id) }}" class="klassio-back-button">
-                <i class="fa-solid fa-arrow-left"></i> Volver a la clase
-            </a>
-        </div>
-
-        {{-- Encabezado Principal --}}
-        <section class="page-hero">
-            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                <div>
-                    <span class="hero-badge">MI AULA 🎒</span>
-                    <h1 class="hero-title">¡A jugar! 🎮</h1>
-                    <p class="hero-sub mb-0">Elige un reto de <strong>{{ $class->name }}</strong>.</p>
                 </div>
-                <div style="font-size: 64px; line-height: 1;">🚀</div>
+
+                <div class="hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 md:flex">
+                    <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L12 2.25l-.259 1.035a3.375 3.375 0 0 0-2.455 2.456L9 6l1.036.259a3.375 3.375 0 0 0 2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                    </svg>
+                </div>
+
             </div>
+
         </section>
 
-        {{-- Formulario de Búsqueda y Filtros --}}
-        <section class="card surface-card filter-card">
-            <form method="GET" action="{{ route('student.activities.index', $class->id) }}" class="row g-3 align-items-end">
-                <div class="col-md-5">
-                    <label class="filter-label" for="search">🔎 Buscar actividad</label>
-                    <input class="form-control-custom" type="search" name="search" id="search" value="{{ request('search') }}" placeholder="Ej. animales, fracciones…">
+        {{-- Búsqueda y filtros --}}
+        <section class="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+
+            <form method="GET" action="{{ route('student.activities.index', $class->id) }}"
+                  class="flex flex-col gap-3 lg:flex-row lg:items-end">
+
+                <div class="grid flex-1 gap-3 sm:grid-cols-2">
+
+                    <div>
+                        <label for="search" class="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                            Buscar actividad
+                        </label>
+
+                        <input type="search" name="search" id="search" value="{{ request('search') }}"
+                               placeholder="Ej. animales, fracciones…"
+                               class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-800 placeholder-slate-400 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2">
+                    </div>
+
+                    <div>
+                        <label for="type" class="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                            Tipo de reto
+                        </label>
+
+                        <select name="type" id="type"
+                                class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-800 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2">
+                            <option value="">Todos los retos</option>
+                            <option value="kahoot" @selected(request('type') === 'kahoot')>Kahoot</option>
+                            <option value="crossword" @selected(request('type') === 'crossword')>Crucigrama</option>
+                            <option value="word_search" @selected(request('type') === 'word_search')>Sopa de letras</option>
+                            <option value="matching" @selected(request('type') === 'matching')>Unir conceptos</option>
+                            <option value="roulette" @selected(request('type') === 'roulette')>Ruleta</option>
+                        </select>
+                    </div>
+
                 </div>
-                
-                <div class="col-md-4">
-                    <label class="filter-label" for="type">🎮 Tipo de reto</label>
-                    <select class="form-select-custom" name="type" id="type">
-                        <option value="">Todos los retos</option>
-                        <option value="kahoot" @selected(request('type') === 'kahoot')>Kahoot</option>
-                        <option value="crossword" @selected(request('type') === 'crossword')>Crucigrama</option>
-                        <option value="word_search" @selected(request('type') === 'word_search')>Sopa de letras</option>
-                        <option value="matching" @selected(request('type') === 'matching')>Unir conceptos</option>
-                        <option value="roulette" @selected(request('type') === 'roulette')>Ruleta</option>
-                    </select>
-                </div>
-                
-                <div class="col-md-auto d-flex gap-2">
-                    <button class="btn-klassio" type="submit">Buscar 🔎</button>
+
+                <div class="flex gap-2 lg:shrink-0">
+
+                    <button type="submit"
+                            class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-orange-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 lg:flex-none">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                        Buscar
+                    </button>
+
                     @if (request()->filled('search') || request()->filled('type'))
-                        <a class="btn-outline-custom" href="{{ route('student.activities.index', $class->id) }}">Limpiar</a>
+                        <a href="{{ route('student.activities.index', $class->id) }}"
+                           class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2">
+                            Limpiar
+                        </a>
                     @endif
+
                 </div>
+
             </form>
+
         </section>
 
-        {{-- Lista de Actividades --}}
+        {{-- Lista de actividades --}}
         @if ($activities->isEmpty())
-            <section class="card surface-card empty-card">
-                <div class="empty-icon">🎈</div>
-                <h2 class="empty-title">¡Todavía no hay actividades!</h2>
-                <p class="text-secondary mb-0 fs-5">Cuando tu maestro publique una, aparecerá aquí.</p>
+
+            <section class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 text-orange-400">
+                    <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.658L19.24 5.33a2.25 2.25 0 0 0-2.152-1.581H6.911a2.25 2.25 0 0 0-2.152 1.581l-2.408 7.85a2.25 2.25 0 0 0-.1.658Z" />
+                    </svg>
+                </div>
+
+                <h3 class="mt-4 text-lg font-bold text-slate-900">
+                    Todavía no hay actividades
+                </h3>
+
+                <p class="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+                    @if (request()->filled('search') || request()->filled('type'))
+                        No encontramos actividades con ese filtro. Prueba con otra búsqueda.
+                    @else
+                        Cuando tu maestro publique una, aparecerá aquí.
+                    @endif
+                </p>
+
             </section>
+
         @else
+
             @php
                 $pageActivities = $activities->getCollection();
                 $unitGroups = $units
@@ -307,53 +147,99 @@
                 $unassigned = $pageActivities->filter(fn ($activity) => $activity->unit_id === null)->values();
             @endphp
 
-            {{-- Unidades con Actividades --}}
-            @forelse ($unitGroups as $group)
-                <details class="card surface-card unit-accordion" @if ($loop->first) open @endif>
-                    <summary class="unit-summary">
-                        <span class="unit-title-wrap">
-                            <span>📂</span>
-                            <span class="text-truncate">Unidad {{ $group['unit']->number }}{{ filled($group['unit']->name) ? ' — '.$group['unit']->name : '' }}</span>
+            {{-- Unidades con actividades --}}
+            @foreach ($unitGroups as $group)
+                <details class="group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300"
+                    @if ($loop->first) open @endif
+                >
+                    <summary class="flex cursor-pointer select-none list-none items-center justify-between gap-3 px-4 py-3.5 transition hover:bg-slate-50 active:bg-slate-100 sm:gap-4 sm:px-5 sm:py-4"
+                             title="Toca para mostrar u ocultar las actividades de esta unidad">
+
+                        <span class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                            <span class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-700 sm:flex" aria-hidden="true">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.25 3h6.75m-6.75 0V15a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v.75m-16.5 0a2.25 2.25 0 0 0 2.25 2.25h1.5a2.25 2.25 0 0 0 2.25-2.25v-.75a2.25 2.25 0 0 1 2.25-2.25h.75m-11.25 3V6.75A2.25 2.25 0 0 1 5.25 4.5h9A2.25 2.25 0 0 1 16.5 6.75v6.75" />
+                                </svg>
+                            </span>
+
+                            <span class="text-sm font-bold leading-snug text-orange-700">
+                                Unidad {{ $group['unit']->number }}{{ filled($group['unit']->name) ? ' — '.$group['unit']->name : '' }}
+                            </span>
                         </span>
-                        <span class="unit-badge">{{ $group['activities']->count() }} {{ $group['activities']->count() === 1 ? 'actividad' : 'actividades' }}</span>
+
+                        <span class="flex shrink-0 items-center gap-1 sm:gap-2">
+                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                                {{ $group['activities']->count() }} {{ $group['activities']->count() === 1 ? 'actividad' : 'actividades' }}
+                            </span>
+
+                            <span class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:text-slate-600" aria-hidden="true">
+                                <svg class="chevron h-5 w-5 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </span>
+                        </span>
+
                     </summary>
-                    <div class="unit-content">
-                        <div class="row g-3">
-                            @each('partials.activity-card-student', $group['activities'], 'activity')
-                        </div>
+
+                    <div class="grid gap-3 border-t border-slate-100 px-4 py-5 sm:px-5 sm:grid-cols-2 xl:grid-cols-3">
+                        @each('partials.activity-card-student', $group['activities'], 'activity')
                     </div>
                 </details>
-            @empty
-            @endforelse
+            @endforeach
 
-            {{-- Actividades Sin Unidad --}}
+            {{-- Actividades sin unidad --}}
             @if ($unassigned->isNotEmpty())
-                <details class="card surface-card unit-accordion" @if ($unitGroups->isEmpty()) open @endif>
-                    <summary class="unit-summary">
-                        <span class="unit-title-wrap" style="color: var(--text-muted);">
-                            <span>🗂️</span>
-                            <span class="text-truncate">Sin unidad</span>
+                <details class="group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300"
+                    @if ($unitGroups->isEmpty()) open @endif
+                >
+                    <summary class="flex cursor-pointer select-none list-none items-center justify-between gap-3 px-4 py-3.5 transition hover:bg-slate-50 active:bg-slate-100 sm:gap-4 sm:px-5 sm:py-4"
+                             title="Toca para mostrar u ocultar estas actividades">
+
+                        <span class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                            <span class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 sm:flex" aria-hidden="true">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
+                                </svg>
+                            </span>
+
+                            <span class="text-sm font-bold leading-snug text-slate-500">
+                                Sin unidad
+                            </span>
                         </span>
-                        <span class="unit-badge" style="background: #f1f5f9; color: var(--text-muted);">
-                            {{ $unassigned->count() }} {{ $unassigned->count() === 1 ? 'actividad' : 'actividades' }}
+
+                        <span class="flex shrink-0 items-center gap-1 sm:gap-2">
+                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                                {{ $unassigned->count() }} {{ $unassigned->count() === 1 ? 'actividad' : 'actividades' }}
+                            </span>
+
+                            <span class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:text-slate-600" aria-hidden="true">
+                                <svg class="chevron h-5 w-5 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </span>
                         </span>
+
                     </summary>
-                    <div class="unit-content">
-                        <div class="row g-3">
-                            @each('partials.activity-card-student', $unassigned, 'activity')
-                        </div>
+
+                    <div class="grid gap-3 border-t border-slate-100 px-4 py-5 sm:px-5 sm:grid-cols-2 xl:grid-cols-3">
+                        @each('partials.activity-card-student', $unassigned, 'activity')
                     </div>
                 </details>
             @endif
+
         @endif
 
         {{-- Paginación --}}
         @if ($activities->hasPages())
-            <div class="mt-4 d-flex justify-content-center">
-                {{ $activities->links() }}
+            <div class="mt-4">
+                {{ $activities->links('vendor.pagination.student') }}
             </div>
         @endif
 
-    </main>
-</body>
-</html>
+    </div>
+
+    <style>
+        details[open] > summary .chevron { transform: rotate(180deg); }
+    </style>
+
+@endsection
