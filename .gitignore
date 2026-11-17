@@ -9,6 +9,7 @@ docker-compose.local.yml
 .phpactor.json
 .phpunit.result.cache
 /.codex
+/.opencode/
 /.cursor/
 /.idea
 /.nova

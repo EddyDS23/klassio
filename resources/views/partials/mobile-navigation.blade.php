@@ -12,6 +12,18 @@
     'brandSubtitle' => 'Panel',
     'brandIcon' => 'K',
     'brandIconBg' => 'bg-emerald-600',
+    'activeClasses' => 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400',
+    'inactiveClasses' => 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800',
+    'focusRingClass' => 'focus:ring-indigo-500',
+    'panelClasses' => 'bg-white dark:bg-slate-900',
+    'panelWidth' => 'w-full max-w-sm',
+    'panelBorder' => 'border-slate-200 dark:border-slate-700',
+    'brandTitleClasses' => 'text-slate-900 dark:text-white',
+    'brandSubtitleClasses' => 'text-slate-500 dark:text-slate-400',
+    'closeBtnClasses' => 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200',
+    'userNameClasses' => 'text-slate-900 dark:text-white',
+    'userRoleClasses' => 'text-slate-500 dark:text-slate-400',
+    'logoutClasses' => 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300',
 ])
 
 <div id="mobile-nav-drawer" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-label="Menú de navegación">
@@ -20,19 +32,19 @@
 
     {{-- Drawer panel --}}
     {{-- Panel lateral: se desliza desde la izquierda (hamburguesa a la izquierda) --}}
-    <aside class="fixed inset-y-0 left-0 z-50 w-full max-w-sm transform transition-transform duration-300 ease-out -translate-x-full md:hidden" id="mobile-nav-panel" role="document">
-        <div class="flex flex-col h-full bg-white dark:bg-slate-900 shadow-xl overflow-x-hidden">
+    <aside class="fixed inset-y-0 left-0 z-50 {{ $panelWidth }} transform transition-transform duration-300 ease-out -translate-x-full md:hidden" id="mobile-nav-panel" role="document">
+        <div class="flex flex-col h-full {{ $panelClasses }} shadow-xl overflow-x-hidden">
             {{-- Header --}}
-            <div class="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 px-[1rem] py-[1rem]">
+            <div class="flex items-center justify-between gap-3 border-b {{ $panelBorder }} px-[1rem] py-[1rem]">
                 <a href="{{ url('/') }}" class="flex min-w-0 items-center gap-3" aria-label="{{ $brandTitle }} - Inicio">
                     <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl {{ $brandIconBg }} text-xl font-black text-white shadow-lg">
                         {{ $brandIcon }}
                     </div>
                     <div class="min-w-0">
-                        <p class="truncate text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                        <p class="truncate text-xl font-black tracking-tight {{ $brandTitleClasses }}">
                             {{ $brandTitle }}
                         </p>
-                        <p class="truncate text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                        <p class="truncate text-xs font-bold uppercase tracking-widest {{ $brandSubtitleClasses }}">
                             {{ $brandSubtitle }}
                         </p>
                     </div>
@@ -40,7 +52,7 @@
 
                 <button
                     type="button"
-                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition {{ $closeBtnClasses }} focus:outline-none focus:ring-2 {{ $focusRingClass }}"
                     id="mobile-nav-close"
                     aria-label="Cerrar menú"
                 >
@@ -66,10 +78,10 @@
                         <li>
                             <a href="{{ route($item['route']) }}{{ $isFragment ? '#' . ($item['fragment'] ?? '') : '' }}"
                                class="flex items-center gap-3 rounded-xl px-[1rem] py-[0.875rem] text-sm font-bold transition
-                                         {{ $isActive ? 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
+                                         {{ $isActive ? $activeClasses : $inactiveClasses }}"
                                aria-current="{{ $isActive ? 'page' : 'false' }}"
                                data-fragment="{{ $item['fragment'] ?? '' }}">
-                                <span class="text-lg shrink-0" aria-hidden="true">{{ $item['icon'] }}</span>
+                                <span class="shrink-0 text-lg [&_svg]:h-5 [&_svg]:w-5" aria-hidden="true">{!! $item['icon'] !!}</span>
                                 <span class="truncate">{{ $item['label'] }}</span>
                             </a>
                         </li>
@@ -78,21 +90,21 @@
             </nav>
 
             {{-- User info and logout --}}
-            <div class="shrink-0 border-t border-slate-200 dark:border-slate-700 px-[1rem] py-[1rem]">
+            <div class="shrink-0 border-t {{ $panelBorder }} px-[1rem] py-[1rem]">
                 <div class="mb-3 flex items-center gap-3">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $avatarBg }} font-bold text-white">
                         {{ $avatarLetter }}
                     </div>
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-bold text-slate-900 dark:text-white">{{ $userName }}</p>
-                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $userRole }}</p>
+                        <p class="truncate text-sm font-bold {{ $userNameClasses }}">{{ $userName }}</p>
+                        <p class="truncate text-xs {{ $userRoleClasses }}">{{ $userRole }}</p>
                     </div>
                 </div>
 
                 <form action="{{ $logoutUrl }}" method="POST">
                     @csrf
                     <button type="submit"
-                            class="flex w-full items-center gap-3 rounded-xl bg-red-50 dark:bg-red-900/20 px-[1rem] py-[0.75rem] text-sm font-bold text-red-600 dark:text-red-400 transition hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300">
+                            class="flex w-full items-center gap-3 rounded-xl px-[1rem] py-[0.75rem] text-sm font-bold transition {{ $logoutClasses }}">
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -114,6 +126,10 @@
     var closeBtn = document.getElementById('mobile-nav-close');
 
     if (!drawer || !panel || !backdropEl || !openBtn || !closeBtn) return;
+
+    // Clases de estado activo/inactivo configurables por área (admin/teacher).
+    var ACTIVE_CLASSES = {!! json_encode(explode(' ', $activeClasses)) !!};
+    var INACTIVE_CLASSES = {!! json_encode(explode(' ', $inactiveClasses)) !!};
 
     var isOpen = false;
     var lastFocusedElement = null;
@@ -240,12 +256,20 @@
                 var linkFragment = hashMatch[1];
                 var isActive = hash === linkFragment;
                 if (isActive) {
-                    link.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-indigo-600', 'dark:text-indigo-400');
-                    link.classList.remove('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+                    ACTIVE_CLASSES.forEach(function (cls) {
+                        link.classList.add(cls);
+                    });
+                    INACTIVE_CLASSES.forEach(function (cls) {
+                        link.classList.remove(cls);
+                    });
                     link.setAttribute('aria-current', 'page');
                 } else {
-                    link.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-indigo-600', 'dark:text-indigo-400');
-                    link.classList.add('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+                    ACTIVE_CLASSES.forEach(function (cls) {
+                        link.classList.remove(cls);
+                    });
+                    INACTIVE_CLASSES.forEach(function (cls) {
+                        link.classList.add(cls);
+                    });
                     link.setAttribute('aria-current', 'false');
                 }
             }

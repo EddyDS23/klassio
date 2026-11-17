@@ -5,249 +5,220 @@
 
 @section('page-actions')
     <a href="{{ route('teacher.classes.show', $class->id) }}"
-        class="klassio-back-button">
-        ← Volver a la clase
-    </a>
-
-    <a href="{{ route('teacher.classes.index') }}"
-        class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700">
-        Mis clases
+       class="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+        Volver a la clase
     </a>
 @endsection
 
-@push('styles')
-    <style>
-        /* Bootstrap CDN fuerza p-4/p-5 a 1.5rem con !important; fija el padding compacto de tarjeta a 16px. */
-        #teacher-enrolled-students .enrolled-student-card { padding: 1rem !important; }
-        @media (max-width: 767.98px) {
-            /* Bootstrap aplica !important a px-5, p-5 y gap-4. */
-            #teacher-enrolled-students { padding-inline: 1rem !important; }
-            #teacher-enrolled-students .enrolled-students-section { padding: 1rem; }
-            #teacher-enrolled-students .enrolled-students-list { grid-template-columns: minmax(0, 1fr); }
-            #teacher-enrolled-students .enrolled-student-card { min-width: 0; padding: 1rem !important; }
-
-            #teacher-enrolled-students .enrolled-student-profile {
-                display: grid;
-                grid-template-columns: 2.75rem minmax(0, 1fr);
-                gap: .5rem .75rem !important;
-            }
-            #teacher-enrolled-students .enrolled-student-avatar { grid-column: 1; grid-row: 1 / span 2; }
-            #teacher-enrolled-students .enrolled-student-details { display: contents; }
-            #teacher-enrolled-students .enrolled-student-name,
-            #teacher-enrolled-students .enrolled-student-email {
-                grid-column: 2;
-                min-width: 0;
-                margin: 0 !important;
-                white-space: normal;
-                overflow: visible;
-                text-overflow: clip;
-                overflow-wrap: anywhere;
-                word-break: normal;
-            }
-            #teacher-enrolled-students .enrolled-student-status {
-                grid-column: 1 / -1;
-                justify-self: start;
-                max-width: 100%;
-                margin-top: .25rem !important;
-            }
-            #teacher-enrolled-students .enrolled-student-status > span { flex-shrink: 0; }
-            #teacher-enrolled-students .enrolled-student-actions {
-                margin-top: .75rem !important;
-                padding-top: .75rem !important;
-            }
-        }
-    </style>
-@endpush
-
 @section('content')
-        <div id="teacher-enrolled-students" class="mx-auto w-full max-w-7xl space-y-8">
+    <div id="teacher-enrolled-students" class="space-y-6">
 
-            <!-- Encabezado -->
-            <section
-                class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-7 text-white shadow-xl shadow-emerald-200 md:p-10">
+        <!-- Contenido principal -->
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
 
-                <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10"></div>
-                <div class="absolute -bottom-28 right-24 h-72 w-72 rounded-full bg-white/10"></div>
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
 
-                <div class="relative z-10 max-w-3xl">
-
-                    <div
-                        class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-emerald-50 backdrop-blur">
-                        <span>👥</span>
-                        Gestión de alumnos
-                    </div>
-
-                    <h1 class="text-3xl font-black tracking-tight md:text-4xl">
-                        Alumnos de {{ $class->name }}
-                    </h1>
-
-                    <p class="mt-3 max-w-2xl text-sm leading-6 text-emerald-50 md:text-base">
-                        Consulta los alumnos inscritos en esta clase y administra
-                        cuidadosamente sus accesos al grupo.
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">
+                        Lista de estudiantes
                     </p>
 
-                    <div class="mt-6 inline-flex items-center gap-3 rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-lg">
-                            🎓
-                        </div>
+                    <h2 class="mt-1 text-xl font-bold text-slate-900">
+                        Alumnos inscritos
+                    </h2>
 
-                        <div>
-                            <p class="text-xs font-semibold text-emerald-100">
-                                Total de alumnos
-                            </p>
-
-                            <p class="text-2xl font-black">
-                                {{ $students->count() }}
-                            </p>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
-
-            <!-- Contenido principal -->
-            <section class="enrolled-students-section rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-
-                <div class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
-
-                    <div>
-                        <p class="text-xs font-black uppercase tracking-widest text-emerald-600">
-                            Lista de estudiantes
-                        </p>
-
-                        <h2 class="mt-1 text-2xl font-black text-slate-900">
-                            Alumnos inscritos
-                        </h2>
-
-                        <p class="mt-1 text-sm text-slate-500">
-                            Revisa la información de cada alumno registrado en esta clase.
-                        </p>
-                    </div>
-
+                    <p class="mt-1 text-sm text-slate-500">
+                        Revisa la información de cada alumno registrado en esta clase.
+                    </p>
                 </div>
 
-                @if ($students->isEmpty())
+                <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 ring-1 ring-emerald-100">
+                    {{ $students->count() }}
+                    {{ $students->count() === 1 ? 'alumno' : 'alumnos' }}
+                </span>
 
-                    <!-- Estado vacío -->
-                    <div class="rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+            </div>
 
-                        <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-4xl">
-                            🎒
-                        </div>
+            @if ($students->isEmpty())
 
-                        <h3 class="mt-5 text-xl font-black text-slate-900">
-                            Aún no hay alumnos inscritos
-                        </h3>
+                <!-- Estado vacío -->
+                <div class="rounded-2xl border border-slate-200 bg-white p-12 text-center">
 
-                        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                            Comparte el código de acceso de tu clase para que los alumnos
-                            puedan unirse desde su cuenta.
-                        </p>
-
-                        <a href="{{ route('teacher.classes.show', $class->id) }}"
-                            class="mt-6 klassio-back-button">
-                            Volver a la clase
-                        </a>
-
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-400">
+                        <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.628 48.628 0 0 1 12 20.904a48.628 48.628 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+                        </svg>
                     </div>
-                @else
-                    <!-- Lista de alumnos -->
-                    <div class="enrolled-students-list grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 
-                        @foreach ($students as $enrollment)
-                            <article
-                                class="enrolled-student-card group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-white hover:shadow-lg">
+                    <h3 class="mt-4 text-lg font-bold text-slate-900">
+                        Aún no hay alumnos inscritos
+                    </h3>
 
-                                <div class="enrolled-student-profile flex items-center gap-3">
+                    <p class="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+                        Comparte el código de acceso de tu clase para que los alumnos
+                        puedan unirse desde su cuenta.
+                    </p>
 
-                                    <!-- Inicial -->
-                                    <div
-                                        class="enrolled-student-avatar flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-lg font-black text-white shadow-md shadow-emerald-100">
-                                        {{ strtoupper(substr($enrollment->student->name, 0, 1)) }}
-                                    </div>
+                    <a href="{{ route('teacher.classes.show', $class->id) }}"
+                       class="mt-6 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900">
+                        Volver a la clase
+                    </a>
 
-                                    <div class="enrolled-student-details min-w-0 flex-1">
+                </div>
+            @else
+                <!-- Lista de alumnos -->
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 
-                                        <h3 class="enrolled-student-name truncate text-base font-black text-slate-900">
-                                            {{ $enrollment->student->name }}
-                                        </h3>
+                    @foreach ($students as $enrollment)
+                        <article
+                            class="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-200 hover:bg-white hover:shadow-md"
+                            data-student-card>
 
-                                        <p class="enrolled-student-email mt-0.5 break-all text-xs leading-5 text-slate-500 sm:text-sm">
-                                            {{ $enrollment->student->email }}
-                                        </p>
+                            <div class="flex items-center gap-3">
 
-                                        <div
-                                            class="enrolled-student-status mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                            Alumno inscrito
-                                        </div>
+                                <!-- Inicial -->
+                                <div
+                                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-lg font-bold text-white shadow-sm shadow-emerald-200">
+                                    {{ strtoupper(substr($enrollment->student->name, 0, 1)) }}
+                                </div>
 
-                                    </div>
+                                <div class="min-w-0 flex-1">
+
+                                    <h3 class="truncate text-base font-bold text-slate-900">
+                                        {{ $enrollment->student->name }}
+                                    </h3>
+
+                                    <p class="mt-0.5 break-all text-xs leading-5 text-slate-500 sm:text-sm">
+                                        {{ $enrollment->student->email }}
+                                    </p>
 
                                 </div>
 
-                                <div class="enrolled-student-actions mt-3 border-t border-slate-200 pt-3">
+                                <button type="button" data-remove-toggle
+                                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                                    aria-expanded="false"
+                                    aria-controls="remove-confirm-{{ $enrollment->student->id }}"
+                                    aria-label="Retirar a {{ $enrollment->student->name }} de la clase">
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                    </svg>
+                                </button>
 
-                                    <form
-                                        action="{{ route('teacher.classes.students.remove', [
+                            </div>
+
+                            <!-- Confirmación de retirada (dos pasos, inline) -->
+                            <div id="remove-confirm-{{ $enrollment->student->id }}"
+                                class="mt-3 hidden rounded-xl border border-red-200 bg-red-50 p-3"
+                                data-confirm-panel>
+
+                                <p class="text-sm font-semibold text-red-800">
+                                    ¿Retirar a
+                                    <span class="font-bold">{{ $enrollment->student->name }}</span>
+                                    de la clase?
+                                </p>
+
+                                <p class="mt-0.5 text-xs text-red-700/80">
+                                    Perderá el acceso a las actividades y materiales de esta clase.
+                                </p>
+
+                                <div class="mt-3 flex gap-2">
+
+                                    <form action="{{ route('teacher.classes.students.remove', [
                                             'id' => $class->id,
                                             'studentId' => $enrollment->student->id,
                                         ]) }}"
-                                        method="POST"
-                                        onsubmit="return confirm('¿Seguro que deseas retirar a este alumno de la clase?');">
+                                          method="POST" class="flex-1">
                                         @csrf
                                         @method('DELETE')
 
                                         <button type="submit"
-                                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm font-bold text-red-600 transition hover:border-red-300 hover:bg-red-50">
-                                            <span>🗑️</span>
-                                            Retirar alumno
+                                                class="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                            </svg>
+                                            Sí, retirar
                                         </button>
                                     </form>
 
+                                    <button type="button" data-remove-cancel
+                                        class="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                                        Cancelar
+                                    </button>
+
                                 </div>
 
-                            </article>
-                        @endforeach
+                            </div>
 
-                    </div>
-
-                @endif
-
-                @if ($students->hasPages())
-                    <div class="mt-8">
-                        {{ $students->links() }}
-                    </div>
-                @endif
-
-
-            </section>
-
-            <!-- Ayuda inferior -->
-            <section class="rounded-2xl border border-cyan-100 bg-cyan-50 p-5">
-
-                <div class="flex items-start gap-3">
-
-                    <div
-                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-xl text-white">
-                        💡
-                    </div>
-
-                    <div>
-                        <h3 class="font-black text-cyan-900">
-                            Recomendación
-                        </h3>
-
-                        <p class="mt-1 text-sm leading-6 text-cyan-800">
-                            Antes de retirar a un alumno, verifica que sea la persona correcta.
-                            Esta acción puede afectar su acceso a las actividades y materiales
-                            de la clase.
-                        </p>
-                    </div>
+                        </article>
+                    @endforeach
 
                 </div>
 
-            </section>
+            @endif
 
-        </div>
+            @if ($students->hasPages())
+                <div class="mt-8">
+                    {{ $students->links() }}
+                </div>
+            @endif
+
+
+        </section>
+
+    </div>
 @endsection
+
+@push('scripts')
+    @if (! $students->isEmpty())
+        {{-- Confirmación en dos pasos para retirar alumnos --}}
+        <script>
+            (function () {
+                var cards = Array.prototype.slice.call(document.querySelectorAll('[data-student-card]'));
+
+                function closeConfirm(card) {
+                    var panel = card.querySelector('[data-confirm-panel]');
+                    var toggle = card.querySelector('[data-remove-toggle]');
+
+                    if (panel) {
+                        panel.classList.add('hidden');
+                    }
+
+                    if (toggle) {
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                }
+
+                cards.forEach(function (card) {
+                    var toggle = card.querySelector('[data-remove-toggle]');
+                    var panel = card.querySelector('[data-confirm-panel]');
+                    var cancel = card.querySelector('[data-remove-cancel]');
+
+                    if (! toggle || ! panel) {
+                        return;
+                    }
+
+                    toggle.addEventListener('click', function () {
+                        var wasOpen = toggle.getAttribute('aria-expanded') === 'true';
+
+                        // Solo un confirm abierto a la vez.
+                        cards.forEach(closeConfirm);
+
+                        if (! wasOpen) {
+                            panel.classList.remove('hidden');
+                            toggle.setAttribute('aria-expanded', 'true');
+                        }
+                    });
+
+                    if (cancel) {
+                        cancel.addEventListener('click', function () {
+                            closeConfirm(card);
+                        });
+                    }
+                });
+            })();
+        </script>
+    @endif
+@endpush

@@ -27,4 +27,20 @@
     --color-klassio-muted: #64748B;
 
     --color-klassio-background: #F8FAFC;
+
+    /* =================================
+       PALETA VERDE DOCENTE ("BOSQUE")
+       Neutrales con base verde: sustituyen
+       al slate (azulado) en el área docente.
+       ================================= */
+
+    --color-bosque-50: #F1F7F4;
+    --color-bosque-100: #DFEFE8;
+    --color-bosque-200: #C6E3D8;
+    --color-bosque-700: #2A5747;
+    --color-bosque-800: #16352C;
+    --color-bosque-900: #0E241E;
+    --color-bosque-950: #071411;
+
+    --color-klassio-mint: #10B981;
 }

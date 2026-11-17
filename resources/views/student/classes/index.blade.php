@@ -1,7 +1,7 @@
 @extends('student.layouts.app')
 
 @section('title', 'Mis clases')
-@section('page-heading', 'Mis clases')
+@section('page-title', 'Mis clases')
 
 @section('content')
             <div class="mx-auto max-w-7xl space-y-5 px-4! py-5! sm:px-6! sm:py-6! lg:px-8!">

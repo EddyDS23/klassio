@@ -4,37 +4,31 @@
 
 @section('page-title', 'Calificaciones')
 
+@section('page-actions')
+    <a href="{{ route('teacher.classes.show', $class->id) }}"
+       class="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+        Volver a la clase
+    </a>
+@endsection
+
 @section('content')
 
-        {{-- Navegación --}}
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-
-            <a href="{{ route('teacher.classes.show', $class->id) }}"
-                class="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 transition hover:text-emerald-900">
-
-                <span class="text-lg">←</span>
-                Volver a {{ $class->name }}
-            </a>
-
-            <span
-                class="rounded-full bg-white px-4 py-1.5 text-xs font-black uppercase tracking-wide text-slate-500 shadow-sm ring-1 ring-slate-200">
-                Periodo {{ $class->period() }}
-            </span>
-
-        </div>
-
-
         {{-- Título --}}
-        <div class="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
             <div class="flex flex-wrap items-center gap-3">
 
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
-                    ⭐
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                    </svg>
                 </div>
 
                 <div>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-900">
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900">
                         Calificación general
                     </h2>
 
@@ -42,6 +36,10 @@
                         {{ $class->name }}
                     </p>
                 </div>
+
+                <span class="ml-auto rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
+                    Periodo {{ $class->period() }}
+                </span>
 
             </div>
 
@@ -84,10 +82,14 @@ $formatScore = fn ($score) => $score === null
 @endphp
 
         @if (empty($units))
-            <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-                <p class="text-4xl">🗂️</p>
+            <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-400">
+                    <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </div>
 
-                <h3 class="mt-3 text-lg font-black text-slate-900">
+                <h3 class="mt-3 text-lg font-bold text-slate-900">
                     Aún no hay actividades publicadas
                 </h3>
 
@@ -96,10 +98,14 @@ $formatScore = fn ($score) => $score === null
                 </p>
             </div>
         @elseif (empty($studentRows))
-            <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-                <p class="text-4xl">🎓</p>
+            <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-400">
+                    <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.628 48.628 0 0 1 12 20.904a48.628 48.628 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+                    </svg>
+                </div>
 
-                <h3 class="mt-3 text-lg font-black text-slate-900">
+                <h3 class="mt-3 text-lg font-bold text-slate-900">
                     No hay alumnos inscritos
                 </h3>
 
@@ -109,17 +115,18 @@ $formatScore = fn ($score) => $score === null
             </div>
         @else
 
-            <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
                 {{-- Barra de herramientas --}}
                 <div
-                    class="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+                    class="flex flex-col gap-4 border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
 
                     <div class="relative w-full lg:max-w-xs">
 
-                        <span
-                            class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">
-                            🔍
+                        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                            </svg>
                         </span>
 
                         <input type="text" id="grading-search" autocomplete="off"
@@ -130,24 +137,24 @@ $formatScore = fn ($score) => $score === null
 
                     <div class="flex flex-wrap items-center gap-2">
 
-                        <span class="mr-1 text-xs font-black uppercase tracking-wide text-slate-400">
+                        <span class="mr-1 text-xs font-bold uppercase tracking-wide text-slate-400">
                             Ordenar
                         </span>
 
                         <button type="button"
-                            class="grading-sort rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                            class="grading-sort rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
                             data-sort="final_desc">
                             Final ↓
                         </button>
 
                         <button type="button"
-                            class="grading-sort rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                            class="grading-sort rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
                             data-sort="final_asc">
                             Final ↑
                         </button>
 
                         <button type="button"
-                            class="grading-sort rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                            class="grading-sort rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
                             data-sort="name">
                             A → Z
                         </button>
@@ -166,14 +173,14 @@ $formatScore = fn ($score) => $score === null
                             <tr>
 
                                 <th scope="col"
-                                    class="min-w-[200px] px-6 py-4 text-left text-xs font-black uppercase tracking-wide text-slate-500">
+                                    class="min-w-0 px-4 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 sm:min-w-[200px] sm:px-6">
                                     Alumno
                                 </th>
 
 
                                 @foreach ($units as $group)
                                     <th scope="col"
-                                        class="min-w-[110px] px-4 py-4 text-center text-xs font-black uppercase tracking-wide text-slate-500">
+                                        class="hidden min-w-[110px] px-4 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500 sm:table-cell">
 
                                         <span class="block">
                                             @if ($group['number'] !== null)
@@ -193,7 +200,7 @@ $formatScore = fn ($score) => $score === null
 
 
                                 <th scope="col"
-                                    class="min-w-[130px] px-6 py-4 text-center text-xs font-black uppercase tracking-wide text-slate-500">
+                                    class="px-4 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500 sm:px-6">
                                     Calificación
                                     final
                                 </th>
@@ -213,20 +220,25 @@ $final = $row['final'];
                                     data-student-name="{{ $row['student']->name }}"
                                     data-student-email="{{ $row['student']->email }}"
                                     data-final="{{ $final ?? '' }}"
-                                    aria-expanded="false"
                                     class="transition hover:bg-slate-50/60">
 
-                                    <td class="px-6 py-4">
+                                    <td class="px-4 py-4 sm:px-6">
 
                                         <button type="button"
                                             class="grading-toggle inline-flex items-start gap-2 text-left"
+                                            aria-expanded="false"
+                                            aria-controls="grading-detail-{{ $row['student']->id }}"
                                             aria-label="Ver detalle de {{ $row['student']->name }}">
 
                                             <span
-                                                class="grading-caret mt-0.5 text-xs text-slate-400 transition">▸</span>
+                                                class="grading-caret mt-0.5 text-slate-400 transition">
+                                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                                </svg>
+                                            </span>
 
                                             <span>
-                                                <span class="block font-black text-slate-900">
+                                                <span class="block font-bold text-slate-900">
                                                     {{ $row['student']->name }}
                                                 </span>
 
@@ -243,18 +255,18 @@ $final = $row['final'];
 $unitScore = $row['unitScores'][$group['key']] ?? null;
 @endphp
 
-                                        <td class="px-4 py-4 text-center">
+                                        <td class="hidden px-4 py-4 text-center sm:table-cell">
                                             <span
-                                                class="inline-flex rounded-xl px-3 py-1.5 text-sm font-black {{ $gradeClass($unitScore) }}">
+                                                class="inline-flex rounded-xl px-3 py-1.5 text-sm font-bold {{ $gradeClass($unitScore) }}">
                                                 {{ $formatScore($unitScore) }}
                                             </span>
                                         </td>
                                     @endforeach
 
 
-                                    <td class="px-6 py-4 text-center">
+                                    <td class="px-4 py-4 text-center sm:px-6">
                                         <span
-                                            class="inline-flex rounded-2xl px-4 py-2 text-base font-black shadow-sm {{ $gradeClass($final) }}">
+                                            class="inline-flex rounded-2xl px-4 py-2 text-base font-bold shadow-sm {{ $gradeClass($final) }}">
                                             {{ $formatScore($final) }}
                                         </span>
                                     </td>
@@ -264,10 +276,11 @@ $unitScore = $row['unitScores'][$group['key']] ?? null;
 
                                 {{-- Fila de detalle (actividades por unidad) --}}
                                 <tr data-detail="{{ $row['student']->id }}"
+                                    id="grading-detail-{{ $row['student']->id }}"
                                     data-active-for="{{ $row['student']->id }}"
                                     class="hidden bg-slate-50/70">
 
-                                    <td colspan="{{ count($units) + 2 }}" class="px-6 pb-6">
+                                    <td colspan="{{ count($units) + 2 }}" class="px-4 pb-6 sm:px-6">
 
                                         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 
@@ -277,7 +290,7 @@ $unitScore = $row['unitScores'][$group['key']] ?? null;
 
                                                     <div class="flex items-center justify-between gap-2">
 
-                                                        <p class="min-w-0 truncate text-xs font-black uppercase tracking-wide text-slate-500"
+                                                        <p class="min-w-0 truncate text-xs font-bold uppercase tracking-wide text-slate-500"
                                                             title="{{ $group['name'] }}">
 
                                                             @if ($group['number'] !== null)
@@ -288,7 +301,7 @@ $unitScore = $row['unitScores'][$group['key']] ?? null;
                                                         </p>
 
                                                         <span
-                                                            class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black {{ $gradeClass($row['unitScores'][$group['key']] ?? null) }}">
+                                                            class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold {{ $gradeClass($row['unitScores'][$group['key']] ?? null) }}">
                                                             {{ $formatScore($row['unitScores'][$group['key']] ?? null) }}
                                                         </span>
 
@@ -320,12 +333,12 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
 
                                                                     @if ($scoreRaw === null)
                                                                         <span
-                                                                            class="shrink-0 text-[11px] font-black uppercase tracking-wide text-slate-400">
+                                                                            class="shrink-0 text-[11px] font-bold uppercase tracking-wide text-slate-400">
                                                                             Sin puntaje
                                                                         </span>
                                                                     @else
                                                                         <span
-                                                                            class="shrink-0 text-[11px] font-black text-emerald-700">
+                                                                            class="shrink-0 text-[11px] font-bold text-emerald-700">
                                                                             {{ $scoreRaw }} / {{ $activity['max_score'] }}
                                                                         </span>
                                                                     @endif
@@ -353,7 +366,7 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
                             {{-- Fila "sin resultados" (buscador) --}}
                             <tr id="grading-empty" class="hidden">
                                 <td colspan="{{ count($units) + 2 }}" class="px-6 py-8 text-center">
-                                    <p class="text-sm font-black text-slate-500">
+                                    <p class="text-sm font-bold text-slate-500">
                                         No se encontraron alumnos
                                     </p>
 
@@ -372,7 +385,7 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
 
                 {{-- Paginación --}}
                 <div
-                    class="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row">
+                    class="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:px-6">
 
                     <p id="grading-count-label" class="text-xs font-bold text-slate-500">
 
@@ -382,16 +395,16 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
                     <div class="flex items-center gap-3">
 
                         <button type="button" id="grading-prev"
-                            class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-black text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
+                            class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
                             ← Anterior
                         </button>
 
-                        <span id="grading-page-label" class="text-xs font-black text-slate-500">
+                        <span id="grading-page-label" class="text-xs font-bold text-slate-500">
 
                         </span>
 
                         <button type="button" id="grading-next"
-                            class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-black text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
+                            class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
                             Siguiente →
                         </button>
 
@@ -487,7 +500,12 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
                         detailRow.classList.add('hidden');
                     }
 
-                    studentRow.setAttribute('aria-expanded', 'false');
+                    var toggle = studentRow.querySelector('.grading-toggle');
+
+                    if (toggle) {
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+
                     var caret = studentRow.querySelector('.grading-caret');
 
                     if (caret) {
@@ -588,7 +606,7 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
                         return;
                     }
 
-                    var expanded = studentRow.getAttribute('aria-expanded') === 'true';
+                    var expanded = toggle.getAttribute('aria-expanded') === 'true';
                     var caret = studentRow.querySelector('.grading-caret');
 
                     if (expanded) {
@@ -599,7 +617,7 @@ $scoreRaw = $row['activityRaw'][$activity['id']] ?? null;
                         caret.classList.add('rotate-90', 'text-emerald-600');
                     }
 
-                    studentRow.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                    toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
                 });
 
                 render();

@@ -1,73 +1,75 @@
 @extends('teacher.layouts.app')
 
-@section('title', (isset($crossword) ? 'Editar' : 'Configurar').' crucigrama')
+@section('title', (isset($crossword) ? 'Editar' : 'Configurar').' crucigrama — '.$activity->title)
 
 @section('page-title', isset($crossword) ? 'Editar crucigrama' : 'Configurar crucigrama')
 
-@section('page-actions')
-        <a
-            href="{{ route('teacher.activities.index', $activity->class_id) }}"
-            class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-200 transition hover:bg-emerald-700"
-        >
-            Actividades
-        </a>
-@endsection
-
 @section('content')
 
-        {{-- El encabezado (marca, sesión y hamburguesa móvil) lo aporta el
-             layout compartido teacher.layouts.app. --}}
+    <div class="mx-auto max-w-5xl">
 
         <div class="mb-6">
-            <a href="{{ route('teacher.activities.show', $activity->id) }}" class="klassio-back-button">
-                <span aria-hidden="true">←</span> Volver a la actividad
+            <a href="{{ route('teacher.activities.show', $activity->id) }}"
+               class="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+                Volver a la actividad
             </a>
         </div>
 
-        <!-- Hero -->
-        <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-7 text-white shadow-xl shadow-emerald-200 md:p-10">
+        {{-- Encabezado --}}
+        <section class="mb-6 rounded-2xl bg-emerald-700 p-5 text-white shadow-sm sm:p-6">
 
-            <div class="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/10"></div>
-            <div class="absolute -bottom-32 right-24 h-80 w-80 rounded-full bg-white/10"></div>
+            <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
 
-            <div class="relative z-10 max-w-3xl">
+                <div class="min-w-0">
+                    <p class="text-xs font-bold uppercase tracking-widest text-emerald-200">
+                        Juego de crucigrama
+                    </p>
 
-                <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold text-emerald-50 backdrop-blur">
-                    <span>🧩</span>
-                    {{ isset($crossword) ? 'Editar actividad' : 'Nueva actividad' }}
+                    <h2 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                        {{ isset($crossword) ? 'Editar crucigrama' : 'Configurar crucigrama' }}
+                    </h2>
+
+                    <p class="mt-2 flex items-center gap-1.5 text-sm font-bold text-emerald-100">
+                        <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                        </svg>
+                        {{ $activity->title }}
+                    </p>
                 </div>
 
-                <p class="mt-3 text-base font-semibold text-emerald-50 md:text-lg">
-                    {{ $activity->title }}
-                </p>
-
-                <p class="mt-3 max-w-2xl text-sm leading-6 text-emerald-50">
-                    Agrega las palabras y pistas que formarán parte del crucigrama.
-                    El sistema intentará cruzarlas automáticamente usando letras en común.
-                </p>
+                <div class="hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 ring-1 ring-emerald-500 md:flex">
+                    <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.75m-.75 3h.75m0 0H21" />
+                    </svg>
+                </div>
 
             </div>
+
         </section>
 
-        {{-- El flash de guardado lo renderiza el layout compartido
-             teacher.layouts.app: aquí no se duplica. --}}
-
-        <!-- Errores -->
-        @if($errors->any())
-            <div class="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800 shadow-sm">
+        {{-- Errores --}}
+        @if ($errors->any())
+            <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm sm:p-5">
 
                 <div class="flex items-center gap-3">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-full bg-red-600 font-black text-white">
-                        !
+
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-700 ring-1 ring-red-200">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
                     </div>
 
-                    <h2 class="text-lg font-black">
-                        Revisa los siguientes errores
-                    </h2>
+                    <h3 class="text-sm font-bold text-red-800">
+                        Revisa los siguientes datos
+                    </h3>
+
                 </div>
 
-                <ul class="mt-4 list-disc space-y-1 pl-6 text-sm">
-                    @foreach($errors->all() as $error)
+                <ul class="mt-3 list-disc space-y-1 pl-6 text-sm text-red-800">
+                    @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
@@ -75,416 +77,295 @@
             </div>
         @endif
 
-        @php
-            $isEditing = isset($crossword);
-        @endphp
+        {{-- Ayuda --}}
+        <section class="mb-6 flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
-        <!-- Formulario -->
-        <form
-            action="{{
-                $isEditing
-                    ? route('teacher.crossword.update', $activity->id)
-                    : route('teacher.crossword.store', $activity->id)
-            }}"
-            method="POST"
-            class="space-y-6"
-        >
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                </svg>
+            </div>
+
+            <div class="min-w-0">
+                <h3 class="text-sm font-bold text-slate-900">
+                    Cómo configurar el crucigrama
+                </h3>
+
+                <p class="mt-1 text-sm text-slate-600">
+                    Escribe cada palabra, agrega una pista y asigna su puntaje.
+                    Las palabras deben compartir letras para cruzarse en la
+                    cuadrícula.
+                </p>
+
+                <p class="mt-1.5 text-xs font-bold text-slate-500">
+                    El crucigrama necesita al menos 2 palabras.
+                </p>
+            </div>
+
+        </section>
+
+        {{-- Formulario --}}
+        <form id="crossword-form" method="POST"
+              action="{{ isset($crossword) ? route('teacher.crossword.update', $activity->id) : route('teacher.crossword.store', $activity->id) }}">
 
             @csrf
 
-            @if($isEditing)
+            @if (isset($crossword))
                 @method('PUT')
             @endif
 
-            <!-- Encabezado de sección -->
-            <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <section class="mb-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
 
-                <div class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
-
+                <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p class="text-xs font-black uppercase tracking-widest text-emerald-600">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-emerald-600">
                             Banco de palabras
                         </p>
 
-                        <h2 class="mt-1 text-2xl font-black text-slate-900">
+                        <h3 class="mt-0.5 text-lg font-bold text-slate-900">
                             Palabras del crucigrama
-                        </h2>
-
-                        <p class="mt-1 text-sm text-slate-500">
-                            Escribe cada palabra, agrega una pista y asigna su puntuación.
-                        </p>
+                        </h3>
                     </div>
 
-                    <div class="rounded-2xl bg-emerald-50 px-4 py-3 text-center">
-                        <p class="text-2xl font-black text-emerald-700" id="word-count">
-                            {{ $isEditing ? $words->count() : 2 }}
-                        </p>
+                    <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                        <span data-words-count>{{ isset($crossword) ? $words->count() : 2 }}</span>
+                        <span data-words-label>{{ (isset($crossword) ? $words->count() : 2) === 1 ? 'palabra' : 'palabras' }}</span>
+                    </span>
+                </div>
 
-                        <p class="text-xs font-bold text-emerald-600">
-                            Palabras
-                        </p>
-                    </div>
+                <div id="words-container" class="space-y-4">
+
+                    @php
+                        $isEditing = isset($crossword);
+                        $cards = $isEditing ? $words->all() : [null, null];
+                    @endphp
+
+                    @foreach ($cards as $i => $word)
+                        @include('teacher.crossword.partials.item-card', ['i' => $i, 'word' => $word])
+                    @endforeach
 
                 </div>
 
-                <!-- Tabla -->
-                <div class="overflow-x-auto rounded-2xl border border-slate-200">
-
-                    <table class="min-w-full divide-y divide-slate-200">
-
-                        <thead class="bg-slate-50">
-                            <tr>
-                                <th class="px-4 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-600">
-                                    Palabra
-                                </th>
-
-                                <th class="px-4 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-600">
-                                    Pista
-                                </th>
-
-                                <th class="px-4 py-4 text-left text-xs font-black uppercase tracking-wider text-slate-600">
-                                    Puntuación
-                                </th>
-
-                                <th class="px-4 py-4 text-center text-xs font-black uppercase tracking-wider text-slate-600">
-                                    Acción
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody
-                            id="words-container"
-                            class="divide-y divide-slate-200 bg-white"
-                        >
-
-                            @if($isEditing && $words->count() > 0)
-
-                                @foreach($words as $index => $word)
-
-                                    <tr class="word-row transition hover:bg-emerald-50/40">
-
-                                        <td class="min-w-48 px-4 py-4 align-top">
-                                            <label class="mb-2 block text-xs font-bold text-slate-500">
-                                                Palabra
-                                            </label>
-
-                                            <input
-                                                type="text"
-                                                name="words[{{ $index }}][word]"
-                                                value="{{ old(
-                                                    "words.$index.word",
-                                                    $word->word
-                                                ) }}"
-                                                maxlength="20"
-                                                required
-                                                placeholder="Ej. MATEMÁTICAS"
-                                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold uppercase text-slate-800 outline-none transition placeholder:normal-case placeholder:font-normal focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                            >
-                                        </td>
-
-                                        <td class="min-w-64 px-4 py-4 align-top">
-                                            <label class="mb-2 block text-xs font-bold text-slate-500">
-                                                Pista
-                                            </label>
-
-                                            <input
-                                                type="text"
-                                                name="words[{{ $index }}][clue]"
-                                                value="{{ old(
-                                                    "words.$index.clue",
-                                                    $word->clue
-                                                ) }}"
-                                                maxlength="255"
-                                                required
-                                                placeholder="Escribe una pista para el alumno"
-                                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                            >
-                                        </td>
-
-                                        <td class="min-w-36 px-4 py-4 align-top">
-                                            <label class="mb-2 block text-xs font-bold text-slate-500">
-                                                Puntos
-                                            </label>
-
-                                            <input
-                                                type="number"
-                                                name="words[{{ $index }}][score]"
-                                                value="{{ old(
-                                                    "words.$index.score",
-                                                    $word->score
-                                                ) }}"
-                                                min="1"
-                                                max="1000"
-                                                required
-                                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                            >
-                                        </td>
-
-                                        <td class="px-4 py-4 text-center align-middle">
-                                            <button
-                                                type="button"
-                                                onclick="removeRow(this)"
-                                                class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-600 transition hover:bg-red-100"
-                                            >
-                                                🗑️ Eliminar
-                                            </button>
-                                        </td>
-
-                                    </tr>
-
-                                @endforeach
-
-                            @else
-
-                                @for($i = 0; $i < 2; $i++)
-
-                                    <tr class="word-row transition hover:bg-emerald-50/40">
-
-                                        <td class="min-w-48 px-4 py-4 align-top">
-                                            <label class="mb-2 block text-xs font-bold text-slate-500">
-                                                Palabra
-                                            </label>
-
-                                            <input
-                                                type="text"
-                                                name="words[{{ $i }}][word]"
-                                                value="{{ old("words.$i.word") }}"
-                                                maxlength="20"
-                                                required
-                                                placeholder="Ej. MATEMÁTICAS"
-                                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold uppercase text-slate-800 outline-none transition placeholder:normal-case placeholder:font-normal focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                            >
-                                        </td>
-
-                                        <td class="min-w-64 px-4 py-4 align-top">
-                                            <label class="mb-2 block text-xs font-bold text-slate-500">
-                                                Pista
-                                            </label>
-
-                                            <input
-                                                type="text"
-                                                name="words[{{ $i }}][clue]"
-                                                value="{{ old("words.$i.clue") }}"
-                                                maxlength="255"
-                                                required
-                                                placeholder="Escribe una pista para el alumno"
-                                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                            >
-                                        </td>
-
-                                        <td class="min-w-36 px-4 py-4 align-top">
-                                            <label class="mb-2 block text-xs font-bold text-slate-500">
-                                                Puntos
-                                            </label>
-
-                                            <input
-                                                type="number"
-                                                name="words[{{ $i }}][score]"
-                                                value="{{ old("words.$i.score", 100) }}"
-                                                min="1"
-                                                max="1000"
-                                                required
-                                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                            >
-                                        </td>
-
-                                        <td class="px-4 py-4 text-center align-middle">
-                                            <button
-                                                type="button"
-                                                onclick="removeRow(this)"
-                                                class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-600 transition hover:bg-red-100"
-                                            >
-                                                🗑️ Eliminar
-                                            </button>
-                                        </td>
-
-                                    </tr>
-
-                                @endfor
-
-                            @endif
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-                <!-- Acciones -->
-                <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
-
-                    <button
-                        type="button"
-                        onclick="addRow()"
-                        class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
-                    >
-                        <span class="text-lg">＋</span>
-                        Agregar palabra
-                    </button>
-
-                    <p class="text-xs text-slate-500">
-                        El crucigrama debe tener al menos 2 palabras.
-                    </p>
-
-                </div>
+                <button type="button" id="add-word"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50 px-5 py-3.5 text-sm font-bold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100 sm:w-auto">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Agregar palabra
+                </button>
 
             </section>
 
-            <!-- Botones finales -->
-            <section class="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            {{-- Acciones finales --}}
+            <section class="mb-8 flex flex-col-reverse gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
 
-                <a
-                    href="{{ route('teacher.activities.show', $activity->id) }}"
-                    class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
-                >
+                <a href="{{ route('teacher.activities.show', $activity->id) }}"
+                   class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
                     Cancelar
                 </a>
 
-                <button
-                    type="submit"
-                    class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700"
-                >
-                    <span>✓</span>
-                    {{ $isEditing ? 'Actualizar crucigrama' : 'Guardar crucigrama' }}
+                <button type="submit"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    {{ isset($crossword) ? 'Actualizar crucigrama' : 'Guardar crucigrama' }}
                 </button>
 
             </section>
 
         </form>
 
-        <!-- Ayuda -->
-        <section class="rounded-2xl border border-cyan-100 bg-cyan-50 p-5">
-
-            <div class="flex items-start gap-3">
-
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-xl text-white">
-                    💡
-                </div>
-
-                <div>
-                    <h3 class="font-black text-cyan-900">
-                        Recomendación para crear tu crucigrama
-                    </h3>
-
-                    <p class="mt-1 text-sm leading-6 text-cyan-800">
-                        Utiliza palabras relacionadas con el tema de la clase.
-                        Escribe pistas claras y asigna una puntuación adecuada
-                        para cada respuesta.
-                    </p>
-                </div>
-
-            </div>
-
-        </section>
+    </div>
 
 @endsection
 
 @push('scripts')
     <script>
-        let rowIndex = {{ $isEditing ? $words->count() : 2 }};
+        (function () {
+            var container = document.getElementById('words-container');
+            var countBadge = document.querySelector('[data-words-count]');
+            var countLabel = document.querySelector('[data-words-label]');
+            var addWord = document.getElementById('add-word');
+            var form = document.getElementById('crossword-form');
 
-        function updateWordCount() {
-            const rows = document.querySelectorAll('.word-row');
-            const counter = document.getElementById('word-count');
+            var trashPath = '<path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />';
 
-            if (counter) {
-                counter.textContent = rows.length;
-            }
-        }
-
-        function addRow() {
-            const container = document.getElementById('words-container');
-
-            const row = document.createElement('tr');
-
-            row.classList.add(
-                'word-row',
-                'transition',
-                'hover:bg-emerald-50/40'
-            );
-
-            row.innerHTML = `
-                <td class="min-w-48 px-4 py-4 align-top">
-                    <label class="mb-2 block text-xs font-bold text-slate-500">
-                        Palabra
-                    </label>
-
-                    <input
-                        type="text"
-                        name="words[${rowIndex}][word]"
-                        maxlength="20"
-                        required
-                        placeholder="Ej. MATEMÁTICAS"
-                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold uppercase text-slate-800 outline-none transition placeholder:normal-case placeholder:font-normal focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                    >
-                </td>
-
-                <td class="min-w-64 px-4 py-4 align-top">
-                    <label class="mb-2 block text-xs font-bold text-slate-500">
-                        Pista
-                    </label>
-
-                    <input
-                        type="text"
-                        name="words[${rowIndex}][clue]"
-                        maxlength="255"
-                        required
-                        placeholder="Escribe una pista para el alumno"
-                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                    >
-                </td>
-
-                <td class="min-w-36 px-4 py-4 align-top">
-                    <label class="mb-2 block text-xs font-bold text-slate-500">
-                        Puntos
-                    </label>
-
-                    <input
-                        type="number"
-                        name="words[${rowIndex}][score]"
-                        value="100"
-                        min="1"
-                        max="1000"
-                        required
-                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                    >
-                </td>
-
-                <td class="px-4 py-4 text-center align-middle">
-                    <button
-                        type="button"
-                        onclick="removeRow(this)"
-                        class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-600 transition hover:bg-red-100"
-                    >
-                        🗑️ Eliminar
-                    </button>
-                </td>
-            `;
-
-            container.appendChild(row);
-
-            rowIndex++;
-
-            updateWordCount();
-        }
-
-        function removeRow(button) {
-            const rows = document.querySelectorAll('.word-row');
-
-            if (rows.length <= 2) {
-                alert('El crucigrama debe tener al menos 2 palabras.');
-                return;
+            function wordCount() {
+                return container.querySelectorAll('[data-item-card]').length;
             }
 
-            const row = button.closest('tr');
+            function updateCount() {
+                var count = wordCount();
 
-            if (row) {
-                row.remove();
+                if (countBadge) {
+                    countBadge.textContent = count;
+                }
+
+                if (countLabel) {
+                    countLabel.textContent = count === 1 ? 'palabra' : 'palabras';
+                }
+
+                // El crucigrama necesita al menos dos palabras: se desactiva
+                // el borrado cuando quedan dos tarjetas.
+                container.querySelectorAll('[data-item-card]').forEach(function (card) {
+                    var toggle = card.querySelector('[data-confirm-toggle]');
+
+                    if (toggle) {
+                        toggle.disabled = count <= 2;
+                    }
+                });
             }
 
-            updateWordCount();
-        }
+            function closePanels() {
+                container.querySelectorAll('[data-confirm-panel]').forEach(function (panel) {
+                    panel.classList.add('hidden');
 
-        updateWordCount();
+                    var header = panel.parentElement;
+                    var toggle = header ? header.querySelector('[data-confirm-toggle]') : null;
+
+                    if (toggle) {
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
+            function createCard(index) {
+                var card = document.createElement('article');
+
+                card.className = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm';
+                card.setAttribute('data-item-card', '');
+
+                var fieldClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100';
+                var labelClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-slate-400';
+
+                card.innerHTML =
+                    '<div class="relative flex items-start justify-between gap-3">' +
+                        '<span class="mt-0.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700" data-item-badge>Palabra</span>' +
+                        '<button type="button" data-confirm-toggle aria-expanded="false" aria-label="Eliminar esta palabra" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">' +
+                            '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">' + trashPath + '</svg>' +
+                        '</button>' +
+                        '<div class="absolute right-0 top-12 z-10 hidden w-64 rounded-xl border border-red-200 bg-red-50 p-3 shadow-lg" data-confirm-panel>' +
+                            '<p class="text-xs font-bold text-red-800">¿Eliminar esta palabra?</p>' +
+                            '<div class="mt-2 flex gap-2">' +
+                                '<button type="button" data-confirm-remove class="flex-1 rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-red-700">Sí, eliminar</button>' +
+                                '<button type="button" data-confirm-cancel class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-red-50">Cancelar</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="mt-3">' +
+                        '<label class="' + labelClass + '">Palabra</label>' +
+                        '<input type="text" name="words[' + index + '][word]" maxlength="20" required placeholder="Ej. MATEMÁTICAS" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-bold uppercase text-slate-800 outline-none transition placeholder:font-normal placeholder:normal-case placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100">' +
+                    '</div>' +
+                    '<div class="mt-3">' +
+                        '<label class="' + labelClass + '">Pista</label>' +
+                        '<input type="text" name="words[' + index + '][clue]" maxlength="255" required placeholder="Escribe una pista para el alumno" class="' + fieldClass + '">' +
+                    '</div>' +
+                    '<div class="mt-3 grid grid-cols-2 gap-3">' +
+                        '<div>' +
+                            '<label class="' + labelClass + '">Puntos</label>' +
+                            '<input type="number" name="words[' + index + '][score]" value="100" min="1" max="1000" required class="' + fieldClass + ' font-bold">' +
+                        '</div>' +
+                    '</div>';
+
+                return card;
+            }
+
+            function reindex() {
+                container.querySelectorAll('[data-item-card]').forEach(function (card, i) {
+                    card.querySelectorAll('input').forEach(function (el) {
+                        el.name = el.name.replace(
+                            /words\[\d+\]\[([a-z_]+)\]/,
+                            'words[' + i + '][$1]'
+                        );
+                    });
+
+                    var badge = card.querySelector('[data-item-badge]');
+
+                    if (badge) {
+                        badge.textContent = 'Palabra ' + (i + 1);
+                    }
+                });
+            }
+
+            if (addWord) {
+                addWord.addEventListener('click', function () {
+                    closePanels();
+
+                    // Índice alto y único para no pisar filas existentes;
+                    // reindex() normaliza al final.
+                    var safeIndex = 1000 + Math.floor(Math.random() * 9000);
+
+                    container.appendChild(createCard(safeIndex));
+                    reindex();
+                    updateCount();
+
+                    var inputs = container.querySelectorAll('[data-item-card] input[type="text"]');
+                    var last = inputs[inputs.length - 1];
+
+                    if (last) {
+                        last.focus();
+                    }
+                });
+            }
+
+            // Confirmación en dos pasos con delegación (las tarjetas se
+            // crean dinámicamente).
+            container.addEventListener('click', function (event) {
+                var toggle = event.target.closest('[data-confirm-toggle]');
+
+                if (toggle) {
+                    if (toggle.disabled) {
+                        return;
+                    }
+
+                    var panel = toggle.parentElement.querySelector('[data-confirm-panel]');
+                    var wasOpen = toggle.getAttribute('aria-expanded') === 'true';
+
+                    closePanels();
+
+                    if (!wasOpen && panel) {
+                        panel.classList.remove('hidden');
+                        toggle.setAttribute('aria-expanded', 'true');
+                    }
+
+                    return;
+                }
+
+                var cancel = event.target.closest('[data-confirm-cancel]');
+
+                if (cancel) {
+                    closePanels();
+                    return;
+                }
+
+                var remove = event.target.closest('[data-confirm-remove]');
+
+                if (remove) {
+                    var card = remove.closest('[data-item-card]');
+
+                    if (card && wordCount() > 2) {
+                        card.remove();
+                        reindex();
+                        updateCount();
+                    }
+                }
+            });
+
+            if (form) {
+                form.addEventListener('submit', function () {
+                    closePanels();
+
+                    var submitButton = form.querySelector('button[type="submit"]');
+
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.classList.add('cursor-wait', 'opacity-75');
+                    }
+                });
+            }
+
+            updateCount();
+        })();
     </script>
 @endpush

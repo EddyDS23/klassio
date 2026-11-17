@@ -1,9 +1,27 @@
 {{-- Recursos visuales sin Vite ni Node. --}}
 @php($theme = $theme ?? 'guest')
 @if ($includeBootstrap ?? true)
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    {{-- Bootstrap dentro de una capa CSS: sin esto, sus reglas "sin capa" (p. ej. a { color: azul })
+         pisan cualquier clase de color de Tailwind v4, que vive en la capa "utilities". --}}
+    <style>
+        @layer bootstrap;
+        @import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css") layer(bootstrap);
+    </style>
 @endif
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.5"></script>
+<style type="text/tailwindcss">
+    /* Paleta verde docente ("bosque"): neutrales con base verde + verde vibrante. */
+    @theme {
+        --color-bosque-50: #F1F7F4;
+        --color-bosque-100: #DFEFE8;
+        --color-bosque-200: #C6E3D8;
+        --color-bosque-700: #2A5747;
+        --color-bosque-800: #16352C;
+        --color-bosque-900: #0E241E;
+        --color-bosque-950: #071411;
+        --color-klassio-mint: #10B981;
+    }
+</style>
 @if ($includeBootstrap ?? true)
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 @endif
@@ -27,13 +45,13 @@
     .student-activity a:not(nav a) { display: inline-block; background: var(--klassio-primary); color: #fff; padding: .65rem 1rem; text-decoration: none; font-weight: 700; }
     .student-activity button { border: 0; background: var(--klassio-primary); color: #fff; padding: .65rem 1rem; font-weight: 700; margin: .25rem; }
     @if ($theme === 'teacher')
-        :root { --klassio-primary: #7c3aed; --klassio-accent: #f97316; }
-        body { background-color: #faf5ff; background-image: radial-gradient(circle at top right, rgb(124 58 237 / .18), transparent 32rem), radial-gradient(circle at bottom left, rgb(249 115 22 / .12), transparent 28rem); }
-        .page-hero { background: linear-gradient(135deg, #6d28d9, #9333ea 55%, #f97316); }
+        :root { --klassio-primary: #047857; --klassio-accent: #f59e0b; --bs-link-color-rgb: 4, 120, 87; --bs-link-hover-color-rgb: 6, 95, 70; }
+        body { background-color: #f6f7f6; background-image: radial-gradient(circle at top right, rgb(5 150 105 / .07), transparent 32rem); }
+        .page-hero { background: linear-gradient(135deg, #047857, #059669 55%, #10B981); }
     @elseif ($theme === 'student')
-        :root { --klassio-primary: #0891b2; --klassio-accent: #8b5cf6; }
-        body { background-color: #f0fdfa; background-image: radial-gradient(circle at top right, rgb(6 182 212 / .18), transparent 32rem), radial-gradient(circle at bottom left, rgb(139 92 246 / .12), transparent 28rem); }
-        .page-hero { background: linear-gradient(135deg, #0891b2, #2563eb 55%, #7c3aed); }
+        :root { --klassio-primary: #c2410c; --klassio-accent: #db2777; }
+        body { background-color: #f1f5f9; background-image: radial-gradient(circle at top right, rgb(234 88 12 / .08), transparent 32rem); }
+        .page-hero { background: #c2410c; }
     @elseif ($theme === 'admin')
         :root { --klassio-primary: #0f172a; --klassio-accent: #f59e0b; }
         body { background-color: #f6f7fb; background-image: radial-gradient(circle at top right, rgb(15 23 42 / .07), transparent 32rem); }
@@ -65,7 +83,7 @@
     body.student-kids .student-activity button { padding: .9rem 1.25rem; font-size: 1.05rem; }
     body.student-kids #timer { font-size: 1.1rem; }
     body.student-kids .klassio-toast-msg { font-size: .95rem; }
-    body.student-kids :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+    body.student-kids :focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
 
     /* Acciones de regreso: mismo marco en vistas Tailwind y Bootstrap. */
     a.klassio-back-button,

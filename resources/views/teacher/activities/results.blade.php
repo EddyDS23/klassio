@@ -1,114 +1,86 @@
 @extends('teacher.layouts.app')
 
-@section('title', 'Resultados - ' . $activity->title . ' | Klassio')
-@section('brand-url', route('teacher.activities.show', $activity->id))
-@section('brand-caption', 'Panel del maestro')
-@section('header-context')
-<span class="hidden rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
-    Resultados
-</span>
-@endsection
+@section('title', 'Resultados — ' . $activity->title)
+
+@section('page-title', 'Resultados')
 
 @section('content')
+
+    <div class="mx-auto max-w-5xl">
+
         <div class="mb-6">
-            <a href="{{ route('teacher.activities.show', $activity->id) }}" class="klassio-back-button">
-                <span aria-hidden="true">←</span> Volver a la actividad
+            <a href="{{ route('teacher.activities.show', $activity->id) }}"
+               class="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+                Volver a la actividad
             </a>
         </div>
 
-        <!-- Encabezado -->
-        <section class="mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-6 text-white shadow-xl shadow-emerald-200 sm:p-8">
+        {{-- Encabezado --}}
+        <section class="mb-6 rounded-2xl bg-emerald-700 p-5 text-white shadow-sm sm:p-6">
 
-            <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
 
-                <div>
-                    <span class="mb-3 inline-flex rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-wider">
+                <div class="min-w-0">
+                    <p class="text-xs font-bold uppercase tracking-widest text-emerald-200">
                         Evaluación de estudiantes
-                    </span>
+                    </p>
 
-                    <h1 class="text-3xl font-black tracking-tight sm:text-4xl">
+                    <h2 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
                         Resultados
-                    </h1>
+                    </h2>
 
-                    <p class="mt-3 max-w-2xl text-sm leading-6 text-emerald-50 sm:text-base">
-                        Consulta el desempeño de tus estudiantes en esta actividad.
+                    <p class="mt-2 flex items-center gap-1.5 text-sm font-bold text-emerald-100">
+                        <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                        </svg>
+                        {{ $activity->title }}
                     </p>
                 </div>
 
-                <div class="hidden h-28 w-28 items-center justify-center rounded-3xl bg-white/15 text-7xl md:flex">
-                    🏆
+                <div class="hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 ring-1 ring-emerald-500 md:flex">
+                    <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                    </svg>
                 </div>
 
             </div>
 
         </section>
 
+        {{-- Datos de la actividad --}}
+        <section class="mb-6">
 
-        <!-- Información de la actividad -->
-        <section class="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60 sm:p-8">
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 
-            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-
-                <div>
-                    <p class="text-xs font-black uppercase tracking-widest text-emerald-600">
-                        Actividad evaluada
-                    </p>
-
-                    <h2 class="mt-1 break-words text-2xl font-black text-slate-900">
-                        {{ $activity->title }}
-                    </h2>
-                </div>
-
-                <span class="w-fit rounded-full bg-emerald-100 px-4 py-2 text-xs font-black capitalize text-emerald-700">
-                    @include('partials.game-type-label', ['type' => $activity->type])
-                </span>
-
-            </div>
-
-
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-                <div class="rounded-2xl bg-emerald-50 p-4">
-                    <p class="text-xs font-bold text-emerald-700">
-                        Tipo
-                    </p>
-
-                    <p class="mt-1 text-base font-black capitalize text-slate-900">
+                <div class="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
+                    <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tipo</p>
+                    <p class="mt-1 text-sm font-bold text-slate-800">
                         @include('partials.game-type-label', ['type' => $activity->type])
                     </p>
                 </div>
 
-
-                <div class="rounded-2xl bg-cyan-50 p-4">
-                    <p class="text-xs font-bold text-cyan-700">
-                        Modo
-                    </p>
-
-                    <p class="mt-1 text-base font-black capitalize text-slate-900">
-                        {{ $activity->mode }}
+                <div class="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
+                    <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Modo</p>
+                    <p class="mt-1 text-sm font-bold text-slate-800">
+                        {{ $activity->mode === 'team' ? 'Por equipos' : 'Individual' }}
                     </p>
                 </div>
 
-
-                <div class="rounded-2xl bg-teal-50 p-4">
-                    <p class="text-xs font-bold text-teal-700">
-                        Puntuación máxima
-                    </p>
-
-                    <p class="mt-1 text-base font-black text-slate-900">
-                        {{ $activity->max_score }} puntos
-                    </p>
+                <div class="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
+                    <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Puntuación máx.</p>
+                    <p class="mt-1 text-sm font-bold text-slate-800">{{ $activity->max_score }} pts</p>
                 </div>
 
-
-                <div class="rounded-2xl bg-slate-100 p-4">
-                    <p class="text-xs font-bold text-slate-500">
-                        Tiempo límite
-                    </p>
-
-                    <p class="mt-1 text-base font-black text-slate-900">
-                        @if ($activity->time_limit)
-                            {{ $activity->time_limit }} segundos
+                <div class="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
+                    <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tiempo límite</p>
+                    <p class="mt-1 text-sm font-bold text-slate-800">
+                        @if ($activity->time_limit && $activity->time_limit % 60 === 0)
+                            {{ $activity->time_limit / 60 }} min
+                        @elseif ($activity->time_limit)
+                            {{ $activity->time_limit }} seg
                         @else
                             Sin límite
                         @endif
@@ -119,47 +91,31 @@
 
         </section>
 
+        {{-- Resultados --}}
+        <section class="mb-8">
 
-        <!-- Resultados de alumnos -->
-        <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
-
-            <div class="border-b border-slate-100 bg-slate-50 px-6 py-5 sm:px-8">
-
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-
-                    <div>
-                        <p class="text-xs font-black uppercase tracking-widest text-emerald-600">
-                            Seguimiento académico
-                        </p>
-
-                        <h2 class="mt-1 text-2xl font-black text-slate-900">
-                            Alumnos
-                        </h2>
-                    </div>
-
-                    <span class="w-fit rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
-                        {{ $results->count() }} registros
-                    </span>
-
-                </div>
-
-            </div>
-
+            <h3 class="mb-3 flex flex-wrap items-center gap-2 text-lg font-bold text-slate-900">
+                Resultados por alumno
+                <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                    {{ $results->count() }} {{ $results->count() === 1 ? 'registro' : 'registros' }}
+                </span>
+            </h3>
 
             @if ($results->isEmpty())
 
-                <!-- Estado vacío -->
-                <div class="px-6 py-14 text-center sm:px-8">
+                <div class="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
 
-                    <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-5xl">
-                        📊
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                        <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                        </svg>
                     </div>
 
-                    <h3 class="mt-5 text-2xl font-black text-slate-900">
+                    <h4 class="mt-4 text-base font-bold text-slate-900">
                         No hay resultados todavía
-                    </h3>
+                    </h4>
 
-                    <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    <p class="mx-auto mt-1 max-w-md text-sm text-slate-500">
                         No hay alumnos inscritos en esta clase o todavía no existen
                         resultados para mostrar.
                     </p>
@@ -168,190 +124,185 @@
 
             @else
 
-                <!-- Tabla responsive -->
-                <div class="overflow-x-auto">
+                {{-- Tarjetas (móvil) --}}
+                <div class="grid gap-3 sm:hidden">
 
-                    <table class="min-w-full text-left text-sm">
+                    @foreach ($results as $result)
+                        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
 
-                        <thead class="bg-slate-100 text-xs uppercase tracking-wider text-slate-500">
+                            <div class="flex items-center gap-3">
 
-                            <tr>
-                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
-                                    Alumno
-                                </th>
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-sm font-bold text-emerald-700 ring-1 ring-emerald-100">
+                                    {{ strtoupper(substr($result['student']->name, 0, 1)) }}
+                                </div>
 
-                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
-                                    Correo
-                                </th>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-bold text-slate-900">
+                                        {{ $result['student']->name }}
+                                    </p>
 
-                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
-                                    Estado
-                                </th>
+                                    @switch($result['status'])
+                                        @case('completed')
+                                            <span class="text-xs font-bold text-emerald-700">Completado</span>
+                                        @break
+                                        @case('abandoned')
+                                            <span class="text-xs font-bold text-slate-500">Abandonado</span>
+                                        @break
+                                        @case('expired')
+                                            <span class="text-xs font-bold text-red-600">Expirado</span>
+                                        @break
+                                        @case('started')
+                                            <span class="text-xs font-bold text-amber-600">En progreso</span>
+                                        @break
+                                        @default
+                                            <span class="text-xs font-bold text-slate-500">Sin realizar</span>
+                                    @endswitch
+                                </div>
 
-                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
-                                    Intento
-                                </th>
+                            </div>
 
-                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
-                                    Puntuación
-                                </th>
+                            <div class="mt-3 grid grid-cols-3 gap-2">
 
-                                <th class="whitespace-nowrap px-4 py-3.5 font-black sm:px-5">
-                                    Tiempo
-                                </th>
-                            </tr>
+                                <div class="rounded-lg bg-slate-50 px-2 py-1.5 ring-1 ring-slate-200">
+                                    <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Intento</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-700">{{ $result['attempt'] ?? '—' }}</p>
+                                </div>
 
-                        </thead>
+                                <div class="rounded-lg bg-slate-50 px-2 py-1.5 ring-1 ring-slate-200">
+                                    <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Puntos</p>
+                                    <p class="mt-0.5 text-xs font-bold text-emerald-700">
+                                        {{ $result['score'] !== null ? $result['score'].' / '.$activity->max_score : '—' }}
+                                    </p>
+                                </div>
 
+                                <div class="rounded-lg bg-slate-50 px-2 py-1.5 ring-1 ring-slate-200">
+                                    <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Tiempo</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-700">
+                                        {{ $result['elapsed_seconds'] !== null
+                                            ? sprintf('%02d:%02d', intdiv($result['elapsed_seconds'], 60), $result['elapsed_seconds'] % 60)
+                                            : '—' }}
+                                    </p>
+                                </div>
 
-                        <tbody class="divide-y divide-slate-100">
+                            </div>
 
-                            @foreach ($results as $result)
+                        </article>
+                    @endforeach
 
-                                <tr class="transition hover:bg-emerald-50/40">
+                </div>
 
-                                    <!-- Alumno -->
-                                    <td class="whitespace-nowrap px-4 py-3.5 sm:px-5">
+                {{-- Tabla (desktop) --}}
+                <div class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:block">
 
-                                        <div class="flex items-center gap-3">
+                    <div class="overflow-x-auto">
 
-                                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-black text-emerald-700">
-                                                {{ strtoupper(substr($result['student']->name, 0, 1)) }}
-                                            </div>
+                        <table class="min-w-full text-left text-sm">
 
-                                            <div class="min-w-0">
-                                                <p class="mb-0 font-black text-slate-900">
+                            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+
+                                <tr>
+                                    <th class="whitespace-nowrap px-5 py-3.5 font-bold">Alumno</th>
+                                    <th class="whitespace-nowrap px-5 py-3.5 font-bold">Correo</th>
+                                    <th class="whitespace-nowrap px-5 py-3.5 font-bold">Estado</th>
+                                    <th class="whitespace-nowrap px-5 py-3.5 font-bold">Intento</th>
+                                    <th class="whitespace-nowrap px-5 py-3.5 font-bold">Puntuación</th>
+                                    <th class="whitespace-nowrap px-5 py-3.5 font-bold">Tiempo</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody class="divide-y divide-slate-100">
+
+                                @foreach ($results as $result)
+
+                                    <tr class="transition hover:bg-emerald-50/40">
+
+                                        <td class="whitespace-nowrap px-5 py-3.5">
+
+                                            <div class="flex items-center gap-3">
+
+                                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-sm font-bold text-emerald-700 ring-1 ring-emerald-100">
+                                                    {{ strtoupper(substr($result['student']->name, 0, 1)) }}
+                                                </div>
+
+                                                <p class="font-bold text-slate-900">
                                                     {{ $result['student']->name }}
                                                 </p>
 
-                                                <p class="mb-0 text-xs text-slate-500">
-                                                    Estudiante
-                                                </p>
                                             </div>
 
-                                        </div>
+                                        </td>
 
-                                    </td>
+                                        <td class="whitespace-nowrap px-5 py-3.5 text-slate-600">
+                                            {{ $result['student']->email }}
+                                        </td>
 
+                                        <td class="whitespace-nowrap px-5 py-3.5">
 
-                                    <!-- Correo -->
-                                    <td class="whitespace-nowrap px-4 py-3.5 text-slate-600 sm:px-5">
-                                        {{ $result['student']->email }}
-                                    </td>
+                                            @switch($result['status'])
 
-
-                                    <!-- Estado -->
-                                    <td class="whitespace-nowrap px-4 py-3.5 sm:px-5">
-
-                                        @switch($result['status'])
-
-                                            @case('completed')
-
-                                                <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-700">
-                                                    Completado
-                                                </span>
-
+                                                @case('completed')
+                                                    <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">Completado</span>
                                                 @break
 
-                                            @case('abandoned')
-
-                                                <span class="inline-flex rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-black text-orange-700">
-                                                    Abandonado
-                                                </span>
-
+                                                @case('abandoned')
+                                                    <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">Abandonado</span>
                                                 @break
 
-                                            @case('expired')
-
-                                                <span class="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-black text-red-700">
-                                                    Expirado
-                                                </span>
-
+                                                @case('expired')
+                                                    <span class="inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">Expirado</span>
                                                 @break
 
-                                            @case('started')
-
-                                                <span class="inline-flex rounded-full bg-cyan-100 px-2.5 py-0.5 text-xs font-black text-cyan-700">
-                                                    En progreso
-                                                </span>
-
+                                                @case('started')
+                                                    <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">En progreso</span>
                                                 @break
 
-                                            @default
+                                                @default
+                                                    <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">Sin realizar</span>
 
-                                                <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-600">
-                                                    Sin realizar
+                                            @endswitch
+
+                                        </td>
+
+                                        <td class="whitespace-nowrap px-5 py-3.5 font-bold text-slate-700">
+                                            {{ $result['attempt'] ?? '—' }}
+                                        </td>
+
+                                        <td class="whitespace-nowrap px-5 py-3.5">
+                                            @if ($result['score'] !== null)
+                                                <span class="font-bold text-emerald-700">{{ $result['score'] }}</span>
+                                                <span class="text-slate-400">/ {{ $activity->max_score }}</span>
+                                            @else
+                                                <span class="font-bold text-slate-400">—</span>
+                                            @endif
+                                        </td>
+
+                                        <td class="whitespace-nowrap px-5 py-3.5 font-bold text-slate-700">
+                                            @if ($result['elapsed_seconds'] !== null)
+                                                <span class="rounded-lg bg-slate-100 px-2.5 py-1">
+                                                    {{ sprintf('%02d:%02d', intdiv($result['elapsed_seconds'], 60), $result['elapsed_seconds'] % 60) }}
                                                 </span>
+                                            @else
+                                                <span class="text-slate-400">—</span>
+                                            @endif
+                                        </td>
 
-                                        @endswitch
+                                    </tr>
 
-                                    </td>
+                                @endforeach
 
+                            </tbody>
 
-                                    <!-- Intento -->
-                                    <td class="whitespace-nowrap px-4 py-3.5 font-bold text-slate-700 sm:px-5">
-                                        {{ $result['attempt'] ?? '—' }}
-                                    </td>
+                        </table>
 
-
-                                    <!-- Puntuación -->
-                                    <td class="whitespace-nowrap px-4 py-3.5 sm:px-5">
-
-                                        @if ($result['score'] !== null)
-
-                                            <span class="font-black text-emerald-700">
-                                                {{ $result['score'] }}
-                                            </span>
-
-                                            <span class="text-slate-400">
-                                                / {{ $activity->max_score }}
-                                            </span>
-
-                                        @else
-
-                                            <span class="font-bold text-slate-400">
-                                                —
-                                            </span>
-
-                                        @endif
-
-                                    </td>
-
-
-                                    <!-- Tiempo -->
-                                    <td class="whitespace-nowrap px-4 py-3.5 font-bold text-slate-700 sm:px-5">
-
-                                        @if ($result['elapsed_seconds'] !== null)
-
-                                            <span class="rounded-lg bg-slate-100 px-2.5 py-0.5">
-                                                {{ sprintf(
-                                                    '%02d:%02d',
-                                                    intdiv($result['elapsed_seconds'], 60),
-                                                    $result['elapsed_seconds'] % 60
-                                                ) }}
-                                            </span>
-
-                                        @else
-
-                                            <span class="text-slate-400">
-                                                —
-                                            </span>
-
-                                        @endif
-
-                                    </td>
-
-                                </tr>
-
-                            @endforeach
-
-                        </tbody>
-
-                    </table>
+                    </div>
 
                 </div>
 
             @endif
 
         </section>
+
+    </div>
+
 @endsection

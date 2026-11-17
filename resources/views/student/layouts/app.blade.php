@@ -4,119 +4,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>@yield('title', 'Espacio del estudiante') | Klassio</title>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="min-h-screen bg-slate-50 text-slate-900 student-kids">
-    <div class="flex min-h-screen flex-col lg:flex-row">
-        <aside class="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
-            <div class="flex h-24 items-center gap-3 px-7">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl font-extrabold text-white">K</div>
-                <div>
-                    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Klassio</h1>
-                    <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Aprende y conecta</p>
+<body class="min-h-screen bg-slate-100 text-slate-800 student-kids">
+
+    @php
+        $navItems = [
+            [
+                'route' => 'student.dashboard',
+                'label' => 'Inicio',
+                'pattern' => 'student.dashboard',
+                'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>',
+            ],
+            [
+                'route' => 'student.classes.index',
+                'label' => 'Mis clases',
+                'pattern' => 'student.classes.*',
+                'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>',
+            ],
+        ];
+    @endphp
+
+    <div class="flex min-h-screen">
+
+        <!-- Barra lateral: identidad cálida "atardecer" -->
+        <aside class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-orange-900 bg-orange-950 md:flex">
+
+            <a href="{{ route('student.dashboard') }}"
+               class="flex items-center gap-3 border-b border-orange-900 px-6 py-6 transition hover:bg-orange-900/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+
+                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-600 text-xl font-bold text-white shadow-lg shadow-orange-950/40">
+                    K
                 </div>
-            </div>
 
-            <nav class="flex-1 px-4 py-5" aria-label="Navegación principal">
-                <p class="mb-4 px-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">Menú principal</p>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">
+                        Klassio
+                    </h1>
 
-                <a href="{{ route('student.dashboard') }}"
-                    @class([
-                        'mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition',
-                        'bg-indigo-50 font-bold text-indigo-600' => request()->routeIs('student.dashboard'),
-                        'font-medium text-slate-500 hover:bg-slate-50 hover:text-indigo-600' => ! request()->routeIs('student.dashboard'),
-                    ])>
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l9-9 9 9M5 10v10h14V10" />
-                    </svg>
-                    Inicio
-                </a>
+                    <p class="text-xs font-bold uppercase tracking-widest text-orange-400">
+                        Panel del estudiante
+                    </p>
+                </div>
 
-                <a href="{{ route('student.classes.index') }}"
-                    @class([
-                        'mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition',
-                        'bg-indigo-50 font-bold text-indigo-600' => request()->routeIs('student.classes.*'),
-                        'font-medium text-slate-500 hover:bg-slate-50 hover:text-indigo-600' => ! request()->routeIs('student.classes.*'),
-                    ])>
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5zM8 7h8M8 11h8M8 15h5" />
-                    </svg>
-                    Mis clases
-                </a>
+            </a>
 
-                <a href="{{ route('student.dashboard') }}#juegos"
-                    class="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12a4 4 0 014 4v3a4 4 0 01-4 4h-1l-3-3H10l-3 3H6a4 4 0 014-4zM8 12v4M6 14h4M16 13h.01M19 11h.01" />
-                    </svg>
-                    Juegos educativos
-                </a>
+            <nav class="flex-1 space-y-1 overflow-y-auto px-4 py-6" aria-label="Navegación principal">
+
+                @foreach ($navItems as $item)
+                    <a href="{{ route($item['route']) }}"
+                       aria-current="{{ request()->routeIs($item['pattern']) ? 'page' : 'false' }}"
+                       class="flex items-center gap-3 rounded-2xl px-4 py-3.5 text-base font-bold transition
+                             {{ request()->routeIs($item['pattern']) ? 'bg-orange-600 text-white' : 'text-orange-400 hover:bg-orange-900/70 hover:text-white' }} focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+                        <span class="shrink-0 [&_svg]:h-6 [&_svg]:w-6" aria-hidden="true">{!! $item['icon'] !!}</span>
+                        {{ $item['label'] }}
+                    </a>
+                @endforeach
+
             </nav>
 
-            <div class="border-t border-slate-100 p-4">
-                <div class="mb-4 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-600">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                    </div>
-                    <div class="min-w-0">
-                        <p class="truncate text-sm font-bold text-slate-800">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-slate-400">Estudiante</p>
-                    </div>
-                </div>
-
-                <form method="POST" action="/logout">
+            <div class="border-t border-orange-900 px-4 py-5">
+                <form action="{{ url('/logout') }}" method="POST">
                     @csrf
-                    <button type="submit" class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 17l5-5-5-5M15 12H3M21 3v18" />
+
+                    <button type="submit"
+                            class="flex w-full items-center gap-3 rounded-2xl bg-orange-900 px-4 py-3.5 text-base font-bold text-orange-500 transition hover:bg-red-900/30 hover:text-red-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                         </svg>
                         Cerrar sesión
                     </button>
                 </form>
             </div>
+
         </aside>
 
-<main class="min-w-0 flex-1">
-            <header class="sticky top-4 z-20 mx-4 mt-2 flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-[1rem] py-3 shadow-sm sm:mx-6 sm:px-[1.5rem]">
-                {{-- Botón hamburguesa móvil (esquina superior izquierda) --}}
-                <button type="button"
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:hidden"
-                        id="mobile-nav-open"
-                        aria-label="Abrir menú de navegación"
-                        aria-expanded="false"
-                        aria-controls="mobile-nav-panel">
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
+        <!-- Contenido -->
+        <div class="flex min-w-0 flex-1 flex-col md:ml-64">
 
-                <div class="min-w-0 flex-1">
-                    <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Mi espacio académico</p>
-                    <h2 class="mt-1 text-lg font-bold text-slate-800">@yield('page-heading', 'Inicio')</h2>
+            <!-- Barra superior: título de página + identidad (única franja) -->
+            <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+                <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-3 gap-y-3 px-4 py-3 sm:px-6 lg:px-8">
+
+                    <div class="flex min-w-0 flex-1 items-center gap-3">
+                        {{-- Botón hamburguesa móvil (esquina superior izquierda, solo < 768 px) --}}
+                        <button type="button"
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-1 md:hidden"
+                                id="mobile-nav-open"
+                                aria-label="Abrir menú de navegación"
+                                aria-expanded="false"
+                                aria-controls="mobile-nav-panel">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                            </svg>
+                        </button>
+
+                        <div class="min-w-0">
+                            <p class="hidden text-[0.65rem] font-bold uppercase tracking-widest text-slate-500 sm:block">
+                                Panel del estudiante
+                            </p>
+                            <h2 class="truncate text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+                                @yield('page-title', 'Inicio')
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div class="flex shrink-0 items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-600 text-lg font-bold text-white shadow-lg shadow-orange-200">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+
+                        <div class="hidden sm:block">
+                            <p class="text-sm font-bold text-slate-800">
+                                {{ auth()->user()->name }}
+                            </p>
+
+                            <p class="text-xs font-bold uppercase tracking-widest text-slate-500">
+                                Estudiante
+                            </p>
+                        </div>
+                    </div>
+
                 </div>
             </header>
 
-            @yield('content')
-        </main>
+            <!-- Contenido -->
+            <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+
+                {{-- Barra de acciones de la página (encima del contenido) --}}
+                @hasSection('page-actions')
+                    <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
+                        @yield('page-actions')
+                    </div>
+                @endif
+
+                <!-- Mensaje de éxito -->
+                @if (session('success'))
+                    <div class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm" role="status">
+
+                        <svg class="mt-0.5 h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+
+                        <div>
+                            <p class="font-bold">
+                                ¡Operación exitosa!
+                            </p>
+
+                            <p class="text-sm">
+                                {{ session('success') }}
+                            </p>
+                        </div>
+
+                    </div>
+                @endif
+
+                <!-- Mensaje de error -->
+                @if (session('error'))
+                    <div class="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm" role="alert">
+
+                        <svg class="mt-0.5 h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+
+                        <div>
+                            <p class="font-bold">
+                                Ocurrió un problema
+                            </p>
+
+                            <p class="text-sm">
+                                {{ session('error') }}
+                            </p>
+                        </div>
+
+                    </div>
+                @endif
+
+                @yield('content')
+
+            </main>
+
+            <!-- Pie -->
+            <footer class="border-t border-slate-200 px-4 py-6 text-center text-xs text-slate-400 sm:px-6 lg:px-8">
+                © {{ date('Y') }} Klassio · Plataforma educativa
+            </footer>
+
+        </div>
+
     </div>
 
     @include('partials.mobile-navigation', [
         'navItems' => [
-            ['route' => 'student.dashboard', 'label' => 'Inicio', 'icon' => '🏠', 'pattern' => 'student.dashboard', 'exact' => true],
-            ['route' => 'student.classes.index', 'label' => 'Mis clases', 'icon' => '📚', 'pattern' => 'student.classes.*'],
-            ['route' => 'student.dashboard', 'label' => 'Juegos educativos', 'icon' => '🎮', 'pattern' => 'student.dashboard', 'fragment' => 'juegos'],
+            ['route' => 'student.dashboard', 'label' => 'Inicio', 'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>', 'pattern' => 'student.dashboard', 'exact' => true],
+            ['route' => 'student.classes.index', 'label' => 'Mis clases', 'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>', 'pattern' => 'student.classes.*'],
         ],
         'userName' => auth()->user()->name ?? 'Estudiante',
         'userRole' => 'Estudiante',
         'logoutUrl' => url('/logout'),
         'avatarLetter' => strtoupper(substr(auth()->user()->name ?? 'E', 0, 1)),
-        'avatarBg' => 'bg-indigo-600',
+        'avatarBg' => 'bg-orange-600',
         'brandTitle' => 'Klassio',
-        'brandSubtitle' => 'Aprende y conecta',
+        'brandSubtitle' => 'Panel del estudiante',
         'brandIcon' => 'K',
-        'brandIconBg' => 'bg-indigo-600',
+        'brandIconBg' => 'bg-orange-600',
+        'activeClasses' => 'bg-orange-600 text-white',
+        'inactiveClasses' => 'text-orange-400 hover:bg-orange-900/70 hover:text-white',
+        'focusRingClass' => 'focus:ring-orange-400',
+        'panelClasses' => 'bg-orange-950',
+        'panelBorder' => 'border-orange-900',
+        'brandTitleClasses' => 'text-white',
+        'brandSubtitleClasses' => 'text-orange-400',
+        'closeBtnClasses' => 'text-orange-400 hover:bg-orange-900 hover:text-white',
+        'userNameClasses' => 'text-white',
+        'userRoleClasses' => 'text-orange-400',
+        'logoutClasses' => 'bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-red-300',
+        'panelWidth' => 'w-full max-w-xs',
     ])
 
     @stack('scripts')

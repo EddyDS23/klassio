@@ -1,7 +1,7 @@
 @extends('student.layouts.app')
 
 @section('title', 'Dashboard')
-@section('page-heading', 'Dashboard')
+@section('page-title', 'Inicio')
 
 @section('content')
             <div class="mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
@@ -54,39 +54,6 @@
 
                 </section>
 
-
-                <!-- =====================================
-                     MENSAJES DE LARAVEL
-                 ====================================== -->
-
-                @if(session('success'))
-
-                    <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-
-                        <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-
-                        <p>{{ session('success') }}</p>
-
-                    </div>
-
-                @endif
-
-
-                @if(session('error'))
-
-                    <div class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-
-                        <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M6 18L18 6"/>
-                        </svg>
-
-                        <p>{{ session('error') }}</p>
-
-                    </div>
-
-                @endif
 
 
                 <!-- =====================================
@@ -444,14 +411,6 @@
 
                 </section>
 
-                <!-- PIE -->
-
-                <footer class="border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
-
-                    © {{ date('Y') }} Klassio · Plataforma educativa
-
-                </footer>
-
-
             </div>
+
 @endsection

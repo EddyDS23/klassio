@@ -102,7 +102,8 @@ class GameSessionClassScopingTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('teacher.game-sessions.create', ['activity_id' => $activity->id]))
             ->assertOk()
-            ->assertSee('Crear sala · Clase A')
+            ->assertSee('Crear sala')
+            ->assertSee('Clase A')
             ->assertSee('Actividad Elegida')
             ->assertDontSee('Actividad Otra');
     }

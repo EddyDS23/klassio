@@ -1,585 +1,22 @@
-@extends('teacher.layouts.session')
+@extends('teacher.layouts.app')
 
-@section('title')Equipos — {{ $activity->title }}@endsection
+@section('title', 'Equipos de la actividad')
 
-@section('head')
-    <style>
-        .teams-page,
-        .teams-page * {
-            box-sizing: border-box;
-        }
-
-        body:has(.teams-page) {
-            margin: 0;
-            padding: 28px clamp(14px, 3vw, 36px) 48px;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: radial-gradient(circle at 92% 2%, rgb(249 115 22 / .13), transparent 24rem), #f6f4ff;
-            color: #1e293b;
-        }
-
-        .teams-container {
-            width: min(1180px, 100%);
-            margin: 0 auto;
-        }
-
-        .teams-page .header {
-            position: relative;
-            isolation: isolate;
-            overflow: hidden;
-            margin: 4px 0 20px;
-            padding: clamp(24px, 4vw, 38px);
-            border-radius: 24px;
-            color: #fff;
-            background: linear-gradient(118deg, #4c1d95, #7c3aed 58%, #c2410c);
-            box-shadow: 0 18px 42px rgb(76 29 149 / .2);
-        }
-
-        .teams-page .header::after {
-            position: absolute;
-            z-index: -1;
-            top: -80px;
-            right: -40px;
-            width: 280px;
-            height: 280px;
-            border: 1px solid rgb(255 255 255 / .2);
-            border-radius: 50%;
-            box-shadow: 0 0 0 28px rgb(255 255 255 / .06), 0 0 0 58px rgb(255 255 255 / .04);
-            content: "";
-        }
-
-        .teams-page .header h1 {
-            margin: 0 0 10px;
-            font-size: clamp(1.9rem, 4vw, 2.7rem);
-            line-height: 1.1;
-            letter-spacing: -0.04em;
-            color: #fff;
-        }
-
-        .teams-page .header p {
-            margin: 0;
-            color: rgb(255 255 255 / .84);
-        }
-
-        .teams-page .header p strong { color: #fff; }
-        .teams-page .header .eyebrow { color: #fed7aa; font-size: .72rem; letter-spacing: .14em; }
-
-        .teams-page a:focus-visible,
-        .teams-page button:focus-visible,
-        .teams-page input:focus-visible,
-        .teams-page select:focus-visible {
-            outline: 3px solid #f97316;
-            outline-offset: 3px;
-        }
-
-        .eyebrow {
-            margin: 0 0 8px;
-            color: #fed7aa;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-        }
-
-        .workflow {
-            margin-bottom: 20px;
-            padding: 14px 18px;
-            border: 1px solid #e5dcf6;
-            border-radius: 16px;
-            background: rgb(255 255 255 / .88);
-            box-shadow: 0 8px 20px rgb(49 36 79 / .04);
-        }
-
-        .workflow ol {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px 24px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .workflow-step {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #64748b;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .workflow-step span {
-            display: inline-flex;
-            width: 26px;
-            height: 26px;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: #e2e8f0;
-            color: #475569;
-            font-size: 12px;
-        }
-
-        .workflow-step.is-complete,
-        .workflow-step.is-current {
-            color: #5b21b6;
-        }
-
-        .workflow-step.is-complete span,
-        .workflow-step.is-current span {
-            background: #7c3aed;
-            color: #fff;
-        }
-
-        .workflow-step.is-current {
-            font-weight: 900;
-        }
-
-        .workflow-step.is-blocked { color: #94a3b8; }
-        .workflow-step.is-blocked span { background: #f1f5f9; color: #94a3b8; }
-
-        .alert {
-            padding: 14px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        .panel {
-            background: white;
-            border: 1px solid #e9e4f5;
-            border-radius: 20px;
-            padding: clamp(18px, 3vw, 24px);
-            margin-bottom: 20px;
-            box-shadow: 0 12px 30px rgb(49 36 79 / .06);
-        }
-
-        .panel h2 {
-            margin: 0 0 16px;
-            color: #271747;
-            font-size: clamp(1.08rem, 2vw, 1.25rem);
-            font-weight: 850;
-            letter-spacing: -.02em;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .section-intro {
-            margin: -8px 0 18px;
-            color: #64748b;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .summary-stat {
-            min-width: 0;
-            padding: 14px 16px;
-            border: 1px solid #e9e4f5;
-            border-radius: 15px;
-            background: linear-gradient(145deg, #fff, #faf8ff);
-            transition: transform .16s, box-shadow .16s;
-        }
-
-        .summary-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgb(49 36 79 / .08); }
-
-        .summary-stat strong {
-            display: block;
-            color: #0f172a;
-            font-size: 1.4rem;
-            line-height: 1.2;
-        }
-
-        .summary-stat span {
-            display: block;
-            margin-top: 4px;
-            color: #64748b;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
-        .summary-stat.is-pending {
-            border-color: #fed7aa;
-            background: #fff7ed;
-        }
-
-        .summary-stat.is-pending strong {
-            color: #9a3412;
-        }
-
-        .summary-stat.is-clear {
-            border-color: #a7f3d0;
-            background: #ecfdf5;
-        }
-
-        .summary-stat.is-clear strong {
-            color: #047857;
-        }
-
-        .teams-page form {
-            margin: 0;
-        }
-
-        .teams-page input,
-        .teams-page select {
-            width: 100%;
-            min-height: 44px;
-            padding: 9px 11px;
-            border: 1px solid #cbd5e1;
-            border-radius: 11px;
-            font-size: 14px;
-            background: white;
-            transition: border-color .15s, box-shadow .15s;
-        }
-
-        .teams-page input:focus,
-        .teams-page select:focus { border-color: #8b5cf6; box-shadow: 0 0 0 4px rgb(139 92 246 / .14); }
-
-        .teams-page button {
-            border: 0;
-            border-radius: 11px;
-            min-height: 44px;
-            padding: 9px 14px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: #6d28d9;
-            color: white;
-            box-shadow: 0 5px 12px rgb(109 40 217 / .18);
-        }
-
-        .btn-primary:hover {
-            background: #5b21b6;
-        }
-
-        .next-step-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 44px;
-            text-decoration: none;
-        }
-
-        .next-step-link:focus-visible {
-            outline: 3px solid #f97316;
-            outline-offset: 3px;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #b91c1c;
-        }
-
-        .btn-secondary {
-            background: #475569;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #334155;
-        }
-
-        .btn-warning {
-            background: #ea580c;
-            color: white;
-            box-shadow: 0 5px 12px rgb(234 88 12 / .16);
-        }
-
-        .btn-warning:hover {
-            background: #c2410c;
-        }
-
-        .create-team {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            align-items: end;
-            gap: 10px;
-        }
-
-        .field-label {
-            display: block;
-            margin-bottom: 6px;
-            color: #334155;
-            font-size: 13px;
-            font-weight: 800;
-        }
-
-        .form-field {
-            min-width: 0;
-        }
-
-        .distribution-tools {
-            margin-top: 22px;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .distribution-tools h3 {
-            margin: 0 0 6px;
-            color: #0f172a;
-            font-size: 15px;
-        }
-
-        .distribution-tools p {
-            margin: 0 0 12px;
-            color: #64748b;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .randomize-form {
-            display: grid;
-            grid-template-columns: 180px auto;
-            gap: 10px;
-            max-width: 500px;
-        }
-
-        .teams-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-            gap: 18px;
-        }
-
-        .team-card {
-            background: white;
-            border: 1px solid #e9e4f5;
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow: 0 7px 18px rgb(49 36 79 / .05);
-            transition: transform .18s, box-shadow .18s;
-        }
-
-        .team-card:hover { transform: translateY(-3px); box-shadow: 0 14px 28px rgb(49 36 79 / .1); }
-
-        .team-header {
-            padding: 16px;
-            background: linear-gradient(110deg, #f5f0ff, #fff7ed);
-            border-bottom: 1px solid #eee8f8;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .team-header h3 {
-            margin: 0;
-            font-size: 18px;
-            overflow-wrap: anywhere;
-        }
-
-        .team-count {
-            padding: 5px 9px;
-            border: 1px solid #ddd6fe;
-            border-radius: 999px;
-            background: #fff;
-            color: #64748b;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        .members-title {
-            margin: 0 0 10px;
-            color: #475569;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: .04em;
-            text-transform: uppercase;
-        }
-
-        .team-body {
-            padding: 16px;
-        }
-
-        .members {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 18px;
-        }
-
-        .member {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 9px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .member:last-child {
-            border-bottom: 0;
-        }
-
-        .member-name {
-            min-width: 0;
-            font-size: 14px;
-            overflow-wrap: anywhere;
-        }
-
-        .member-email {
-            color: #64748b;
-            font-size: 12px;
-            display: block;
-            margin-top: 2px;
-        }
-
-        .remove-button {
-            min-height: 36px;
-            padding: 7px 10px;
-            font-size: 12px;
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .remove-button:hover {
-            background: #fecaca;
-        }
-
-        .add-member {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-        }
-
-        .empty {
-            color: #94a3b8;
-            font-size: 14px;
-            padding: 10px 0;
-        }
-
-        .unassigned-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 8px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .unassigned-list li {
-            padding: 10px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            background: #f8fafc;
-            overflow-wrap: anywhere;
-        }
-
-        .notice {
-            margin-top: 14px;
-            padding: 13px 15px;
-            border: 1px solid;
-            border-radius: 11px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .notice.is-warning {
-            border-color: #fed7aa;
-            background: #fff7ed;
-            color: #9a3412;
-        }
-
-        .notice.is-success {
-            border-color: #a7f3d0;
-            background: #ecfdf5;
-            color: #065f46;
-        }
-
-        .next-step-panel {
-            border-color: #ddd6fe;
-            background: linear-gradient(125deg, #f3e8ff, #fff 58%, #fff7ed);
-        }
-
-        .small {
-            font-size: 13px;
-            color: #64748b;
-        }
-
-        .locked {
-            background: #fef3c7;
-            border: 1px solid #fde68a;
-            color: #92400e;
-            padding: 14px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        html[data-theme="dark"] body:has(.teams-page) { background: #111827; color: #e5e7eb; }
-        html[data-theme="dark"] .teams-page .panel,
-        html[data-theme="dark"] .teams-page .team-card { background: #1f2937; border-color: #374151; color: #e5e7eb; }
-        html[data-theme="dark"] .teams-page .panel h2,
-        html[data-theme="dark"] .teams-page .team-header h3,
-        html[data-theme="dark"] .teams-page .summary-stat strong { color: #f3f4f6; }
-        html[data-theme="dark"] .teams-page .summary-stat,
-        html[data-theme="dark"] .teams-page .unassigned-list li { background: #273449; border-color: #374151; }
-        html[data-theme="dark"] .teams-page input,
-        html[data-theme="dark"] .teams-page select { background: #111827; color: #f9fafb; border-color: #4b5563; }
-        html[data-theme="dark"] .teams-page .team-header { background: linear-gradient(110deg, #30234a, #422c2a); border-color: #374151; }
-        html[data-theme="dark"] .teams-page .next-step-panel { background: linear-gradient(125deg, #30234a, #1f2937 58%, #422c2a); }
-
-        @media (max-width: 900px) {
-            .summary-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 600px) {
-            body:has(.teams-page) {
-                padding: 14px;
-            }
-
-            .create-team,
-            .randomize-form,
-            .add-member {
-                grid-template-columns: 1fr;
-            }
-
-            .summary-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .workflow ol {
-                display: grid;
-                gap: 9px;
-            }
-
-            .team-header {
-                align-items: flex-start;
-            }
-
-            .teams-page .header { border-radius: 19px; }
-        }
-    </style>
-@endsection
+@section('page-title', 'Equipos')
 
 @section('content')
-<div class="teams-container teams-page">
+
+    <div class="mx-auto max-w-5xl">
+
+        <div class="mb-6">
+            <a href="{{ route('teacher.activities.show', $activity->id) }}"
+               class="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+                Volver al resumen de la actividad
+            </a>
+        </div>
 
         @php
             $hasParticipations = $activity->participations()->exists();
@@ -592,31 +29,26 @@
 
             $gameConfig = match ($activity->type) {
                 'crossword' => [
-                    'label' => 'Crucigrama',
                     'configured' => $activity->crossword?->words()->exists() ?? false,
                     'configure' => 'teacher.crossword.configure',
                     'edit' => 'teacher.crossword.edit',
                 ],
                 'kahoot' => [
-                    'label' => 'Kahoot',
                     'configured' => $activity->kahoot?->questions()->exists() ?? false,
                     'configure' => 'teacher.kahoot.configure',
                     'edit' => 'teacher.kahoot.edit',
                 ],
                 'wordsearch', 'word_search' => [
-                    'label' => 'Sopa de letras',
                     'configured' => $activity->wordsearch?->words()->exists() ?? false,
                     'configure' => 'teacher.wordsearch.configure',
                     'edit' => 'teacher.wordsearch.edit',
                 ],
                 'matching' => [
-                    'label' => 'Unir conceptos',
                     'configured' => $activity->matching?->items()->exists() ?? false,
                     'configure' => 'teacher.matching.configure',
                     'edit' => 'teacher.matching.edit',
                 ],
                 'roulette' => [
-                    'label' => 'Ruleta',
                     'configured' => $activity->roulette?->items()->exists() ?? false,
                     'configure' => 'teacher.roulette.configure',
                     'edit' => 'teacher.roulette.edit',
@@ -629,93 +61,70 @@
                 : route('teacher.activities.show', $activity->id);
         @endphp
 
-        <a class="klassio-back-button mb-4" href="{{ route('teacher.activities.show', $activity->id) }}">
-            ← Volver al resumen de la actividad
-        </a>
+        {{-- Encabezado --}}
+        <section class="mb-6 rounded-2xl bg-emerald-700 p-5 text-white shadow-sm sm:p-6">
 
-        <div class="header">
-            <p class="eyebrow">Preparación de actividad · Paso 2 de 3</p>
-            <h1>Organiza los equipos</h1>
+            <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
 
-            <p>
-                Actividad: <strong>{{ $activity->title }}</strong>
-            </p>
-        </div>
+                <div class="min-w-0">
+                    <p class="text-xs font-bold uppercase tracking-widest text-emerald-200">
+                        Preparación de actividad
+                    </p>
 
-        @if ($canEditTeams)
-            <nav class="workflow" aria-label="Pasos para preparar la actividad">
-                <ol>
-                    <li class="workflow-step is-complete"><span aria-hidden="true">✓</span> Actividad creada</li>
-                    <li class="workflow-step is-current" aria-current="step"><span>2</span> Organizar equipos</li>
-                    <li class="workflow-step {{ $teamsReadyForConfiguration ? '' : 'is-blocked' }}">
-                        <span>3</span> Configurar {{ $gameConfig['label'] ?? 'juego' }}
-                    </li>
-                </ol>
-            </nav>
-        @endif
+                    <h2 class="mt-1 break-words text-2xl font-bold tracking-tight sm:text-3xl">
+                        Organiza los equipos
+                    </h2>
 
-        <div class="panel" aria-labelledby="team-review-title">
-            <h2 id="team-review-title">Resumen de equipos</h2>
-            <p class="section-intro">Comprueba cuántos estudiantes están asignados y cuáles faltan por ubicar. Cada cambio se guarda al realizar la acción.</p>
-
-            <div class="summary-grid" aria-label="Estado actual de la distribución">
-                <div class="summary-stat">
-                    <strong>{{ $teams->count() }}</strong>
-                    <span>{{ $teams->count() === 1 ? 'equipo creado' : 'equipos creados' }}</span>
+                    <p class="mt-2 flex items-center gap-1.5 text-sm font-bold text-emerald-100">
+                        <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.071 5.071 0 0 0-.02-.845 7.002 7.002 0 0 0-2.006-3.326 5.732 5.732 0 0 0-1.664-1.092 5.85 5.85 0 0 0-2.31-.447 5.85 5.85 0 0 0-2.31.447 5.732 5.732 0 0 0-1.664 1.092 7.002 7.002 0 0 0-2.006 3.326 5.071 5.071 0 0 0-.02.845m12 0a5.078 5.078 0 0 1-3.75.002m-4.5-.002a5.078 5.078 0 0 1-3.75.002M12 10.5a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Zm0 0v.375" />
+                        </svg>
+                        {{ $activity->title }}
+                    </p>
                 </div>
-                <div class="summary-stat {{ $emptyTeamCount > 0 ? 'is-pending' : '' }}">
-                    <strong>{{ $emptyTeamCount }}</strong>
-                    <span>{{ $emptyTeamCount === 1 ? 'equipo sin integrantes' : 'equipos sin integrantes' }}</span>
+
+                <div class="hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 ring-1 ring-emerald-500 md:flex">
+                    <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.071 5.071 0 0 0-.02-.845 7.002 7.002 0 0 0-2.006-3.326 5.732 5.732 0 0 0-1.664-1.092 5.85 5.85 0 0 0-2.31-.447 5.85 5.85 0 0 0-2.31.447 5.732 5.732 0 0 0-1.664 1.092 7.002 7.002 0 0 0-2.006 3.326 5.071 5.071 0 0 0-.02.845m12 0a5.078 5.078 0 0 1-3.75.002m-4.5-.002a5.078 5.078 0 0 1-3.75.002M12 10.5a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Zm0 0v.375" />
+                    </svg>
                 </div>
-                <div class="summary-stat">
-                    <strong>{{ $assignedCount }} / {{ $students->count() }}</strong>
-                    <span>estudiantes asignados</span>
-                </div>
-                <div class="summary-stat {{ $unassignedCount > 0 ? 'is-pending' : 'is-clear' }}">
-                    <strong>{{ $unassignedCount }}</strong>
-                    <span>{{ $unassignedCount === 1 ? 'estudiante pendiente' : 'estudiantes pendientes' }}</span>
-                </div>
+
             </div>
 
-            @if ($unassignedCount > 0)
-                <div class="notice is-warning" role="status">
-                    Hay estudiantes sin equipo. Revisa la lista al final y asígnalos antes de continuar si deben participar.
-                </div>
-            @elseif ($teams->isEmpty())
-                <div class="notice is-warning" role="status">
-                    Aún no hay equipos creados. Puedes crear uno por uno o distribuir al grupo automáticamente.
-                </div>
-            @elseif ($emptyTeamCount > 0)
-                <div class="notice is-warning" role="status">
-                    Hay {{ $emptyTeamCount }} {{ $emptyTeamCount === 1 ? 'equipo sin integrantes' : 'equipos sin integrantes' }}. Revisa si deseas agregar estudiantes o eliminarlos.
-                </div>
-            @else
-                <div class="notice is-success" role="status">
-                    Todos los estudiantes activos están asignados. Revisa también el tamaño de cada equipo.
+            @if ($canEditTeams)
+                {{-- Pasos de preparación --}}
+                <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-emerald-600 pt-4" aria-label="Pasos para preparar la actividad">
+
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white ring-1 ring-emerald-500">
+                        <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                        Actividad creada
+                    </span>
+
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-emerald-700" aria-current="step">
+                        2 · Organizar equipos
+                    </span>
+
+                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold {{ $teamsReadyForConfiguration ? 'bg-white/20 text-white ring-1 ring-white/30' : 'bg-emerald-800/60 text-emerald-200' }}">
+                        3 · Configurar juego
+                    </span>
+
                 </div>
             @endif
 
-            @if (!$canEditTeams)
-                <div class="alert alert-error" role="status" style="margin-top: 14px; margin-bottom: 0;">
-                    La composición ya no se puede modificar porque la actividad no está en borrador o ya tiene participaciones.
-                </div>
-            @endif
-        </div>
+        </section>
 
-
-        {{-- ============================================================
-         MENSAJES
-         ============================================================ --}}
-
-        @if (session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
-
+        {{-- Errores de validación --}}
         @if ($errors->any())
-            <div class="alert alert-error">
-                <ul style="margin: 0; padding-left: 20px;">
+            <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm sm:p-5">
+                <div class="mb-3 flex items-center gap-2">
+                    <svg class="h-5 w-5 shrink-0 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                    <h3 class="font-bold">Revisa los siguientes errores</h3>
+                </div>
+                <ul class="list-inside list-disc space-y-1 text-sm">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -723,305 +132,579 @@
             </div>
         @endif
 
+        {{-- Resumen --}}
+        <section class="mb-6">
 
-        {{-- ============================================================
-         ACCIONES
-         ============================================================ --}}
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
-        @if ($canEditTeams)
-        <div class="panel" aria-labelledby="team-actions-title">
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 
-            <h2 id="team-actions-title">Crear y distribuir equipos</h2>
-            <p class="section-intro">Puedes nombrar los equipos manualmente o repartir a los estudiantes en grupos equilibrados.</p>
-
-            <form method="POST" action="{{ route('teacher.teams.store', $activity->id) }}" class="create-team">
-                    @csrf
-
-                    <div class="form-field">
-                        <label class="field-label" for="new-team-name">Nombre del equipo</label>
-                        <input type="text" name="name" id="new-team-name" placeholder="Ej. Exploradores"
-                            value="{{ old('name') }}" required>
+                    <div class="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Equipos</p>
+                        <p class="mt-1 text-lg font-bold text-slate-900">{{ $teams->count() }}</p>
                     </div>
 
-                    <button type="submit" class="btn-primary">
-                        Crear equipo
-                    </button>
-            </form>
-
-            <div class="distribution-tools">
-                <h3>Distribuir automáticamente</h3>
-                <p>Elige cuántos equipos crear. Esta acción reemplaza la distribución actual y pide confirmación antes de aplicarse.</p>
-                <form method="POST" action="{{ route('teacher.teams.randomize', $activity->id) }}"
-                    class="randomize-form">
-                    @csrf
-
-                    <div class="form-field">
-                        <label class="field-label" for="team-count">Cantidad de equipos</label>
-                        <input type="number" name="team_count" id="team-count" min="1" max="{{ $students->count() }}"
-                            placeholder="Ej. 4" required>
+                    <div class="rounded-xl px-3 py-2.5 ring-1 {{ $emptyTeamCount > 0 ? 'bg-amber-50 ring-amber-200' : 'bg-slate-50 ring-slate-200' }}">
+                        <p class="text-[11px] font-bold uppercase tracking-wide {{ $emptyTeamCount > 0 ? 'text-amber-600' : 'text-slate-400' }}">Sin integrantes</p>
+                        <p class="mt-1 text-lg font-bold {{ $emptyTeamCount > 0 ? 'text-amber-700' : 'text-slate-900' }}">{{ $emptyTeamCount }}</p>
                     </div>
 
-                    <button type="submit" class="btn-warning"
-                        onclick="return confirm(
-                        'Esto reemplazará la distribución actual de equipos. ¿Continuar?'
-                    )">
-                        Crear equipos equilibrados
-                    </button>
-                </form>
+                    <div class="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Asignados</p>
+                        <p class="mt-1 text-lg font-bold text-slate-900">{{ $assignedCount }} <span class="text-sm font-bold text-slate-400">/ {{ $students->count() }}</span></p>
+                    </div>
+
+                    <div class="rounded-xl px-3 py-2.5 ring-1 {{ $unassignedCount > 0 ? 'bg-amber-50 ring-amber-200' : 'bg-emerald-50 ring-emerald-200' }}">
+                        <p class="text-[11px] font-bold uppercase tracking-wide {{ $unassignedCount > 0 ? 'text-amber-600' : 'text-emerald-600' }}">Pendientes</p>
+                        <p class="mt-1 text-lg font-bold {{ $unassignedCount > 0 ? 'text-amber-700' : 'text-emerald-700' }}">{{ $unassignedCount }}</p>
+                    </div>
+
+                </div>
+
+                {{-- Estado general (único aviso) --}}
+                @if ($unassignedCount > 0)
+                    <div class="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-amber-800 ring-1 ring-amber-200">
+                        <svg class="h-5 w-5 shrink-0 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                        <p class="text-sm font-semibold">
+                            Hay {{ $unassignedCount }} {{ $unassignedCount === 1 ? 'estudiante sin equipo' : 'estudiantes sin equipo' }}. Asígnalos antes de continuar si deben participar.
+                        </p>
+                    </div>
+                @elseif ($teams->isEmpty())
+                    <div class="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-amber-800 ring-1 ring-amber-200">
+                        <svg class="h-5 w-5 shrink-0 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                        <p class="text-sm font-semibold">Aún no hay equipos creados. Usa la distribución automática o crea uno por uno.</p>
+                    </div>
+                @elseif ($emptyTeamCount > 0)
+                    <div class="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-amber-800 ring-1 ring-amber-200">
+                        <svg class="h-5 w-5 shrink-0 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                        <p class="text-sm font-semibold">Hay {{ $emptyTeamCount }} {{ $emptyTeamCount === 1 ? 'equipo sin integrantes' : 'equipos sin integrantes' }}. Agrégales estudiantes o elimínalos.</p>
+                    </div>
+                @else
+                    <div class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-emerald-800 ring-1 ring-emerald-200">
+                        <svg class="h-5 w-5 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <p class="text-sm font-semibold">Todos los estudiantes activos están asignados a un equipo.</p>
+                    </div>
+                @endif
+
+                @if (! $canEditTeams)
+                    <div class="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-slate-600 ring-1 ring-slate-200">
+                        <svg class="h-5 w-5 shrink-0 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                        </svg>
+                        <p class="text-sm font-semibold">La composición ya no se puede modificar porque la actividad no está en borrador o ya tiene participaciones.</p>
+                    </div>
+                @endif
+
             </div>
 
-        </div>
+        </section>
+
+        {{-- Crear equipos --}}
+        @if ($canEditTeams)
+            <section id="crear-equipos" class="mb-6">
+
+                <h3 class="mb-3 text-lg font-bold text-slate-900">
+                    Crear equipos
+                </h3>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+
+                    {{-- Acción principal: distribución automática --}}
+                    <form method="POST" action="{{ route('teacher.teams.randomize', $activity->id) }}">
+                        @csrf
+
+                        <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+
+                            <div>
+                                <label for="team-count" class="mb-1.5 block text-sm font-bold text-slate-700">
+                                    Distribuir automáticamente
+                                </label>
+
+                                <input type="number"
+                                       name="team_count"
+                                       id="team-count"
+                                       min="1"
+                                       max="{{ $students->count() }}"
+                                       placeholder="Cantidad de equipos, ej. 4"
+                                       required
+                                       class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
+                            </div>
+
+                            <button type="button"
+                                    data-confirm-toggle
+                                    aria-expanded="false"
+                                    aria-controls="randomize-confirm"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 sm:w-auto">
+                                <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 0 13.803 3.7l3.181-3.182m0-4.991v4.99" />
+                                </svg>
+                                Crear equipos equilibrados
+                            </button>
+
+                        </div>
+
+                        {{-- Confirmación (dos pasos, inline) --}}
+                        <div id="randomize-confirm" class="mt-3 hidden rounded-xl border border-amber-200 bg-amber-50 p-3" data-confirm-panel>
+                            <p class="text-sm font-bold text-amber-800">
+                                Esto reemplazará la distribución actual de equipos.
+                            </p>
+
+                            <div class="mt-3 flex gap-2">
+                                <button type="submit"
+                                        class="flex-1 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2">
+                                    Sí, distribuir
+                                </button>
+
+                                <button type="button" data-confirm-cancel
+                                        class="rounded-xl border border-amber-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+
+                    <div class="mt-4 border-t border-slate-100 pt-4">
+
+                        <form method="POST" action="{{ route('teacher.teams.store', $activity->id) }}"
+                              class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                            @csrf
+
+                            <div>
+                                <label for="new-team-name" class="mb-1.5 block text-sm font-bold text-slate-700">
+                                    O crea un equipo manualmente
+                                </label>
+
+                                <input type="text"
+                                       name="name"
+                                       id="new-team-name"
+                                       placeholder="Nombre del equipo, ej. Exploradores"
+                                       value="{{ old('name') }}"
+                                       required
+                                       class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
+                            </div>
+
+                            <button type="submit"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 sm:w-auto">
+                                <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                Crear equipo
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </section>
         @endif
 
+        {{-- Equipos actuales --}}
+        <section id="equipos-actuales" class="mb-6">
 
-        {{-- ============================================================
-         EQUIPOS
-         ============================================================ --}}
-
-        <div class="panel" aria-labelledby="current-teams-title">
-
-            <h2>
-                <span id="current-teams-title">Equipos actuales</span>
-                <span class="small">({{ $teams->count() }})</span>
-            </h2>
-            <p class="section-intro">Revisa integrantes y tamaños. Puedes agregar o quitar estudiantes mientras la actividad siga en preparación.</p>
+            <h3 class="mb-3 text-lg font-bold text-slate-900">
+                Equipos actuales
+                <span class="text-sm font-bold text-slate-400">({{ $teams->count() }})</span>
+            </h3>
 
             @if ($teams->isEmpty())
 
-                <div class="notice is-warning" role="status">
-                    No hay equipos todavía. Usa “Crear equipo” o “Crear equipos equilibrados” para empezar.
+                <div class="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-4 text-slate-600 shadow-sm">
+                    <svg class="h-5 w-5 shrink-0 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                    </svg>
+                    <p class="text-sm font-semibold">
+                        No hay equipos todavía.
+                        @if ($canEditTeams)
+                            Usa “Crear equipos equilibrados” o “Crear equipo” para empezar.
+                        @endif
+                    </p>
                 </div>
+
             @else
-                <div class="teams-grid">
+
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 
                     @foreach ($teams as $team)
-                        <div class="team-card">
+                        <article class="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" data-confirm-card>
 
-                            <div class="team-header">
+                            {{-- Cabecera del equipo --}}
+                            <div class="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
 
-                                <h3>
-                                    {{ $team->name }}
-                                </h3>
+                                <div class="min-w-0">
+                                    <h4 class="truncate text-base font-bold text-slate-900">
+                                        {{ $team->name }}
+                                    </h4>
 
-                                <span class="team-count">
-                                    {{ $team->members->count() }}
-                                    {{ $team->members->count() === 1 ? 'alumno' : 'alumnos' }}
-                                </span>
+                                    <p class="text-xs font-bold {{ $team->members->isEmpty() ? 'text-amber-600' : 'text-emerald-700' }}">
+                                        {{ $team->members->count() }} {{ $team->members->count() === 1 ? 'integrante' : 'integrantes' }}
+                                    </p>
+                                </div>
+
+                                @if ($canEditTeams)
+                                    <button type="button" data-confirm-toggle
+                                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                                        aria-expanded="false"
+                                        aria-controls="delete-team-{{ $team->id }}"
+                                        aria-label="Eliminar el equipo {{ $team->name }}">
+                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                        </svg>
+                                    </button>
+                                @endif
 
                             </div>
 
+                            {{-- Confirmación de eliminación del equipo --}}
+                            @if ($canEditTeams)
+                                <div id="delete-team-{{ $team->id }}" class="hidden border-b border-red-100 bg-red-50 p-3" data-confirm-panel>
+                                    <p class="text-sm font-bold text-red-800">
+                                        ¿Eliminar el equipo <span class="font-bold">{{ $team->name }}</span>?
+                                    </p>
 
-                            <div class="team-body">
+                                    <p class="mt-0.5 text-xs text-red-700/80">
+                                        También se quitarán sus integrantes.
+                                    </p>
 
-                                {{-- ====================================================
-                                 MIEMBROS
-                                 ==================================================== --}}
+                                    <div class="mt-3 flex gap-2">
+                                        <form method="POST"
+                                              action="{{ route('teacher.teams.destroy', ['id' => $activity->id, 'teamId' => $team->id]) }}"
+                                              class="flex-1">
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button type="submit"
+                                                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                </svg>
+                                                Sí, eliminar
+                                            </button>
+                                        </form>
+
+                                        <button type="button" data-confirm-cancel
+                                                class="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Integrantes --}}
+                            <div class="flex-1 p-4">
 
                                 @if ($team->members->isEmpty())
-                                    <div class="empty">
+                                    <p class="rounded-xl bg-slate-50 p-3 text-sm font-semibold text-slate-500 ring-1 ring-slate-200">
                                         Este equipo no tiene alumnos.
-                                    </div>
+                                        @if ($canEditTeams)
+                                            Agrega el primero con el formulario de abajo.
+                                        @endif
+                                    </p>
                                 @else
-                                    <p class="members-title">Integrantes</p>
-                                    <ul class="members">
-
+                                    <ul class="divide-y divide-slate-100">
                                         @foreach ($team->members as $member)
-                                            <li class="member">
+                                            <li class="py-2 first:pt-0">
 
-                                                <div class="member-name">
+                                                <div class="flex items-center gap-2.5">
 
-                                                    {{ $member->student->name }}
+                                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-sm font-bold text-emerald-700 ring-1 ring-emerald-100">
+                                                        {{ strtoupper(substr($member->student->name, 0, 1)) }}
+                                                    </div>
 
-                                                    @if ($member->student->email)
-                                                        <span class="member-email">
-                                                            {{ $member->student->email }}
-                                                        </span>
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="truncate text-sm font-bold text-slate-800">
+                                                            {{ $member->student->name }}
+                                                        </p>
+
+                                                        @if ($member->student->email)
+                                                            <p class="hidden truncate text-xs text-slate-400 sm:block">
+                                                                {{ $member->student->email }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
+
+                                                    @if ($canEditTeams)
+                                                        <button type="button" data-confirm-toggle
+                                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                                                            aria-expanded="false"
+                                                            aria-controls="remove-member-{{ $team->id }}-{{ $member->student_id }}"
+                                                            aria-label="Quitar a {{ $member->student->name }} del equipo">
+                                                            <svg class="h-4.5 w-4.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                            </svg>
+                                                        </button>
                                                     @endif
 
                                                 </div>
 
-
-                                                {{-- Quitar alumno --}}
                                                 @if ($canEditTeams)
-                                                <form method="POST"
-                                                    action="{{ route('teacher.teams.members.remove', [
-                                                        'id' => $activity->id,
-                                                        'teamId' => $team->id,
-                                                        'studentId' => $member->student_id,
-                                                    ]) }}">
+                                                    {{-- Confirmación de retirada (dos pasos, inline) --}}
+                                                    <div id="remove-member-{{ $team->id }}-{{ $member->student_id }}"
+                                                         class="mt-2 hidden rounded-xl border border-red-200 bg-red-50 p-3"
+                                                         data-confirm-panel>
 
-                                                    @csrf
-                                                    @method('DELETE')
+                                                        <p class="text-sm font-semibold text-red-800">
+                                                            ¿Quitar a
+                                                            <span class="font-bold">{{ $member->student->name }}</span>
+                                                            del equipo?
+                                                        </p>
 
-                                                    <button type="submit" class="remove-button"
-                                                        onclick="return confirm(
-                                                        '¿Quitar este alumno del equipo?'
-                                                    )">
-                                                        Quitar
-                                                    </button>
+                                                        <div class="mt-2 flex gap-2">
+                                                            <form method="POST"
+                                                                  action="{{ route('teacher.teams.members.remove', [
+                                                                      'id' => $activity->id,
+                                                                      'teamId' => $team->id,
+                                                                      'studentId' => $member->student_id,
+                                                                  ]) }}"
+                                                                  class="flex-1">
+                                                                @csrf
+                                                                @method('DELETE')
 
-                                                </form>
+                                                                <button type="submit"
+                                                                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                                                                    Sí, quitar
+                                                                </button>
+                                                            </form>
+
+                                                            <button type="button" data-confirm-cancel
+                                                                    class="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                                                                Cancelar
+                                                            </button>
+                                                        </div>
+
+                                                    </div>
                                                 @endif
 
                                             </li>
                                         @endforeach
-
                                     </ul>
-                                @endif
-
-
-                                {{-- ====================================================
-                                 AGREGAR ALUMNO
-                                 ==================================================== --}}
-
-                                @if ($canEditTeams)
-                                <form method="POST"
-                                    action="{{ route('teacher.teams.members.add', [
-                                        'id' => $activity->id,
-                                        'teamId' => $team->id,
-                                    ]) }}"
-                                    class="add-member">
-
-                                    @csrf
-
-                                    <div class="form-field">
-                                    <label class="field-label" for="team-student-{{ $team->id }}">Agregar integrante</label>
-                                    <select name="student_id" id="team-student-{{ $team->id }}" required>
-
-                                        <option value="">
-                                            Seleccionar alumno...
-                                        </option>
-
-                                        @foreach ($students as $student)
-                                            @if (!$assignedStudentIds->contains($student->id))
-                                                <option value="{{ $student->id }}">
-                                                    {{ $student->name }}
-
-                                                    @if ($student->email)
-                                                        — {{ $student->email }}
-                                                    @endif
-                                                </option>
-                                            @endif
-                                        @endforeach
-
-                                    </select>
-                                    </div>
-
-                                    <button type="submit" class="btn-primary">
-                                        Agregar
-                                    </button>
-
-                                </form>
-                                @endif
-
-
-                                {{-- ====================================================
-                                 ELIMINAR EQUIPO
-                                 ==================================================== --}}
-
-                                @if ($canEditTeams)
-                                <form method="POST"
-                                    action="{{ route('teacher.teams.destroy', [
-                                        'id' => $activity->id,
-                                        'teamId' => $team->id,
-                                    ]) }}"
-                                    style="margin-top: 12px;">
-
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button type="submit" class="btn-danger"
-                                        onclick="return confirm(
-                                        '¿Eliminar este equipo? También se quitarán sus integrantes.'
-                                    )">
-                                        Eliminar equipo
-                                    </button>
-
-                                </form>
                                 @endif
 
                             </div>
 
-                        </div>
+                            {{-- Agregar integrante --}}
+                            @if ($canEditTeams)
+                                <form method="POST"
+                                      action="{{ route('teacher.teams.members.add', ['id' => $activity->id, 'teamId' => $team->id]) }}"
+                                      class="border-t border-slate-100 bg-slate-50/60 p-4">
+                                    @csrf
+
+                                    <label for="team-student-{{ $team->id }}" class="mb-1.5 block text-sm font-bold text-slate-700">
+                                        Agregar integrante
+                                    </label>
+
+                                    <div class="grid gap-2 sm:grid-cols-[1fr_auto]">
+                                        <select name="student_id"
+                                                id="team-student-{{ $team->id }}"
+                                                required
+                                                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
+
+                                            <option value="">Seleccionar alumno...</option>
+
+                                            @foreach ($students as $student)
+                                                @if (! $assignedStudentIds->contains($student->id))
+                                                    <option value="{{ $student->id }}">
+                                                        {{ $student->name }}
+                                                        @if ($student->email)
+                                                            — {{ $student->email }}
+                                                        @endif
+                                                    </option>
+                                                @endif
+                                            @endforeach
+
+                                        </select>
+
+                                        <button type="submit"
+                                                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 sm:w-auto">
+                                            <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                            </svg>
+                                            Agregar
+                                        </button>
+                                    </div>
+                                </form>
+                            @endif
+
+                        </article>
                     @endforeach
 
                 </div>
 
             @endif
 
-        </div>
+        </section>
 
+        {{-- Estudiantes sin equipo --}}
+        <section class="mb-6">
 
-        {{-- ============================================================
-         ALUMNOS SIN EQUIPO
-         ============================================================ --}}
-
-        <div class="panel" aria-labelledby="unassigned-title">
-
-            <h2 id="unassigned-title">Estudiantes sin equipo ({{ $unassignedCount }})</h2>
-            <p class="section-intro">Estos estudiantes activos todavía no están asignados a un equipo.</p>
+            <h3 class="mb-3 text-lg font-bold text-slate-900">
+                Estudiantes sin equipo
+                <span class="text-sm font-bold {{ $unassignedCount > 0 ? 'text-amber-600' : 'text-slate-400' }}">({{ $unassignedCount }})</span>
+            </h3>
 
             @if ($unassignedStudents->isEmpty())
 
-                <div class="notice is-success" role="status">
-                    Todos los estudiantes activos están incluidos en un equipo.
+                <div class="flex items-center gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+                    <svg class="h-5 w-5 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    <p class="text-sm font-semibold">Todos los estudiantes activos están incluidos en un equipo.</p>
                 </div>
+
             @else
-                <ul class="unassigned-list">
 
+                <ul class="grid gap-2 sm:grid-cols-2">
                     @foreach ($unassignedStudents as $student)
-                        <li>
-                            {{ $student->name }}
+                        <li class="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-bold text-slate-500 ring-1 ring-slate-200">
+                                {{ strtoupper(substr($student->name, 0, 1)) }}
+                            </div>
 
-                            @if ($student->email)
-                                <span class="small">
-                                    — {{ $student->email }}
-                                </span>
-                            @endif
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-bold text-slate-800">
+                                    {{ $student->name }}
+                                </p>
+
+                                @if ($student->email)
+                                    <p class="hidden truncate text-xs text-slate-400 sm:block">
+                                        {{ $student->email }}
+                                    </p>
+                                @endif
+                            </div>
                         </li>
                     @endforeach
-
                 </ul>
 
             @endif
 
-        </div>
+        </section>
 
-        <section class="panel next-step-panel" aria-labelledby="next-step-title">
+        {{-- Siguiente paso --}}
+        <section class="mb-8">
+
             @if ($canEditTeams && $gameConfig)
-                <h2 id="next-step-title">Siguiente paso: configurar {{ $gameConfig['label'] }}</h2>
-                @if (!$teamsReadyForConfiguration)
-                    <p class="small" role="status">
-                        @if ($teams->isEmpty())
-                            Para continuar, crea al menos un equipo y asigna a todos los estudiantes. Después podrás configurar {{ $gameConfig['label'] }}.
-                        @else
-                            Asigna a los {{ $unassignedCount === 1 ? 'estudiante pendiente' : 'estudiantes pendientes' }} a un equipo antes de configurar {{ $gameConfig['label'] }}.
-                        @endif
-                    </p>
-                    <a href="{{ $teams->isEmpty() ? '#team-actions-title' : '#current-teams-title' }}" class="btn-primary next-step-link">
-                        {{ $teams->isEmpty() ? 'Crear el primer equipo' : 'Asignar estudiantes' }}
-                        <span aria-hidden="true">↑</span>
-                    </a>
+                @if (! $teamsReadyForConfiguration)
+
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+                        <p class="text-sm font-bold text-amber-800">
+                            @if ($teams->isEmpty())
+                                Para continuar, crea al menos un equipo y asigna a todos los estudiantes.
+                            @else
+                                Asigna a los {{ $unassignedCount === 1 ? 'estudiante pendiente' : 'estudiantes pendientes' }} a un equipo antes de configurar el juego.
+                            @endif
+                        </p>
+
+                        <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                            <a href="{{ $teams->isEmpty() ? '#crear-equipos' : '#equipos-actuales' }}"
+                               class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-white px-5 py-2.5 text-sm font-bold text-amber-800 transition hover:bg-amber-100 sm:w-auto">
+                                {{ $teams->isEmpty() ? 'Crear el primer equipo' : 'Asignar estudiantes' }}
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
                 @else
-                    <p class="small">
-                        Cuando termines de revisar la distribución, continúa con el contenido del juego.
-                        Los equipos se guardan al crear o modificar cada uno.
-                    </p>
-                    <a href="{{ $nextGameRoute }}" class="btn-primary next-step-link">
-                        {{ $gameConfig['configured'] ? 'Continuar a la configuración' : 'Siguiente: configurar el juego' }}
-                        <span aria-hidden="true">→</span>
-                    </a>
+
+                    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:p-5">
+                        <p class="text-sm font-semibold text-emerald-900">
+                            Distribución lista. Continúa con el contenido del juego
+                            @include('partials.game-type-label', ['type' => $activity->type]).
+                        </p>
+
+                        <a href="{{ $nextGameRoute }}"
+                           class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 sm:w-auto">
+                            {{ $gameConfig['configured'] ? 'Continuar a la configuración' : 'Configurar el juego' }}
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </a>
+                    </div>
+
                 @endif
             @else
-                <h2 id="next-step-title">Preparación de equipos</h2>
-                <p class="small">
-                    Esta actividad ya no está en preparación. Puedes regresar al resumen para consultar sus acciones disponibles.
-                </p>
-                <a href="{{ route('teacher.activities.show', $activity->id) }}" class="klassio-back-button">
-                    Volver al resumen de actividad
-                </a>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <p class="text-sm font-semibold text-slate-600">
+                        Esta actividad ya no está en preparación. Regresa al resumen para consultar sus acciones disponibles.
+                    </p>
+
+                    <a href="{{ route('teacher.activities.show', $activity->id) }}"
+                       class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 sm:w-auto">
+                        Volver al resumen de actividad
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+                    </a>
+                </div>
+
             @endif
+
         </section>
 
     </div>
+
 @endsection
+
+@push('scripts')
+    @if ($canEditTeams)
+        {{-- Confirmaciones en dos pasos (distribuir, eliminar equipo, quitar integrante) --}}
+        <script>
+        (function () {
+            var toggles = Array.prototype.slice.call(document.querySelectorAll('[data-confirm-toggle]'));
+            var panels = Array.prototype.slice.call(document.querySelectorAll('[data-confirm-panel]'));
+
+            function closePanel(panel) {
+                panel.classList.add('hidden');
+
+                var toggle = document.querySelector('[aria-controls="' + panel.id + '"]');
+
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+
+            toggles.forEach(function (toggle) {
+                toggle.addEventListener('click', function () {
+                    var panel = document.getElementById(toggle.getAttribute('aria-controls'));
+
+                    if (! panel) {
+                        return;
+                    }
+
+                    var wasOpen = toggle.getAttribute('aria-expanded') === 'true';
+
+                    // Solo una confirmación abierta a la vez.
+                    panels.forEach(closePanel);
+
+                    if (! wasOpen) {
+                        panel.classList.remove('hidden');
+                        toggle.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            });
+
+            panels.forEach(function (panel) {
+                var cancel = panel.querySelector('[data-confirm-cancel]');
+
+                if (cancel) {
+                    cancel.addEventListener('click', function () {
+                        closePanel(panel);
+                    });
+                }
+            });
+        })();
+    </script>
+    @endif
+@endpush
