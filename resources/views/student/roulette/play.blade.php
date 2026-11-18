@@ -8,864 +8,223 @@
 
     <title>Ruleta — {{ $activity->title }}</title>
 
+    @include('partials.assets', ['theme' => 'student', 'includeBootstrap' => false])
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        :root {
-            --bg: #f5f1f8;
-            --surface: #ffffff;
-            --surface-soft: #faf7fc;
-            --primary: #8e24aa;
-            --primary-dark: #5d176f;
-            --primary-light: #f3e5f5;
-            --accent: #c026d3;
-            --text: #29222d;
-            --muted: #766d7b;
-            --border: #e6dce9;
-
-            --success: #15803d;
-            --success-bg: #dcfce7;
-            --success-border: #4ade80;
-
-            --danger: #b91c1c;
-            --danger-bg: #fee2e2;
-            --danger-border: #f87171;
-
-            --shadow: 0 24px 70px rgb(54 20 64 / 0.12);
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            min-height: 100vh;
-            margin: 0;
-            padding: 22px 14px;
-            color: var(--text);
-            background:
-                radial-gradient(circle at 8% 0%, rgb(216 180 254 / .28), transparent 28%),
-                radial-gradient(circle at 92% 8%, rgb(244 114 182 / .16), transparent 25%),
-                var(--bg);
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-                "Segoe UI", sans-serif;
-        }
-
-        button,
-        input {
-            font: inherit;
-        }
-
-        button {
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .page {
-            width: min(1000px, 100%);
-            margin: 0 auto;
-        }
-
-        .game {
-            overflow: hidden;
-            border: 1px solid var(--border);
-            border-radius: 30px;
-            background: var(--surface);
-            box-shadow: var(--shadow);
-        }
-
-        /* =========================================================
-           HEADER
-        ========================================================= */
-
-        .header {
-            padding: 28px 30px 24px;
-            color: #fff;
-            background:
-                radial-gradient(circle at 80% 10%, rgb(255 255 255 / .18), transparent 22%),
-                linear-gradient(135deg, #68127d, #8e24aa 55%, #b423c5);
-        }
-
-        .header-row {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 24px;
-        }
-
-        .eyebrow {
-            margin: 0 0 6px;
-            color: rgb(255 255 255 / .72);
-            font-size: .72rem;
-            font-weight: 850;
-            letter-spacing: .13em;
-            text-transform: uppercase;
-        }
-
-        .title {
-            margin: 0;
-            font-size: clamp(1.7rem, 4vw, 2.35rem);
-            line-height: 1.05;
-            letter-spacing: -.025em;
-        }
-
-        .activity {
-            margin: 8px 0 0;
-            color: rgb(255 255 255 / .82);
-            font-size: .94rem;
-        }
-
-        .timer {
-            flex: 0 0 auto;
-            min-width: 145px;
-            padding: 11px 16px;
-            border: 1px solid rgb(255 255 255 / .22);
-            border-radius: 15px;
-            background: rgb(255 255 255 / .12);
-            text-align: center;
-            backdrop-filter: blur(10px);
-        }
-
-        .timer-label {
-            display: block;
-            margin-bottom: 2px;
-            color: rgb(255 255 255 / .7);
-            font-size: .68rem;
-            font-weight: 800;
-            letter-spacing: .07em;
-            text-transform: uppercase;
-        }
-
-        #timer-value {
-            font-size: 1.35rem;
-            font-weight: 900;
-            letter-spacing: .05em;
-        }
-
-        #timer-value.warning {
-            color: #fde68a;
-        }
-
-        #timer-value.danger {
-            color: #fecaca;
-        }
-
-        /* =========================================================
-           STATS
-        ========================================================= */
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            padding: 18px 30px;
-            border-bottom: 1px solid var(--border);
-            background: #fff;
-        }
-
-        .stat {
-            padding: 12px 15px;
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            background: var(--surface-soft);
-            text-align: center;
-        }
-
-        .stat-label {
-            display: block;
-            margin-bottom: 3px;
-            color: var(--muted);
-            font-size: .69rem;
-            font-weight: 800;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-        }
-
-        .stat-value {
-            color: var(--primary-dark);
-            font-size: 1.15rem;
-            font-weight: 900;
-        }
-
-        /* =========================================================
-           PROGRESS
-        ========================================================= */
-
-        .progress-area {
-            padding: 18px 30px 0;
-        }
-
-        .progress-head {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 7px;
-            color: var(--muted);
-            font-size: .78rem;
-            font-weight: 750;
-        }
-
-        .progress-track {
-            height: 9px;
-            overflow: hidden;
-            border-radius: 999px;
-            background: #eee7f1;
-        }
-
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, #7e22ce, #c026d3);
-            transition: width .35s ease;
-        }
-
-        /* =========================================================
-           GAME AREA
-        ========================================================= */
-
-        .main {
-            padding: 28px 30px 30px;
-        }
-
-        .instructions {
-            width: min(680px, 100%);
-            margin: 0 auto 24px;
-            padding: 13px 17px;
-            border: 1px solid #ead7ef;
-            border-radius: 14px;
-            color: #6b2177;
-            background: #fcf7fd;
-            text-align: center;
-            font-size: .9rem;
-            font-weight: 650;
-        }
-
-        .wheel-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .remaining-label {
-            margin-bottom: 15px;
-            color: var(--muted);
-            font-size: .85rem;
-            font-weight: 750;
-        }
-
-        .remaining-label strong {
-            color: var(--primary);
-        }
-
-        /* =========================================================
-           WHEEL
-        ========================================================= */
-
-        .wheel-stage {
-            position: relative;
-            width: min(410px, 82vw);
-            aspect-ratio: 1;
-            display: grid;
-            place-items: center;
-        }
-
-        .wheel-shadow {
-            position: absolute;
-            inset: 7%;
-            border-radius: 50%;
-            background: rgb(91 23 111 / .22);
-            filter: blur(24px);
-            transform: translateY(15px);
-        }
-
-        .pointer {
-            position: absolute;
-            top: -2px;
-            left: 50%;
-            z-index: 20;
-            width: 0;
-            height: 0;
-            transform: translateX(-50%);
-            border-left: 19px solid transparent;
-            border-right: 19px solid transparent;
-            border-top: 33px solid #481052;
-            filter: drop-shadow(0 5px 4px rgb(0 0 0 / .22));
-        }
-
-        .pointer::after {
-            content: "";
-            position: absolute;
-            left: -9px;
-            top: -32px;
-            width: 18px;
-            height: 9px;
-            border-radius: 999px;
-            background: #fce7f3;
-        }
-
-        .wheel-border {
-            position: relative;
-            z-index: 5;
-            width: 100%;
-            height: 100%;
-            padding: 11px;
-            border-radius: 50%;
-            background:
-                linear-gradient(145deg, #4a0d59, #a21caf 48%, #5b126d);
-            box-shadow:
-                0 22px 42px rgb(76 29 94 / .25),
-                inset 0 0 0 2px rgb(255 255 255 / .25);
-        }
-
-        .wheel {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            border: 5px solid #fff;
-            border-radius: 50%;
-            background: #d8b4fe;
-            transform: rotate(0deg);
-            transition: transform 4.6s cubic-bezier(.11, .82, .19, 1);
-            will-change: transform;
-        }
-
-        /*
-         * Líneas visuales entre segmentos. Los segmentos reales son
-         * generados dinámicamente por JavaScript según las preguntas
-         * pendientes.
-         */
-        .wheel::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: 3;
-            border-radius: 50%;
-            box-shadow:
-                inset 0 0 0 3px rgb(255 255 255 / .5),
-                inset 0 0 35px rgb(76 29 94 / .18);
-            pointer-events: none;
-        }
-
-        .wheel-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            z-index: 30;
-            width: 104px;
-            height: 104px;
-            transform: translate(-50%, -50%);
-            border: 8px solid #fff;
-            border-radius: 50%;
-            color: #fff;
-            background: linear-gradient(145deg, #7e22ce, #a21caf);
-            box-shadow:
-                0 9px 22px rgb(76 29 94 / .3),
-                0 0 0 6px rgb(126 34 206 / .17);
-            font-size: .9rem;
-            font-weight: 950;
-            letter-spacing: .08em;
-            cursor: pointer;
-            transition: transform .15s ease, filter .15s ease;
-        }
-
-        .wheel-center:hover:not(:disabled) {
-            transform: translate(-50%, -50%) scale(1.05);
-            filter: brightness(1.08);
-        }
-
-        .wheel-center:active:not(:disabled) {
-            transform: translate(-50%, -50%) scale(.98);
-        }
-
-        .wheel-center:disabled {
-            cursor: default;
-            opacity: .65;
-        }
-
-        .spin-hint {
-            min-height: 22px;
-            margin-top: 18px;
-            color: var(--muted);
-            font-size: .88rem;
-            font-weight: 650;
-            text-align: center;
-        }
-
-        .spin-hint.spinning {
-            color: var(--primary);
-        }
-
-        /* =========================================================
-           MODAL
-        ========================================================= */
-
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 18px;
-            background: rgb(27 13 31 / .68);
-            backdrop-filter: blur(7px);
-        }
-
-        .modal-backdrop.visible {
-            display: flex;
-            animation: backdrop-in .2s ease;
-        }
-
-        .question-modal {
-            width: min(700px, 100%);
-            max-height: min(760px, calc(100vh - 36px));
-            overflow: auto;
-            border: 1px solid rgb(255 255 255 / .45);
-            border-radius: 25px;
-            background: #fff;
-            box-shadow: 0 30px 90px rgb(0 0 0 / .28);
-            animation: modal-in .28s cubic-bezier(.2, .8, .2, 1);
-        }
-
-        .modal-top {
-            padding: 20px 22px 18px;
-            color: #fff;
-            background: linear-gradient(135deg, #6b177f, #9c27b0);
-        }
-
-        .modal-top-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-        }
-
-        .modal-label {
-            margin: 0;
-            font-size: .72rem;
-            font-weight: 850;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            opacity: .78;
-        }
-
-        .modal-points {
-            padding: 5px 9px;
-            border: 1px solid rgb(255 255 255 / .22);
-            border-radius: 999px;
-            background: rgb(255 255 255 / .12);
-            font-size: .76rem;
-            font-weight: 800;
-        }
-
-        .modal-body {
-            padding: 24px;
-        }
-
-        #question-text {
-            margin: 0 0 22px;
-            color: #35133e;
-            font-size: clamp(1.2rem, 3vw, 1.55rem);
-            font-weight: 850;
-            line-height: 1.35;
-        }
-
-        .options {
-            display: grid;
-            gap: 11px;
-        }
-
-        .option-btn {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 13px;
-            padding: 13px 14px;
-            border: 2px solid #e6dce9;
-            border-radius: 15px;
-            color: #342b38;
-            background: #fff;
-            text-align: left;
-            font-size: .98rem;
-            font-weight: 650;
-            cursor: pointer;
-            transition:
-                border-color .15s ease,
-                background .15s ease,
-                transform .12s ease,
-                box-shadow .15s ease;
-        }
-
-        .option-btn:hover:not(:disabled) {
-            border-color: #c084fc;
-            background: #fdfaff;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgb(76 29 94 / .08);
-        }
-
-        .option-key {
-            flex: 0 0 40px;
-            width: 40px;
-            height: 40px;
-            display: grid;
-            place-items: center;
-            border-radius: 11px;
-            color: #fff;
-            background: linear-gradient(145deg, #a21caf, #7e22ce);
-            font-weight: 950;
-        }
-
-        .option-text {
-            flex: 1;
-            line-height: 1.35;
-        }
-
-        .option-btn.correct {
-            border-color: var(--success-border);
-            background: var(--success-bg);
-            color: #166534;
-        }
-
-        .option-btn.correct .option-key {
-            background: var(--success);
-        }
-
-        .option-btn.wrong {
-            border-color: var(--danger-border);
-            background: var(--danger-bg);
-            color: #991b1b;
-        }
-
-        .option-btn.wrong .option-key {
-            background: var(--danger);
-        }
-
-        .option-btn:disabled {
-            cursor: default;
-        }
-
-        .answer-feedback {
-            display: none;
-            margin-top: 17px;
-            padding: 13px 15px;
-            border-radius: 13px;
-            font-size: .9rem;
-            font-weight: 800;
-            text-align: center;
-        }
-
-        .answer-feedback.visible {
-            display: block;
-            animation: feedback-in .2s ease;
-        }
-
-        .answer-feedback.ok {
-            color: #166534;
-            border: 1px solid #86efac;
-            background: var(--success-bg);
-        }
-
-        .answer-feedback.bad {
-            color: #991b1b;
-            border: 1px solid #fca5a5;
-            background: var(--danger-bg);
-        }
-
-        .modal-note {
-            margin: 16px 0 0;
-            color: var(--muted);
-            font-size: .76rem;
-            text-align: center;
-        }
-
-        /* =========================================================
-           COMPLETION
-        ========================================================= */
-
-        .finish {
-            display: none;
-            width: min(650px, 100%);
-            margin: 25px auto 0;
-            padding: 20px;
-            border: 1px solid #d8b4fe;
-            border-radius: 17px;
-            color: #6b21a8;
-            background: #f3e8ff;
-            font-weight: 800;
-            text-align: center;
-        }
-
-        .finish.visible {
-            display: block;
-            animation: feedback-in .25s ease;
-        }
-
-        .actions {
-            display: flex;
-            justify-content: center;
-            margin-top: 24px;
-        }
-
-        .abandon-btn {
-            border: 0;
-            border-radius: 11px;
-            padding: 9px 15px;
-            color: #6f6672;
-            background: #f0ebf2;
-            font-size: .83rem;
-            font-weight: 750;
-            cursor: pointer;
-            transition: background .15s ease;
-        }
-
-        .abandon-btn:hover {
-            background: #e5dce8;
-        }
-
-        /* =========================================================
-           ANIMATIONS
-        ========================================================= */
-
-        @keyframes backdrop-in {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes modal-in {
-            from {
-                opacity: 0;
-                transform: translateY(18px) scale(.97);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        @keyframes feedback-in {
-            from {
-                opacity: 0;
-                transform: scale(.98);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* =========================================================
-           RESPONSIVE
-        ========================================================= */
-
-        @media (max-width: 680px) {
-            body {
-                padding: 9px;
-            }
-
-            .header {
-                padding: 22px 18px;
-            }
-
-            .main {
-                padding: 23px 18px 24px;
-            }
-
-            .stats {
-                padding: 14px 18px;
-                gap: 8px;
-            }
-
-            .progress-area {
-                padding-left: 18px;
-                padding-right: 18px;
-            }
-
-            .header-row {
-                flex-direction: column;
-                gap: 14px;
-            }
-
-            .timer {
-                width: 100%;
-            }
-
-            .wheel-stage {
-                width: min(350px, 84vw);
-            }
-
-            .wheel-center {
-                width: 92px;
-                height: 92px;
-            }
-
-            .modal-body {
-                padding: 19px;
-            }
-        }
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+
+        /* === Internos del juego (JS modifica estas clases) === */
+        #timer-value.warning { color: #fde68a; }
+        #timer-value.danger { color: #fecaca; }
+
+        .progress-track { height: 9px; overflow: hidden; border-radius: 999px; background: #fce7f3; }
+        .progress-fill { width: 0%; height: 100%; border-radius: inherit; background: #be185d; transition: width .35s ease; }
+
+        .wheel-stage { position: relative; width: min(410px, 82vw); aspect-ratio: 1; display: grid; place-items: center; margin: 0 auto; }
+        .wheel-shadow { position: absolute; inset: 7%; border-radius: 50%; background: rgb(190 24 93 / .2); filter: blur(24px); transform: translateY(15px); }
+        .pointer { position: absolute; top: -2px; left: 50%; z-index: 20; width: 0; height: 0; transform: translateX(-50%); border-left: 19px solid transparent; border-right: 19px solid transparent; border-top: 33px solid #9d174d; filter: drop-shadow(0 5px 4px rgb(0 0 0 / .22)); }
+        .pointer::after { content: ""; position: absolute; left: -9px; top: -32px; width: 18px; height: 9px; border-radius: 999px; background: #fce7f3; }
+        .wheel-border { position: relative; z-index: 5; width: 100%; height: 100%; padding: 11px; border-radius: 50%; background: #be185d; box-shadow: 0 22px 42px rgb(190 24 93 / .25), inset 0 0 0 2px rgb(255 255 255 / .25); }
+        .wheel { position: relative; width: 100%; height: 100%; overflow: hidden; border: 5px solid #fff; border-radius: 50%; background: #fbcfe8; transform: rotate(0deg); transition: transform 4.6s cubic-bezier(.11, .82, .19, 1); will-change: transform; }
+        .wheel::after { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: 50%; box-shadow: inset 0 0 0 3px rgb(255 255 255 / .5), inset 0 0 35px rgb(157 23 77 / .18); pointer-events: none; }
+        .wheel-center { position: absolute; top: 50%; left: 50%; z-index: 30; width: 104px; height: 104px; transform: translate(-50%, -50%); border: 8px solid #fff; border-radius: 50%; color: #fff; background: #be185d; box-shadow: 0 9px 22px rgb(190 24 93 / .3), 0 0 0 6px rgb(190 24 93 / .17); font-size: .9rem; font-weight: 800; letter-spacing: .08em; cursor: pointer; transition: transform .15s ease, filter .15s ease; -webkit-tap-highlight-color: transparent; }
+        .wheel-center:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.05); filter: brightness(1.08); }
+        .wheel-center:active:not(:disabled) { transform: translate(-50%, -50%) scale(.98); }
+        .wheel-center:disabled { cursor: default; opacity: .65; }
+        button.wheel-center { border-radius: 50%; }
+        button.option-btn { border-radius: .9rem; }
+        .spin-hint { min-height: 22px; margin-top: 16px; color: #64748b; font-size: .88rem; font-weight: 600; text-align: center; }
+        .spin-hint.spinning { color: #be185d; }
+
+        .modal-backdrop { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 18px; background: rgb(80 7 36 / .68); }
+        .modal-backdrop.visible { display: flex; }
+        .question-modal { width: min(700px, 100%); max-height: min(760px, calc(100vh - 36px)); overflow: auto; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 90px rgb(0 0 0 / .28); }
+        .modal-top { padding: 18px 20px; color: #fff; background: #be185d; }
+        .modal-top-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+        .modal-label { margin: 0; font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .8; }
+        #modal-points { padding: 5px 10px; border: 1px solid rgb(255 255 255 / .25); border-radius: 999px; background: rgb(255 255 255 / .12); font-size: .76rem; font-weight: 700; }
+        .modal-body { padding: 22px; }
+        #question-text { margin: 0 0 20px; color: #1e293b; font-size: clamp(1.2rem, 3vw, 1.5rem); font-weight: 800; line-height: 1.35; }
+        .options { display: grid; gap: 11px; }
+        .option-btn { width: 100%; display: flex; align-items: center; gap: 13px; padding: 13px 14px; border: 2px solid #e2e8f0; border-radius: .9rem; color: #334155; background: #fff; text-align: left; font-size: .95rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+        .option-btn:hover:not(:disabled) { border-color: #f472b6; background: #fdf2f8; }
+        .option-btn:focus-visible { outline: 3px solid #be185d; outline-offset: 2px; }
+        .option-key { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: .7rem; color: #fff; background: #be185d; font-weight: 800; }
+        .option-text { flex: 1; line-height: 1.35; }
+        .option-btn.correct { border-color: #4ade80; background: #dcfce7; color: #166534; }
+        .option-btn.correct .option-key { background: #15803d; }
+        .option-btn.wrong { border-color: #f87171; background: #fee2e2; color: #991b1b; }
+        .option-btn.wrong .option-key { background: #b91c1c; }
+        .option-btn:disabled { cursor: default; }
+        .answer-feedback { display: none; margin-top: 16px; padding: 12px 14px; border-radius: .8rem; font-size: .9rem; font-weight: 700; text-align: center; }
+        .answer-feedback.visible { display: block; }
+        .answer-feedback.ok { color: #166534; border: 1px solid #86efac; background: #dcfce7; }
+        .answer-feedback.bad { color: #991b1b; border: 1px solid #fca5a5; background: #fee2e2; }
+        .modal-note { margin: 16px 0 0; color: #64748b; font-size: .76rem; text-align: center; }
+
+        .finish { display: none; margin-top: 1rem; padding: 14px 18px; border: 1px solid #a7f3d0; border-radius: .8rem; background: #ecfdf5; color: #065f46; font-weight: 700; text-align: center; }
+        .finish.visible { display: block; }
 
         @media (max-width: 460px) {
-            .stats {
-                grid-template-columns: 1fr;
-            }
+            .wheel-stage { width: min(300px, 84vw); }
+            .wheel-center { width: 84px; height: 84px; font-size: .78rem; }
+            .pointer { border-left-width: 16px; border-right-width: 16px; border-top-width: 28px; }
+            .option-btn { padding: 11px; }
+            .option-key { flex-basis: 36px; width: 36px; height: 36px; }
+        }
 
-            .wheel-stage {
-                width: min(300px, 84vw);
-            }
-
-            .wheel-center {
-                width: 80px;
-                height: 80px;
-                font-size: .75rem;
-            }
-
-            .pointer {
-                border-left-width: 16px;
-                border-right-width: 16px;
-                border-top-width: 28px;
-            }
-
-            .option-btn {
-                padding: 11px;
-            }
-
-            .option-key {
-                flex-basis: 36px;
-                width: 36px;
-                height: 36px;
-            }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
         }
     </style>
 </head>
 
-<body>
+<body class="student-kids">
 
-    <main class="page">
-        <section class="game">
+    <div class="mx-auto w-full max-w-3xl px-3 py-4 sm:px-5 sm:py-6">
 
-            <!-- =====================================================
-                 HEADER
-            ====================================================== -->
-            <header class="header">
-                <div class="header-row">
-                    <div>
-                        <p class="eyebrow">Actividad interactiva</p>
-                        <h1 class="title">Ruleta</h1>
-                        <p class="activity">{{ $activity->title }}</p>
+        {{-- Encabezado --}}
+        <header class="rounded-2xl bg-pink-700 p-4 text-white shadow-sm sm:p-6">
+
+            <div class="flex items-start justify-between gap-3">
+
+                <div class="flex min-w-0 items-start gap-3">
+
+                    <div class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 sm:flex">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
                     </div>
 
-                    <div class="timer">
-                        <span class="timer-label">Tiempo restante</span>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-pink-200 sm:text-xs">
+                            Actividad interactiva
+                        </p>
+                        <h1 class="mt-0.5 text-lg font-bold tracking-tight sm:mt-1 sm:text-2xl">
+                            Ruleta
+                        </h1>
+                        <p class="mt-0.5 break-words text-xs font-semibold text-pink-100 sm:text-sm">
+                            {{ $activity->title }}
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="shrink-0 rounded-xl bg-white/15 px-3 py-2 text-center ring-1 ring-white/25" aria-label="Tiempo restante">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-pink-100">
+                        Tiempo
+                    </span>
+                    <div class="font-mono text-lg font-bold tabular-nums text-white sm:text-xl">
                         <span id="timer-value">--:--</span>
                     </div>
                 </div>
-            </header>
 
-            <!-- =====================================================
-                 STATS
-            ====================================================== -->
-            <section class="stats">
-                <div class="stat">
-                    <span class="stat-label">Puntaje</span>
-                    <span class="stat-value">
-                        <span id="points">{{ $earnedPoints }}</span> / {{ $maxScore }}
-                    </span>
-                </div>
+            </div>
 
-                <div class="stat">
-                    <span class="stat-label">Respondidas</span>
-                    <span class="stat-value">
-                        <span id="answered-count">{{ $answeredCount }}</span> / {{ $totalItems }}
-                    </span>
-                </div>
+        </header>
 
-                <div class="stat">
-                    <span class="stat-label">Estado</span>
-                    <span id="game-status" class="stat-value">Listo</span>
-                </div>
-            </section>
+        {{-- Resumen --}}
+        <p class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3" aria-label="Resumen de la actividad">
 
-            <!-- =====================================================
-                 PROGRESS
-            ====================================================== -->
-            <section class="progress-area">
-                <div class="progress-head">
-                    <span>Progreso de la actividad</span>
-                    <span id="progress-percent">0%</span>
-                </div>
+            <span class="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-pink-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0-3.375-6.375m-7.125 0L6 18.75m4.875-9.75L9.75 2.25h4.5l-1.125 6.75h-2.25Z" />
+                </svg>
+                <span class="font-semibold text-slate-500">Puntos</span>
+                <span class="font-bold text-pink-700"><span id="points">{{ $earnedPoints }}</span> / {{ $maxScore }}</span>
+            </span>
 
-                <div class="progress-track">
-                    <div id="progress-fill" class="progress-fill"></div>
-                </div>
-            </section>
+            <span class="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                <span class="font-semibold text-slate-500">Respondidas</span>
+                <span class="font-bold text-emerald-700"><span id="answered-count">{{ $answeredCount }}</span> / {{ $totalItems }}</span>
+            </span>
 
-            <!-- =====================================================
-                 GAME
-            ====================================================== -->
-            <section class="main">
+            <span class="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                </svg>
+                <span class="font-semibold text-slate-500">Estado</span>
+                <span id="game-status" class="font-bold text-slate-700">Listo</span>
+            </span>
 
-                <div class="instructions">
-                    Gira la ruleta para descubrir una pregunta.
-                    Responde para retirar ese segmento y continuar con las preguntas restantes.
-                </div>
+        </p>
 
-                <div class="wheel-area">
-
-                    <div class="remaining-label">
-                        <strong id="remaining-count">{{ $totalItems - $answeredCount }}</strong>
-                        <span id="remaining-text">preguntas restantes</span>
-                    </div>
-
-                    <div class="wheel-stage">
-                        <div class="wheel-shadow"></div>
-
-                        <div class="pointer"></div>
-
-                        <div class="wheel-border">
-                            <div id="wheel" class="wheel"></div>
-                        </div>
-
-                        <button
-                            id="spin-btn"
-                            class="wheel-center"
-                            type="button"
-                        >
-                            GIRAR
-                        </button>
-                    </div>
-
-                    <div id="spin-hint" class="spin-hint">
-                        Pulsa GIRAR para comenzar
-                    </div>
-                </div>
-
-                <div id="finish" class="finish"></div>
-
-                <div class="actions">
-                    <form
-                        method="POST"
-                        action="{{ route('student.participation.abandon', $activity->id) }}"
-                        onsubmit="return confirm('¿Estás seguro de que quieres abandonar esta actividad?');"
-                    >
-                        @csrf
-
-                        <button type="submit" class="abandon-btn">
-                            Abandonar actividad
-                        </button>
-                    </form>
-                </div>
-            </section>
+        {{-- Progreso --}}
+        <section class="mt-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4" aria-label="Progreso de la actividad">
+            <div class="flex items-center justify-between gap-2 text-xs font-bold text-slate-600 sm:text-sm">
+                <span>Progreso de la actividad</span>
+                <span id="progress-percent" class="font-mono tabular-nums text-pink-700">0%</span>
+            </div>
+            <div class="progress-track mt-2">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
         </section>
-    </main>
+
+        {{-- Cómo jugar --}}
+        <p class="mt-3 flex items-start gap-2 rounded-xl bg-pink-50 px-3.5 py-2.5 text-sm text-pink-900 ring-1 ring-pink-100">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-pink-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 0 4.51-2.104m0 0A9.04 9.04 0 0 0 12 3a9.04 9.04 0 0 0-6.76 12.986M3.75 19.5a12.06 12.06 0 0 1 4.51-2.104m0 0a6.01 6.01 0 0 0 1.5-.189m0 0a6.01 6.01 0 0 1 1.5-.189" />
+            </svg>
+            <span><strong class="font-bold">Cómo jugar:</strong> pulsa GIRAR para descubrir una pregunta. Respóndela para retirar ese segmento de la ruleta y continuar con las restantes.</span>
+        </p>
+
+        {{-- Ruleta --}}
+        <section class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-label="Ruleta del juego">
+
+            <p class="text-center text-sm font-semibold text-slate-500">
+                <strong id="remaining-count" class="font-bold text-pink-700">{{ $totalItems - $answeredCount }}</strong>
+                <span id="remaining-text">preguntas restantes</span>
+            </p>
+
+            <div class="wheel-stage mt-4">
+                <div class="wheel-shadow"></div>
+
+                <div class="pointer"></div>
+
+                <div class="wheel-border">
+                    <div id="wheel" class="wheel"></div>
+                </div>
+
+                <button
+                    id="spin-btn"
+                    class="wheel-center"
+                    type="button"
+                >
+                    GIRAR
+                </button>
+            </div>
+
+            <div id="spin-hint" class="spin-hint">
+                Pulsa GIRAR para comenzar
+            </div>
+
+        </section>
+
+        {{-- Fin de la partida --}}
+        <div id="finish" class="finish" role="status" aria-live="polite"></div>
+
+        <div class="mt-4 flex justify-end border-t border-slate-200 pt-4">
+            <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+                onsubmit="return confirm('¿Seguro que quieres dejar el juego?');">
+                @csrf
+                <button type="submit"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H9" />
+                    </svg>
+                    Dejar el juego
+                </button>
+            </form>
+        </div>
+
+    </div>
 
     <!-- =========================================================
          QUESTION MODAL
@@ -886,7 +245,7 @@
                 <div class="modal-top-row">
                     <p class="modal-label">Pregunta de la ruleta</p>
 
-                    <span id="modal-points" class="modal-points">
+                    <span id="modal-points">
                         0 pts internos
                     </span>
                 </div>
@@ -907,10 +266,7 @@
         </article>
     </div>
 
-    <!-- =========================================================
-         EXPIRE
-    ========================================================== -->
-
+    {{-- Expiración --}}
     <form
         id="expire-form"
         method="POST"
