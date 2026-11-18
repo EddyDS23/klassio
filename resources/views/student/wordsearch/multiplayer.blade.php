@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sopa de Letras — Multijugador</title>
+
     @if ((bool) config('broadcasting.connections.reverb.enabled', false))
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
@@ -20,166 +21,229 @@
             });
         </script>
     @endif
+
+    @include('partials.assets', ['theme' => 'student', 'includeBootstrap' => false])
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        :root {
-            --ws-ink: #183b3a;
-            --ws-muted: #587371;
-            --ws-line: #d7e8e4;
-            --ws-surface: #fff;
-            --ws-soft: #f3faf7;
-            --ws-deep: #075e58;
-            --ws-lime: #c6f36a;
-            --ws-cell-size: clamp(1.8rem, 3vw, 2.25rem);
-        }
-        * { box-sizing: border-box; }
-        a { text-decoration: none; }
-        body { min-height: 100vh; margin: 0; padding: 22px 16px; color: var(--ws-ink); background: radial-gradient(circle at 8% 0%, #d9f3e8 0, transparent 31%), #eff6f2; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        body.student-kids { font-size: 17px; }
-        .wrap { width: min(1240px, 100%); margin: 0 auto; }
-        .card { overflow: hidden; padding: 0; border: 1px solid var(--ws-line); border-radius: 26px; background: var(--ws-surface); box-shadow: 0 24px 64px rgb(23 69 60 / .12); }
-        .game-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 28px; color: #fff; background: radial-gradient(circle at 82% 0%, rgb(198 243 106 / .2), transparent 25%), linear-gradient(120deg, #123c3a, #087f75 74%, #109789); }
-        .eyebrow { margin: 0 0 5px; color: rgb(255 255 255 / .72); font-size: .72rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
-        h1 { margin: 0; color: #fff; font-size: clamp(1.65rem, 4vw, 2.2rem); line-height: 1.08; letter-spacing: -.025em; }
-        .activity-title { margin: 6px 0 0; color: rgb(255 255 255 / .82); font-size: .95rem; }
-        .timer { flex: 0 0 auto; min-width: 140px; padding: 10px 15px; border: 1px solid rgb(255 255 255 / .25); border-radius: 15px; background: rgb(255 255 255 / .12); text-align: center; backdrop-filter: blur(8px); }
-        .timer-label { display: block; color: rgb(255 255 255 / .72); font-size: .68rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-        #timer { color: #fff; font-weight: 900; }
-        #timer-value { display: block; margin-top: 2px; color: var(--ws-lime); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
-        .game-content { padding: 20px 24px 22px; }
-        .race-banner { margin: 0 0 14px; padding: 12px 15px; border: 1px solid #c9e8d9; border-radius: 15px; background: #effbf5; color: #20584d; }
-        .race-banner-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-size: .9rem; font-weight: 800; }
-        .race-count { flex: none; padding: 4px 9px; border-radius: 999px; background: #dcefe3; color: #326d45; font-size: .76rem; }
-        .race-standings { display: flex; flex-wrap: wrap; gap: .45rem; max-height: 88px; margin-top: .55rem; overflow-y: auto; padding: 2px 3px 5px 0; scrollbar-gutter: stable; }
-        .race-chip { max-width: 100%; padding: .25rem .65rem; border: 1px solid #d7e8e4; border-radius: 999px; background: #fff; color: #45635d; font-size: .78rem; font-weight: 700; overflow-wrap: anywhere; }
-        .race-chip.me { border-color: #70b89d; background: #dff5e9; color: #075e58; }
-        .scoreline { display: flex; flex-wrap: wrap; gap: 9px; margin: 0; color: var(--ws-muted); }
-        .scoreline > span { display: inline-flex; align-items: baseline; gap: 6px; padding: 8px 12px; border: 1px solid var(--ws-line); border-radius: 12px; background: var(--ws-soft); }
-        .scoreline strong { color: var(--ws-deep); font-weight: 900; }
-        .how-to { display: flex; align-items: center; gap: 10px; margin: 12px 0 16px; padding: 10px 13px; border: 1px solid #bfe8d8; border-radius: 13px; background: #effbf5; color: #20584d; font-size: .95rem; }
-        .how-to strong { flex: 0 0 auto; color: var(--ws-deep); }
-        .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 310px); align-items: stretch; gap: 16px; }
-        .board-panel, .hints { min-width: 0; border: 1px solid var(--ws-line); border-radius: 19px; background: var(--ws-soft); }
-        .board-panel { padding: 16px; }
-        .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-        .section-heading h2, .hints-heading h2 { margin: 0; color: var(--ws-ink); font-size: 1.05rem; font-weight: 850; }
-        .section-heading p { margin: 3px 0 0; color: var(--ws-muted); font-size: .82rem; }
-        .mobile-scroll-hint { display: none; }
-        .board-badge { flex: 0 0 auto; padding: 5px 9px; border-radius: 999px; background: #e5f4e7; color: #326d45; font-size: .72rem; font-weight: 800; }
-        .grid-scroll { max-width: 100%; overflow: auto; padding: 4px 2px 8px; overscroll-behavior-inline: contain; scrollbar-color: #8ab6a4 #e6f0ec; scrollbar-width: thin; }
-        .grid-scroll:focus-visible { outline: 3px solid #d97706; outline-offset: 2px; }
-        .grid { display: grid; width: max-content; gap: 3px; margin: 0 auto; padding: 7px; border: 1px solid #c8ded7; border-radius: 15px; background: #dcebe5; user-select: none; }
-        .cell { display: flex; width: var(--ws-cell-size); height: var(--ws-cell-size); align-items: center; justify-content: center; border: 1px solid #e1ece8; border-radius: 7px; background: #fff; color: #254e49; font-size: .9rem; font-weight: 850; cursor: pointer; touch-action: none; transition: background-color .12s, color .12s, transform .12s, box-shadow .12s; }
-        .cell:focus-visible { outline: 3px solid #f59e0b; outline-offset: 1px; }
-        .cell.selected { z-index: 1; transform: scale(1.04); background: #087f75; color: #fff; box-shadow: inset 0 0 0 2px #a7f3d0; }
-        .cell.found { border-color: #4d9c61; background: #32854a; color: #fff; cursor: default; }
-        .cell.wrong { background: #c74747; color: #fff; }
-        .hints { display: flex; flex-direction: column; align-self: start; padding: 16px; background: #fff; }
-        .hints-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 11px; border-bottom: 1px solid var(--ws-line); }
-        .hints-heading strong { flex: 0 0 auto; padding: 4px 8px; border-radius: 999px; background: #e9f6ed; color: #367046; font-size: .72rem; }
-        .hints-list { display: grid; align-content: start; gap: 7px; max-height: min(58vh, 500px); overflow-y: auto; padding: 11px 2px 2px 0; }
-        .hints-empty { margin: 0; padding: 12px 10px; border: 1px dashed #bad1c8; border-radius: 11px; color: var(--ws-muted); font-size: .86rem; }
-        .hint { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 42px; padding: 8px 10px; border: 1px solid #e1ece8; border-radius: 11px; background: #f8fbf9; color: #294a45; font-size: .9rem; }
-        .hint span:first-child { overflow-wrap: anywhere; font-weight: 750; }
-        .hint span:last-child { flex: 0 0 auto; color: var(--ws-muted); font-size: .76rem; font-weight: 800; }
-        .hint.found { border-color: #b7dfbe; background: #edf8ef; color: #27723d; }
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+
+        /* === Internos del juego (JS modifica estas clases) === */
+        :root { --ws-cell-size: clamp(1.8rem, 3vw, 2.25rem); }
+
+        .ws-grid { display: grid; width: max-content; gap: 3px; margin: 0 auto; padding: 7px; border: 1px solid #fed7aa; border-radius: 15px; background: #ffedd5; user-select: none; }
+        .cell { display: flex; width: var(--ws-cell-size); height: var(--ws-cell-size); align-items: center; justify-content: center; border: 1px solid #ffedd5; border-radius: 7px; background: #fff; color: #431407; font-size: .9rem; font-weight: 800; cursor: pointer; touch-action: none; transition: background-color .12s, color .12s, transform .12s, box-shadow .12s; }
+        .cell:focus-visible { outline: 3px solid #ea580c; outline-offset: 1px; }
+        .cell.selected { z-index: 1; transform: scale(1.04); background: #ea580c; color: #fff; box-shadow: inset 0 0 0 2px #fdba74; }
+        .cell.found { border-color: #a7f3d0; background: #059669; color: #fff; cursor: default; }
+        .cell.wrong { background: #dc2626; color: #fff; }
+
+        .hint.found { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
         .hint.found span:first-child { text-decoration: line-through; }
-        .result { display: none; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; font-weight: 700; }
-        .result.ok { display: block; border: 1px solid #b7dfbe; background: #edf8ef; color: #256c39; }
-        .result.bad { display: block; border: 1px solid #f1c6c2; background: #fff1ef; color: #9e3029; }
-        .finish { display: none; margin-top: 14px; padding: 12px 14px; border: 1px solid #b7dfbe; border-radius: 13px; background: #edf8ef; color: #256c39; font-weight: 850; text-align: center; }
-        .game-footer { display: flex; justify-content: flex-end; margin-top: 14px; }
-        .game-footer button[type="submit"] { min-height: 42px; padding: 8px 14px; border: 1px solid #d8e2df; border-radius: 11px; background: #fff; color: #4d625e; font: inherit; font-size: .86rem; font-weight: 750; cursor: pointer; }
-        .game-footer button[type="submit"]:hover { border-color: #aabfba; background: #f6faf8; }
-        .game-footer button[type="submit"]:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
-        @media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr) minmax(220px, 270px); gap: 12px; } .game-content { padding: 17px; } .board-panel, .hints { padding: 13px; } }
-        @media (max-width: 680px) { body { padding: 10px; } .card { border-radius: 20px; } .game-header { align-items: flex-start; padding: 17px 16px; gap: 12px; } .timer { min-width: 104px; padding: 8px 10px; } #timer-value { font-size: 1.12rem; } .game-content { padding: 13px; } .layout { grid-template-columns: minmax(0, 1fr); } .board-panel { padding: 12px 9px; } .grid-scroll { margin: 0 -3px; padding: 4px 12px 12px; touch-action: pan-x; } .grid { margin-inline: auto; } .mobile-scroll-hint { display: block; margin-top: 2px; color: var(--ws-muted); font-size: .72rem; } .hints-list { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 34vh; } }
-        @media (max-width: 420px) { body.student-kids { font-size: 16px; } .game-header { gap: 8px; } .timer { min-width: 92px; } .eyebrow { font-size: .62rem; } .activity-title { max-width: 200px; font-size: .82rem; overflow-wrap: anywhere; } .scoreline { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .scoreline > span { min-width: 0; justify-content: center; padding: 7px 8px; font-size: .84rem; } .scoreline > span:first-child { grid-column: 1 / -1; } .how-to { align-items: flex-start; font-size: .86rem; } .hints-list { grid-template-columns: minmax(0, 1fr); } .hint { min-height: 40px; } }
-        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+
+        .result { display: none; }
+        .result.ok { display: block; margin-top: .75rem; padding: .65rem .9rem; border: 1px solid #a7f3d0; border-radius: .75rem; background: #ecfdf5; color: #065f46; font-size: .875rem; font-weight: 700; }
+        .result.bad { display: block; margin-top: .75rem; padding: .65rem .9rem; border: 1px solid #fecaca; border-radius: .75rem; background: #fef2f2; color: #991b1b; font-size: .875rem; font-weight: 700; }
+
+        .race-chip { max-width: 100%; padding: .25rem .65rem; border: 1px solid #e2e8f0; border-radius: 999px; background: #f8fafc; color: #475569; font-size: .78rem; font-weight: 700; overflow-wrap: anywhere; }
+        .race-chip.me { border-color: #fdba74; background: #ffedd5; color: #9a3412; }
+
+        .grid-scroll { max-width: 100%; overflow: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+        .grid-scroll:focus-visible { outline: 3px solid #ea580c; outline-offset: 2px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
     </style>
 </head>
 
 <body class="student-kids">
-    <div class="wrap">
-        <div class="card">
-            <header class="game-header">
-                <div>
-                    <p class="eyebrow">Actividad multijugador</p>
-                    <h1>🔎 Sopa de letras</h1>
-                    <p class="activity-title">{{ $wordsearch->activity->title }}</p>
-                </div>
-                <div class="timer" aria-label="Tiempo restante">
-                    <span class="timer-label">Tiempo restante</span>
-                    <div id="timer"><span id="timer-value">--:--</span></div>
-                </div>
-            </header>
 
-            <div class="game-content">
-                <div class="race-banner">
-                    <div class="race-banner-heading">
-                        <span>🏁 Sala {{ $session->code }} · {{ $activity->mode === 'team' ? 'Carrera por equipos' : 'Carrera individual' }}</span>
-                        <span class="race-count"><strong id="race-count">—</strong> participantes</span>
+    <div class="mx-auto w-full max-w-5xl px-3 py-4 sm:px-5 sm:py-6">
+
+        {{-- Encabezado --}}
+        <header class="rounded-2xl bg-orange-700 p-4 text-white shadow-sm sm:p-6">
+
+            <div class="flex items-start justify-between gap-3">
+
+                <div class="flex min-w-0 items-start gap-3">
+
+                    <div class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 sm:flex">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
                     </div>
-                    <div id="race-standings" class="race-standings" role="list" aria-label="Clasificación en vivo; desplazable" tabindex="0"></div>
+
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-orange-200 sm:text-xs">
+                            Actividad multijugador
+                        </p>
+                        <h1 class="mt-0.5 text-lg font-bold tracking-tight sm:mt-1 sm:text-2xl">
+                            Sopa de letras
+                        </h1>
+                        <p class="mt-0.5 truncate text-xs font-semibold text-orange-100 sm:text-sm">
+                            {{ $wordsearch->activity->title }}
+                        </p>
+                    </div>
+
                 </div>
 
-                <p class="scoreline" aria-label="Resumen de la actividad">
-                    <span>Puntos <strong><span id="points">{{ $earnedPoints }}</span> / {{ $maxScore }}</strong></span>
-                    <span>Encontradas <strong><span id="words-count">{{ $foundCount }}</span> / {{ $words->count() }}</strong></span>
-                </p>
-                <p class="how-to"><strong>Cómo jugar</strong><span>Toca o haz clic en la primera letra y arrastra hasta la última.</span></p>
-                <div id="result" class="result" role="status" aria-live="polite"></div>
-
-                <div class="layout">
-                    <section class="board-panel" aria-label="Tablero de sopa de letras">
-                        <div class="section-heading">
-                            <div>
-                                <h2>Encuentra las palabras</h2>
-                                <p>Selecciona letras en línea recta.</p>
-                                <span class="mobile-scroll-hint">Desliza el tablero para ver todas las letras.</span>
-                            </div>
-                            <span class="board-badge">{{ $wordsearch->rows }} × {{ $wordsearch->columns }}</span>
-                        </div>
-                        <div class="grid-scroll" role="region" aria-label="Tablero; desplaza para ver las letras que no caben" tabindex="0">
-                            <div class="grid" id="grid"
-                                style="grid-template-columns: repeat({{ $wordsearch->columns }}, var(--ws-cell-size));">
-                                @foreach ($grid as $row => $rowCells)
-                                    @foreach ($rowCells as $column => $letter)
-                                        <div class="cell" data-row="{{ $row }}" data-column="{{ $column }}"
-                                            id="cell-{{ $row }}-{{ $column }}">{{ $letter }}</div>
-                                    @endforeach
-                                @endforeach
-                            </div>
-                        </div>
-                    </section>
-
-                    <aside class="hints" aria-label="Palabras por encontrar">
-                        <div class="hints-heading">
-                            <h2>Palabras</h2>
-                            <strong>{{ $words->count() }} en total</strong>
-                        </div>
-                        <div class="hints-list">
-                            @forelse ($words as $word)
-                                <div class="hint {{ in_array($word->id, $foundIds) ? 'found' : '' }}" data-word-id="{{ $word->id }}">
-                                    <span>{{ $word->word }}</span>
-                                    <span>{{ $word->score }} pts</span>
-                                </div>
-                            @empty
-                                <p class="hints-empty">Aún no hay palabras disponibles para esta actividad.</p>
-                            @endforelse
-                        </div>
-                    </aside>
+                <div class="shrink-0 rounded-xl bg-white/15 px-3 py-2 text-center ring-1 ring-white/25" aria-label="Tiempo restante">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-orange-100">
+                        Tiempo
+                    </span>
+                    <div id="timer" class="font-mono text-lg font-bold tabular-nums text-white sm:text-xl">
+                        <span id="timer-value">--:--</span>
+                    </div>
                 </div>
 
-                <div id="finish" class="finish" role="status" aria-live="polite">¡Lo lograste! 🎉</div>
-                <div class="game-footer">
-                    <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}"
-                        onsubmit="return confirm('¿Estás seguro de que quieres salir de esta sala?');">
-                        @csrf
-                        <button type="submit">Salir de la sala</button>
-                    </form>
-                </div>
             </div>
+
+        </header>
+
+        {{-- Carrera --}}
+        <section class="mt-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4" aria-label="Estado de la partida">
+
+            <div class="flex flex-wrap items-center justify-between gap-2">
+
+                <span class="inline-flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <svg class="h-4.5 w-4.5 shrink-0 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0-3.375-6.375m-7.125 0L6 18.75m4.875-9.75L9.75 2.25h4.5l-1.125 6.75h-2.25Z" />
+                    </svg>
+                    Sala
+                    <span class="rounded-full bg-orange-700 px-2.5 py-1 font-mono text-xs font-bold tracking-[0.15em] text-white">
+                        {{ $session->code }}
+                    </span>
+                    <span class="font-semibold text-slate-500">{{ $activity->mode === 'team' ? 'Carrera por equipos' : 'Carrera individual' }}</span>
+                </span>
+
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                    <strong id="race-count">—</strong> participantes
+                </span>
+
+            </div>
+
+            <div id="race-standings" class="mt-3 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto" role="list" aria-label="Clasificación en vivo; desplazable" tabindex="0"></div>
+
+        </section>
+
+        {{-- Resumen --}}
+        <p class="mt-3 flex gap-2 sm:gap-3" aria-label="Resumen de la actividad">
+
+            <span class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0-3.375-6.375m-7.125 0L6 18.75m4.875-9.75L9.75 2.25h4.5l-1.125 6.75h-2.25Z" />
+                </svg>
+                <span class="font-semibold text-slate-500">Puntos</span>
+                <span class="font-bold text-orange-700"><span id="points">{{ $earnedPoints }}</span> / {{ $maxScore }}</span>
+            </span>
+
+            <span class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                <span class="font-semibold text-slate-500">Encontradas</span>
+                <span class="font-bold text-emerald-700"><span id="words-count">{{ $foundCount }}</span> / {{ $words->count() }}</span>
+            </span>
+
+        </p>
+
+        {{-- Cómo jugar --}}
+        <p class="mt-3 flex items-start gap-2 rounded-xl bg-orange-50 px-3.5 py-2.5 text-sm text-orange-900 ring-1 ring-orange-100">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 0 4.51-2.104m0 0A9.04 9.04 0 0 0 12 3a9.04 9.04 0 0 0-6.76 12.986M3.75 19.5a12.06 12.06 0 0 1 4.51-2.104m0 0a6.01 6.01 0 0 0 1.5-.189m0 0a6.01 6.01 0 0 1 1.5-.189" />
+            </svg>
+            <span><strong class="font-bold">Cómo jugar:</strong> toca o haz clic en la primera letra y arrastra hasta la última.</span>
+        </p>
+
+        {{-- Resultado de la selección --}}
+        <div id="result" class="result" role="status" aria-live="polite"></div>
+
+        {{-- Tablero + palabras --}}
+        <div class="mt-3 grid grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+
+            <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4" aria-label="Tablero de sopa de letras">
+
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <h2 class="text-base font-bold text-slate-900 sm:text-lg">
+                            Encuentra las palabras
+                        </h2>
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Selecciona letras en línea recta.
+                            <span class="lg:hidden">Desliza el tablero para ver todas las letras.</span>
+                        </p>
+                    </div>
+                    <span class="shrink-0 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-700">
+                        {{ $wordsearch->rows }} × {{ $wordsearch->columns }}
+                    </span>
+                </div>
+
+                <div class="grid-scroll mt-3 rounded-xl" role="region" aria-label="Tablero; desplaza para ver las letras que no caben" tabindex="0">
+                    <div class="ws-grid" id="grid"
+                        style="grid-template-columns: repeat({{ $wordsearch->columns }}, var(--ws-cell-size));">
+                        @foreach ($grid as $row => $rowCells)
+                            @foreach ($rowCells as $column => $letter)
+                                <div class="cell" data-row="{{ $row }}" data-column="{{ $column }}"
+                                    id="cell-{{ $row }}-{{ $column }}">{{ $letter }}</div>
+                            @endforeach
+                        @endforeach
+                    </div>
+                </div>
+
+            </section>
+
+            <aside class="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4" aria-label="Palabras por encontrar">
+
+                <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                    <h2 class="text-base font-bold text-slate-900 sm:text-lg">
+                        Palabras
+                    </h2>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                        {{ $words->count() }} en total
+                    </span>
+                </div>
+
+                <div class="mt-3 grid max-h-[38vh] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:max-h-[52vh] lg:grid-cols-1">
+                    @forelse ($words as $word)
+                        <div class="hint flex min-h-10 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 {{ in_array($word->id, $foundIds) ? 'found' : '' }}"
+                            data-word-id="{{ $word->id }}">
+                            <span class="break-words">{{ $word->word }}</span>
+                            <span class="shrink-0 text-xs font-bold text-slate-400">{{ $word->score }} pts</span>
+                        </div>
+                    @empty
+                        <p class="col-span-full rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">
+                            Aún no hay palabras disponibles para esta actividad.
+                        </p>
+                    @endforelse
+                </div>
+
+            </aside>
+
         </div>
+
+        {{-- Fin de la partida --}}
+        <div id="finish" class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center font-bold text-emerald-800" role="status" aria-live="polite" style="display: none;">
+            ¡Lo lograste!
+        </div>
+
+        <div class="mt-4 flex justify-end border-t border-slate-200 pt-4">
+            <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}"
+                onsubmit="return confirm('¿Estás seguro de que quieres salir de esta sala?');">
+                @csrf
+                <button type="submit"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H9" />
+                    </svg>
+                    Salir de la sala
+                </button>
+            </form>
+        </div>
+
     </div>
 
     <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
