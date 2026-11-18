@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $activity->title }}</title>
-    @include('partials.assets', ['theme' => 'student'])
+
     @if ((bool) config('broadcasting.connections.reverb.enabled', false))
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
@@ -21,192 +22,227 @@
             });
         </script>
     @endif
+
+    @include('partials.assets', ['theme' => 'student', 'includeBootstrap' => false])
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        :root {
-            --cw-ink: #183b3a;
-            --cw-muted: #587371;
-            --cw-line: #d7e8e4;
-            --cw-surface: #fff;
-            --cw-soft: #f3faf7;
-            --cw-deep: #075e58;
-            --cw-lime: #c6f36a;
-        }
-        * { box-sizing: border-box; }
-        body.student-kids {
-            min-height: 100vh;
-            width: min(1240px, 100%);
-            margin: 0 auto;
-            padding: 22px 16px;
-            color: var(--cw-ink);
-            background: radial-gradient(circle at 8% 0%, #d9f3e8 0, transparent 31%), #eff6f2;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            font-size: 17px;
-        }
-        .crossword-card { overflow: hidden; border: 1px solid var(--cw-line); border-radius: 26px; background: var(--cw-surface); box-shadow: 0 24px 64px rgb(23 69 60 / .12); }
-        .game-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 28px; color: #fff; background: radial-gradient(circle at 82% 0%, rgb(198 243 106 / .2), transparent 25%), linear-gradient(120deg, #123c3a, #087f75 74%, #109789); }
-        .eyebrow { margin: 0 0 5px; color: rgb(255 255 255 / .72); font-size: .72rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
-        .game-header h1 { margin: 0; color: #fff; font-size: clamp(1.65rem, 4vw, 2.2rem); line-height: 1.08; letter-spacing: -.025em; }
-        .game-subtitle { margin: 7px 0 0; color: rgb(255 255 255 / .84); font-size: .95rem; }
-        #timer { flex: 0 0 auto; min-width: 145px; padding: 10px 15px; border: 1px solid rgb(255 255 255 / .25); border-radius: 15px; background: rgb(255 255 255 / .12); text-align: center; backdrop-filter: blur(8px); }
-        .timer-label { display: block; color: rgb(255 255 255 / .72); font-size: .68rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-        #timer-value { display: block; margin-top: 2px; color: var(--cw-lime); font-size: 1.35rem; font-weight: 900; font-variant-numeric: tabular-nums; }
-        .game-content { padding: 20px 24px 22px; }
-        .game-summary { display: flex; flex-wrap: wrap; gap: 9px; margin: 0; }
-        .game-summary span { display: inline-flex; align-items: baseline; gap: 7px; padding: 8px 12px; border: 1px solid var(--cw-line); border-radius: 12px; background: var(--cw-soft); color: var(--cw-muted); }
-        #score-display { color: var(--cw-deep); font-weight: 900; }
-        .how-to { display: flex; align-items: center; gap: 10px; margin: 12px 0 16px; padding: 10px 13px; border: 1px solid #bfe8d8; border-radius: 13px; background: #effbf5; color: #20584d; font-size: .95rem; }
-        .how-to strong { flex: 0 0 auto; color: var(--cw-deep); }
-        .play-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .85fr); align-items: start; gap: 16px; }
-        .panel { min-width: 0; padding: 17px; border: 1px solid var(--cw-line); border-radius: 19px; background: #fff; }
-        .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-        .panel-heading h2, .clue-panel h2 { margin: 0; color: var(--cw-ink); font-size: 1.05rem; font-weight: 850; }
-        .panel-heading p { margin: 3px 0 0; color: var(--cw-muted); font-size: .82rem; }
-        .board-scroll { max-width: 100%; overflow: auto; padding: 3px 2px 10px; overscroll-behavior-inline: contain; scrollbar-color: #8ab6a4 #e6f0ec; scrollbar-width: thin; }
-        .board-scroll:focus-visible { outline: 3px solid #d97706; outline-offset: 2px; }
-        #crossword-grid { justify-content: start; min-width: max-content; width: max-content !important; max-width: none !important; padding: 12px; border: 1px solid #335b56; border-radius: 15px; background: #173c39; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .08); }
-        #crossword-grid > div { flex: none; border-radius: 4px; }
-        #crossword-grid input { border: 2px solid #cfdfda !important; border-radius: 6px !important; color: #183b3a !important; background: #fff !important; outline: none; font-weight: 850; transition: transform .12s, border-color .12s, box-shadow .12s; }
-        #crossword-grid input:focus { z-index: 2; border-color: #07877b !important; box-shadow: 0 0 0 3px rgb(20 184 166 / .28); transform: scale(1.08); }
-        #crossword-grid input.correct { border-color: #4d9c61 !important; background: #dff3e2 !important; color: #256c39 !important; }
-        #crossword-grid input.incorrect { border-color: #c74747 !important; background: #fde9e6 !important; color: #8f302c !important; }
-        .clue-panel { display: grid; gap: 16px; }
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+
+        /* === Internos del tablero (JS modifica estas clases) === */
+        .play-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: .75rem; }
+
+        .clue-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; }
         .clue-group { min-width: 0; }
-        .clue-group h2 { display: flex; align-items: center; gap: 8px; padding-bottom: 9px; border-bottom: 1px solid var(--cw-line); }
-        .clue-group h2 span { color: var(--cw-muted); font-size: .76rem; font-weight: 700; }
-        #clues-horizontal, #clues-vertical { display: grid; gap: 7px; max-height: 280px; overflow-y: auto; margin: 10px 0 0; padding: 0 3px 0 0; list-style: none; }
-        #clues-horizontal li, #clues-vertical li { margin: 0; padding: 9px 11px; border: 1px solid #e1ece8; border-radius: 11px; background: #f8fbf9; color: #294a45; font-size: .9rem; line-height: 1.4; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
-        #clues-horizontal li:hover, #clues-vertical li:hover { border-color: #9bd2c0; background: #effbf5; }
-        #clues-horizontal li.active, #clues-vertical li.active { border-color: #14a394; background: #e2f6ef; color: #075e58; font-weight: 800; }
-        .results-panel { margin-top: 16px; }
-        #results { display: grid; gap: 7px; max-height: 220px; overflow-y: auto; margin-top: 11px; }
-        #results p { margin: 0; padding: 10px 12px; border: 1px solid #dbe9e3; border-radius: 11px; background: #f3faf7; color: #31534d; font-size: .9rem; font-weight: 650; line-height: 1.45; }
-        .game-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; }
-        .game-actions form { margin: 0 !important; text-align: left !important; }
-        .game-actions button { min-height: 42px; padding: 8px 14px; border: 1px solid #e9c7c6; border-radius: 11px; background: #fff6f4; color: #9b3a35; font: inherit; font-size: .86rem; font-weight: 750; cursor: pointer; transition: background .15s, border-color .15s; }
-        .game-actions button:hover { border-color: #d89b97; background: #ffede9; }
-        .game-actions button:focus-visible, .game-actions a:focus-visible, #crossword-grid input:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
-        .game-actions nav a { display: inline-flex; align-items: center; min-height: 42px; padding: 8px 12px; border-radius: 11px; color: var(--cw-deep); font-weight: 750; text-decoration: none; }
-        .game-actions nav a:hover { background: #eff8f4; }
-        #crossword-grid.empty-board { display: block; width: auto !important; min-width: 0 !important; max-width: 100% !important; padding: 18px !important; color: #fff; font-weight: 700; }
-        @media (max-width: 820px) {
-            .play-layout { grid-template-columns: minmax(0, 1fr); }
-            .clue-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-            #clues-horizontal, #clues-vertical { max-height: 220px; }
+        .clue-group h2 { display: flex; align-items: center; gap: .5rem; padding-bottom: .55rem; border-bottom: 1px solid #e2e8f0; }
+
+        #clues-horizontal, #clues-vertical { display: grid; gap: 7px; max-height: 240px; overflow-y: auto; margin: .6rem 0 0; padding: 0 3px 0 0; list-style: none; }
+        #clues-horizontal li, #clues-vertical li { margin: 0; padding: 9px 11px; border: 1px solid #e2e8f0; border-radius: .7rem; background: #f8fafc; color: #334155; font-size: .9rem; font-weight: 600; line-height: 1.4; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+        #clues-horizontal li:hover, #clues-vertical li:hover { border-color: #fcd34d; background: #fffbeb; }
+        #clues-horizontal li.active, #clues-vertical li.active { border-color: #d97706; background: #fffbeb; color: #78350f; font-weight: 800; }
+
+        .board-scroll { max-width: 100%; overflow: auto; padding: 3px 2px 10px; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+        .board-scroll:focus-visible { outline: 3px solid #d97706; outline-offset: 2px; }
+
+        #crossword-grid { justify-content: start; min-width: max-content; width: max-content !important; max-width: none !important; padding: 10px; border: 1px solid #fcd34d; border-radius: 12px; background: #fffbeb; }
+        #crossword-grid > div { flex: none; border-radius: 4px; }
+        #crossword-grid span { color: #92400e; font-weight: 800; }
+        #crossword-grid input { border: 2px solid #e2e8f0 !important; border-radius: 6px !important; color: #1e293b !important; background: #fff !important; outline: none; font-weight: 800; transition: transform .12s, border-color .12s, box-shadow .12s; }
+        #crossword-grid input:focus { z-index: 2; border-color: #d97706 !important; box-shadow: 0 0 0 3px rgb(217 119 6 / .25); transform: scale(1.08); }
+        #crossword-grid input.correct { border-color: #059669 !important; background: #ecfdf5 !important; color: #065f46 !important; }
+        #crossword-grid input.incorrect { border-color: #dc2626 !important; background: #fef2f2 !important; color: #991b1b !important; }
+        #crossword-grid.empty-board { display: block; width: auto !important; min-width: 0 !important; max-width: 100% !important; padding: 18px !important; color: #78350f; font-weight: 700; }
+
+        #results { display: grid; gap: 7px; max-height: 220px; overflow-y: auto; }
+        #results p { margin: 0; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: .7rem; background: #f8fafc; color: #334155; font-size: .9rem; font-weight: 600; line-height: 1.45; }
+
+        .race-chip { max-width: 100%; padding: .25rem .65rem; border: 1px solid #e2e8f0; border-radius: 999px; background: #f8fafc; color: #475569; font-size: .78rem; font-weight: 700; overflow-wrap: anywhere; }
+        .race-chip.me { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
+
+        @media (min-width: 640px) {
+            .clue-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
-        @media (max-width: 600px) {
-            body.student-kids { padding: 10px; font-size: 16px; }
-            .crossword-card { border-radius: 20px; }
-            .game-header { align-items: flex-start; gap: 10px; padding: 17px 15px; }
-            .game-header h1 { font-size: clamp(1.3rem, 6vw, 1.8rem); overflow-wrap: anywhere; }
-            .game-subtitle { max-width: 220px; font-size: .84rem; }
-            #timer { min-width: 102px; padding: 8px 9px; }
-            #timer-value { font-size: 1.12rem; }
-            .game-content { padding: 13px; }
-            .game-summary { display: block; }
-            .game-summary span { padding: 7px 10px; font-size: .88rem; }
-            .panel { padding: 12px; }
-            #crossword-grid { padding: 9px; }
-            .clue-panel { grid-template-columns: minmax(0, 1fr); gap: 13px; }
-            #clues-horizontal, #clues-vertical { max-height: 190px; }
-            .how-to { align-items: flex-start; font-size: .86rem; }
-            .game-actions { align-items: stretch; flex-direction: column; }
-            .game-actions nav a { justify-content: center; width: 100%; }
-            .game-actions form button { width: 100%; }
+
+        @media (min-width: 1024px) {
+            .play-layout { grid-template-columns: minmax(0, 1.35fr) minmax(280px, .85fr); gap: 1rem; }
         }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
         }
-
-        .race-banner { margin-bottom: 14px; padding: 12px 15px; border: 1px solid #bfe8d8; border-radius: 14px; background: #effbf5; color: #20584d; }
-        .race-banner-title { font-weight: 850; }
-        .race-standings { display: flex; flex-wrap: wrap; gap: 7px; max-height: 86px; margin-top: 8px; overflow-y: auto; padding: 2px 3px 5px 0; scrollbar-gutter: stable; }
-        .race-chip { max-width:100%; padding: 4px 10px; border: 1px solid #cfe5dc; border-radius: 999px; background: #fff; color: #31534d; font-size: .78rem; font-weight: 700; overflow-wrap:anywhere; }
-        .race-chip.me { border-color: #07877b; background: #e2f6ef; color: #075e58; }
-        .race-banner-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; }
-        .race-count { flex:none; padding:4px 10px; border:1px solid #cfe5dc; border-radius:999px; background:#fff; color:#31534d; font-size:.76rem; font-weight:800; }
     </style>
 </head>
 
 <body class="student-kids">
     @include('partials.toast')
-    <main class="crossword-card">
-        <header class="game-header">
-            <div>
-                <p class="eyebrow">Actividad interactiva</p>
-                <h1>🧩 {{ $activity->title }}</h1>
-                <p class="game-subtitle">¡Adivina las palabras!</p>
+
+    <div class="mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-6">
+
+        <a href="{{ route('student.activities.show', $activity->id) }}"
+            class="mb-3 inline-flex min-h-11 items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-bold text-slate-600 transition hover:bg-white hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Volver a la actividad
+        </a>
+
+        {{-- Encabezado --}}
+        <header class="rounded-2xl bg-amber-700 p-4 text-white shadow-sm sm:p-6">
+
+            <div class="flex items-start justify-between gap-3">
+
+                <div class="flex min-w-0 items-start gap-3">
+
+                    <div class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 sm:flex">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.88.398-.378.878-.58 1.402-.58h.05c1.219 0 2.25.996 2.25 2.25 0 .49-.148.935-.401 1.322-.284.437-.46.977-.46 1.546 0 .836.26 1.63.733 2.293.474.663 1.15 1.153 1.955 1.373.195.052.4.08.612.08 1.219 0 2.25.996 2.25 2.25 0 1.247-.99 2.25-2.25 2.25-.303 0-.596-.06-.86-.17-.505-.21-1.08-.327-1.68-.327-.58 0-1.14.108-1.657.313-.504.198-1.07.305-1.66.305-1.247 0-2.25-.991-2.25-2.25 0-.31.06-.605.17-.877.207-.507.327-1.08.327-1.68 0-.6-.12-1.173-.327-1.68A2.246 2.246 0 0 0 10.5 10.5c-.58 0-1.14.108-1.657.313-.504.198-1.07.305-1.66.305-1.247 0-2.25-.991-2.25-2.25 0-1.254 1.031-2.25 2.25-2.25.212 0 .417.028.612.08.804.22 1.48.71 1.955 1.373.473.663.733 1.457.733 2.293 0 .57-.176 1.11-.46 1.547" />
+                        </svg>
+                    </div>
+
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-amber-200 sm:text-xs">
+                            Actividad multijugador
+                        </p>
+                        <h1 class="mt-0.5 break-words text-lg font-bold tracking-tight sm:mt-1 sm:text-2xl">
+                            Crucigrama
+                        </h1>
+                        <p class="mt-0.5 break-words text-xs font-semibold text-amber-100 sm:text-sm">
+                            {{ $activity->title }}
+                        </p>
+                    </div>
+
+                </div>
+
+                <div id="timer" class="shrink-0 rounded-xl bg-white/15 px-3 py-2 text-center ring-1 ring-white/25" aria-label="Tiempo restante">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-amber-100">
+                        Tiempo
+                    </span>
+                    <div class="font-mono text-lg font-bold tabular-nums text-white sm:text-xl">
+                        <span id="timer-value">--:--</span>
+                    </div>
+                </div>
+
             </div>
-            <div id="timer" aria-label="Tiempo restante">
-                <span class="timer-label">Tiempo restante</span>
-                <span id="timer-value">--:--</span>
-            </div>
+
         </header>
 
-        <div class="game-content">
-            <nav class="mb-4" aria-label="Navegación de actividades">
-                <a href="{{ route('student.activities.show', $activity->id) }}" class="klassio-back-button">
-                    <span aria-hidden="true">←</span> Volver a la actividad
-                </a>
-            </nav>
+        {{-- Carrera --}}
+        <section class="mt-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4" aria-label="Estado de la partida">
 
-            <div class="race-banner" aria-label="Estado de la sala multijugador">
-                <div class="race-banner-heading">
-                    <div class="race-banner-title">🏁 Sala {{ $session->code }} · {{ $activity->mode === 'team' ? 'Carrera por equipos' : 'Carrera individual' }}</div>
-                    <span class="race-count"><strong id="race-count">—</strong> participantes</span>
-                </div>
-                <div id="race-standings" class="race-standings" role="list" aria-label="Clasificación en vivo; desplazable" aria-live="polite" tabindex="0"></div>
-            </div>
-            <p class="game-summary" aria-label="Puntaje de la actividad">
-                <span>Puntos <strong id="score-display">0</strong></span>
-            </p>
-        <p class="how-to"><strong>Cómo jugar</strong><span>Haz clic en una pista y escribe la respuesta desde la primera casilla. En los cruces, las casillas compartidas siguen disponibles para completar la palabra pendiente. Usa las flechas para moverte.</span></p>
+            <div class="flex flex-wrap items-center justify-between gap-2">
 
-            <div class="play-layout">
-                <section class="panel board-panel" aria-label="Tablero del crucigrama">
-                    <div class="panel-heading">
-                        <div>
-                            <h2>Crucigrama</h2>
-                            <p>Completa las casillas siguiendo las pistas.</p>
-                        </div>
-                    </div>
-                    <div class="board-scroll" role="region" aria-label="Tablero; desplaza para ver todas las casillas" tabindex="0">
-                        <div id="crossword-grid"></div>
-                    </div>
-                </section>
+                <span class="inline-flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <svg class="h-4.5 w-4.5 shrink-0 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0-3.375-6.375m-7.125 0L6 18.75m4.875-9.75L9.75 2.25h4.5l-1.125 6.75h-2.25Z" />
+                    </svg>
+                    Sala
+                    <span class="rounded-full bg-amber-700 px-2.5 py-1 font-mono text-xs font-bold tracking-[0.15em] text-white">
+                        {{ $session->code }}
+                    </span>
+                    <span class="font-semibold text-slate-500">{{ $activity->mode === 'team' ? 'Carrera por equipos' : 'Carrera individual' }}</span>
+                </span>
 
-                <section class="panel clue-panel" aria-label="Pistas del crucigrama">
-                    <div class="clue-group">
-                        <h2>Horizontales <span>→</span></h2>
-                        <ul id="clues-horizontal"></ul>
-                    </div>
-                    <div class="clue-group">
-                        <h2>Verticales <span>↓</span></h2>
-                        <ul id="clues-vertical"></ul>
-                    </div>
-                </section>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                    <strong id="race-count">—</strong> participantes
+                </span>
+
             </div>
 
-            <section class="panel results-panel" aria-label="Resultados de las respuestas">
-                <div class="panel-heading">
-                    <div>
-                        <h2>Resultados</h2>
-                        <p>Revisa aquí tus respuestas y puntos obtenidos.</p>
-                    </div>
-                </div>
-                <div id="results" aria-live="polite">
-                    <p id="results-empty">Todavía no has respondido ninguna palabra.</p>
+            <div id="race-standings" class="mt-3 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto" role="list" aria-label="Clasificación en vivo; desplazable" aria-live="polite" tabindex="0"></div>
+
+        </section>
+
+        {{-- Resumen --}}
+        <p class="mt-3 flex" aria-label="Puntaje de la actividad">
+            <span class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0-3.375-6.375m-7.125 0L6 18.75m4.875-9.75L9.75 2.25h4.5l-1.125 6.75h-2.25Z" />
+                </svg>
+                <span class="font-semibold text-slate-500">Puntos</span>
+                <span class="font-bold text-amber-700"><span id="score-display">0</span></span>
+            </span>
+        </p>
+
+        {{-- Cómo jugar --}}
+        <p class="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900 ring-1 ring-amber-100">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 0 4.51-2.104m0 0A9.04 9.04 0 0 0 12 3a9.04 9.04 0 0 0-6.76 12.986M3.75 19.5a12.06 12.06 0 0 1 4.51-2.104m0 0a6.01 6.01 0 0 0 1.5-.189m0 0a6.01 6.01 0 0 1 1.5-.189" />
+            </svg>
+            <span><strong class="font-bold">Cómo jugar:</strong> haz clic en una pista y escribe la respuesta desde la primera casilla. En los cruces, las casillas compartidas siguen disponibles. Usa las flechas para moverte.</span>
+        </p>
+
+        {{-- Tablero + pistas --}}
+        <div class="play-layout mt-3">
+
+            <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4" aria-label="Tablero del crucigrama">
+                <h2 class="text-base font-bold text-slate-900 sm:text-lg">
+                    Crucigrama
+                </h2>
+                <p class="mt-0.5 text-xs text-slate-500">
+                    Completa las casillas siguiendo las pistas.
+                    <span class="lg:hidden">Desliza el tablero para ver todas las casillas.</span>
+                </p>
+                <div class="board-scroll mt-3" role="region" aria-label="Tablero; desplaza para ver todas las casillas" tabindex="0">
+                    <div id="crossword-grid"></div>
                 </div>
             </section>
 
-            <div class="game-actions">
-                <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}"
-                    onsubmit="return confirm('¿Estás seguro de que quieres salir de esta sala?');">
-                    @csrf
-                    <button type="submit">Salir de la sala 👋</button>
-                </form>
-            </div>
+            <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4" aria-label="Pistas del crucigrama">
+                <div class="clue-panel">
+                    <div class="clue-group">
+                        <h2 class="text-base font-bold text-slate-900">
+                            Horizontales
+                            <svg class="h-4 w-4 shrink-0 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </h2>
+                        <ul id="clues-horizontal"></ul>
+                    </div>
+                    <div class="clue-group">
+                        <h2 class="text-base font-bold text-slate-900">
+                            Verticales
+                            <svg class="h-4 w-4 shrink-0 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                            </svg>
+                        </h2>
+                        <ul id="clues-vertical"></ul>
+                    </div>
+                </div>
+            </section>
+
         </div>
-    </main>
+
+        {{-- Resultados --}}
+        <section class="mt-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4" aria-label="Resultados de las respuestas">
+            <h2 class="text-base font-bold text-slate-900 sm:text-lg">
+                Resultados
+            </h2>
+            <p class="mt-0.5 text-xs text-slate-500">
+                Revisa aquí tus respuestas y puntos obtenidos.
+            </p>
+            <div id="results" class="mt-3" aria-live="polite">
+                <p id="results-empty">Todavía no has respondido ninguna palabra.</p>
+            </div>
+        </section>
+
+        <div class="mt-4 flex justify-end border-t border-slate-200 pt-4">
+            <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}"
+                onsubmit="return confirm('¿Estás seguro de que quieres salir de esta sala?');">
+                @csrf
+                <button type="submit"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H9" />
+                    </svg>
+                    Salir de la sala
+                </button>
+            </form>
+        </div>
+
+    </div>
 
     @php
         $wordsJson = $words->map(
