@@ -6,129 +6,170 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Unir Conceptos — Jugar</title>
+
+    @include('partials.assets', ['theme' => 'student', 'includeBootstrap' => false])
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        :root { --mt-ink: #183b3a; --mt-muted: #587371; --mt-line: #d7e8e4; --mt-soft: #f3faf7; --mt-deep: #075e58; --mt-lime: #c6f36a; }
-        * { box-sizing: border-box; }
-        a { text-decoration: none; }
-        body.student-kids { min-height: 100vh; margin: 0; padding: 22px 16px; color: var(--mt-ink); background: radial-gradient(circle at 8% 0%, #d9f3e8 0, transparent 31%), #eff6f2; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 17px; }
-        .wrap { width: min(1180px, 100%); margin: 0 auto; }
-        .card { overflow: hidden; padding: 0; border: 1px solid var(--mt-line); border-radius: 26px; background: #fff; box-shadow: 0 24px 64px rgb(23 69 60 / .12); }
-        .game-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 28px; color: #fff; background: radial-gradient(circle at 82% 0%, rgb(198 243 106 / .2), transparent 25%), linear-gradient(120deg, #123c3a, #087f75 74%, #109789); }
-        .eyebrow { margin: 0 0 5px; color: rgb(255 255 255 / .72); font-size: .72rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
-        .game-header h1 { margin: 0; color: #fff; font-size: clamp(1.65rem, 4vw, 2.2rem); line-height: 1.08; letter-spacing: -.025em; }
-        .activity-title { margin: 6px 0 0; color: rgb(255 255 255 / .82); font-size: .95rem; overflow-wrap: anywhere; }
-        #timer { flex: 0 0 auto; min-width: 142px; padding: 10px 15px; border: 1px solid rgb(255 255 255 / .25); border-radius: 15px; background: rgb(255 255 255 / .12); text-align: center; backdrop-filter: blur(8px); }
-        .timer-label { display: block; color: rgb(255 255 255 / .72); font-size: .68rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-        #timer-value { display: block; margin-top: 2px; color: var(--mt-lime); font-size: 1.35rem; font-weight: 900; font-variant-numeric: tabular-nums; }
-        .game-content { padding: 20px 24px 22px; }
-        .scoreline { display: flex; flex-wrap: wrap; gap: 9px; margin: 0; color: var(--mt-muted); }
-        .scoreline > span { display: inline-flex; align-items: baseline; gap: 6px; padding: 8px 12px; border: 1px solid var(--mt-line); border-radius: 12px; background: var(--mt-soft); }
-        .scoreline strong { color: var(--mt-deep); font-weight: 900; }
-        .how-to { display: flex; align-items: center; gap: 10px; margin: 12px 0 15px; padding: 10px 13px; border: 1px solid #bfe8d8; border-radius: 13px; background: #effbf5; color: #20584d; font-size: .94rem; }
-        .how-to strong { flex: 0 0 auto; color: var(--mt-deep); }
-        #result { margin-bottom: 12px; }
-        .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; gap: clamp(14px, 3vw, 28px); position: relative; padding: 17px; border: 1px solid var(--mt-line); border-radius: 20px; background: var(--mt-soft); }
-        .col { display: flex; min-width: 0; flex-direction: column; gap: 9px; }
-        .col-title { display: flex; align-items: center; justify-content: center; min-height: 38px; margin-bottom: 2px; color: var(--mt-ink); font-size: .9rem; font-weight: 850; letter-spacing: .04em; text-align: center; text-transform: uppercase; }
-        .card-item { display: flex; min-height: 62px; align-items: center; justify-content: center; padding: 12px 15px; border: 2px solid #dbe8e3; border-radius: 14px; background: #fff; color: #294a45; font-size: .96rem; font-weight: 750; line-height: 1.35; text-align: center; overflow-wrap: anywhere; cursor: pointer; transition: border-color .15s, background .15s, color .15s, transform .12s, box-shadow .15s; user-select: none; -webkit-user-select: none; }
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+
+        /* === Internos del juego (JS modifica estas clases) === */
+        .layout { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 10px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 1rem; background: #fff; }
+
+        .col { display: flex; min-width: 0; flex-direction: column; gap: 8px; }
+        .col-title { display: flex; align-items: center; justify-content: center; min-height: 30px; color: #64748b; font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+
+        .card-item { display: flex; min-height: 54px; align-items: center; justify-content: center; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: .8rem; background: #fff; color: #334155; font-size: .9rem; font-weight: 700; line-height: 1.35; text-align: center; overflow-wrap: anywhere; cursor: pointer; user-select: none; -webkit-user-select: none; transition: border-color .15s, background .15s, color .15s, transform .12s, box-shadow .15s; }
         .card-item.left { touch-action: none; cursor: grab; }
         .card-item.left:active { cursor: grabbing; }
-        .card-item:hover:not(.matched) { transform: translateY(-1px); border-color: #77b9a6; box-shadow: 0 5px 14px rgb(24 59 58 / .08); }
-        .card-item:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
-        .card-item.selected { border-color: #07877b; background: #e5f6ef; color: #075e58; box-shadow: 0 0 0 3px rgb(8 135 123 / .12); }
-        .card-item.matched { border-color: #78bd83; background: #eaf7ec; color: #286d3a; cursor: default; }
-        .card-item.wrong { border-color: #d98f88; background: #fff0ed; color: #983a34; }
+        .card-item:hover:not(.matched) { transform: translateY(-1px); border-color: #fcd34d; box-shadow: 0 5px 14px rgb(15 23 42 / .07); }
+        .card-item:focus-visible { outline: 3px solid #d97706; outline-offset: 2px; }
+        .card-item.selected { border-color: #d97706; background: #fffbeb; color: #78350f; box-shadow: 0 0 0 3px rgb(217 119 6 / .15); }
+        .card-item.matched { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; cursor: default; }
+        .card-item.wrong { border-color: #fca5a5; background: #fef2f2; color: #991b1b; }
+
         #connections { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-        .connection-line { stroke: #32854a; stroke-width: 4; stroke-linecap: round; opacity: .82; }
-        .connection-line.drag-line { stroke: #087f75; stroke-dasharray: 8 6; opacity: .65; }
-        .result { display: none; padding: 10px 13px; border: 1px solid transparent; border-radius: 12px; font-weight: 750; text-align: center; }
-        .result.ok { display: block; border-color: #b7dfbe; background: #edf8ef; color: #256c39; }
-        .result.bad { display: block; border-color: #f1c6c2; background: #fff1ef; color: #9e3029; }
-        .finish { display: none; margin-top: 14px; padding: 12px 14px; border: 1px solid #b7dfbe; border-radius: 13px; background: #edf8ef; color: #256c39; font-weight: 850; text-align: center; }
-        .game-footer { display: flex; justify-content: flex-end; margin-top: 14px; }
-        .game-footer form { margin: 0 !important; text-align: right !important; }
-        .game-footer button[type="submit"] { min-height: 42px; padding: 8px 14px; border: 1px solid #e9c7c6; border-radius: 11px; background: #fff6f4; color: #9b3a35; font: inherit; font-size: .86rem; font-weight: 750; cursor: pointer; transition: background .15s, border-color .15s; }
-        .game-footer button[type="submit"]:hover { border-color: #d89b97; background: #ffede9; }
-        .game-footer button[type="submit"]:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
-        .klassio-sound-btn, .klassio-sound-fab { border: 1px solid #bfd9d0 !important; background: #fff !important; color: var(--mt-deep) !important; }
-        @media (max-width: 760px) { .wrap { width: 100%; } .layout { gap: 12px; padding: 12px; } .card-item { min-height: 58px; padding: 10px 11px; } }
-        @media (max-width: 640px) {
-            body.student-kids { padding: 10px; font-size: 16px; }
-            .card { border-radius: 20px; }
-            .game-header { align-items: flex-start; gap: 10px; padding: 17px 15px; }
-            .game-header h1 { font-size: clamp(1.3rem, 6vw, 1.8rem); }
-            .activity-title { max-width: 210px; font-size: .82rem; }
-            #timer { min-width: 98px; padding: 8px 9px; }
-            #timer-value { font-size: 1.12rem; }
-            .game-content { padding: 13px; }
-            .layout { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 11px; }
-            .col { gap: 7px; }
-            .col-title { min-height: 30px; font-size: .8rem; }
-            .card-item { min-height: 48px; padding: 9px 10px; font-size: .9rem; }
-            .how-to { align-items: flex-start; font-size: .86rem; }
+        .connection-line { stroke: #d97706; stroke-width: 4; stroke-linecap: round; opacity: .82; }
+        .connection-line.drag-line { stroke: #d97706; stroke-dasharray: 8 6; opacity: .65; }
+
+        .result { display: none; }
+        .result.ok { display: block; margin-bottom: .75rem; padding: .65rem .9rem; border: 1px solid #a7f3d0; border-radius: .75rem; background: #ecfdf5; color: #065f46; font-size: .875rem; font-weight: 700; text-align: center; }
+        .result.bad { display: block; margin-bottom: .75rem; padding: .65rem .9rem; border: 1px solid #fecaca; border-radius: .75rem; background: #fef2f2; color: #991b1b; font-size: .875rem; font-weight: 700; text-align: center; }
+
+        @media (min-width: 640px) {
+            .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; padding: 18px; }
+            .card-item { min-height: 62px; padding: 12px 15px; font-size: .95rem; }
         }
-        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
     </style>
 </head>
 
 <body class="student-kids">
     @include('partials.toast')
-    <div class="wrap">
-        <div class="card">
-            <header class="game-header">
-                <div>
-                    <p class="eyebrow">Actividad interactiva</p>
-                    <h1>🔗 Unir parejas</h1>
-                    <p class="activity-title">{{ $matching->activity->title }}</p>
-                </div>
-                <div id="timer" aria-label="Tiempo restante">
-                    <span class="timer-label">Tiempo restante</span>
-                    <span id="timer-value">--:--</span>
-                </div>
-            </header>
 
-            <div class="game-content">
-                <p class="scoreline" aria-label="Resumen de la actividad">
-                    <span>Puntos <strong><span id="points">{{ $earnedPoints }}</span> / {{ $maxScore }}</strong></span>
-                    <span>Parejas <strong><span id="matched-count">{{ count($correctIds) }}</span> / {{ $items->count() }}</strong></span>
-                </p>
-                <p class="how-to"><strong>Cómo jugar</strong><span>Selecciona un concepto y luego su definición, o arrastra el concepto hasta su pareja. También puedes tocar las tarjetas.</span></p>
+    <div class="mx-auto w-full max-w-5xl px-3 py-4 sm:px-5 sm:py-6">
 
-                <div id="result" class="result" role="status" aria-live="polite"></div>
+        {{-- Encabezado --}}
+        <header class="rounded-2xl bg-amber-700 p-4 text-white shadow-sm sm:p-6">
 
-                <div class="layout" aria-label="Relaciona los conceptos con sus definiciones">
-                    <svg id="connections" aria-hidden="true"></svg>
-                    <div class="col">
-                        <div class="col-title">Conceptos</div>
-                        @foreach ($items as $item)
-                            <div class="card-item left" data-item-id="{{ $item->id }}"
-                                {{ in_array($item->id, $correctIds) ? 'data-matched' : '' }}>
-                                {{ $item->left_text }}
-                            </div>
-                        @endforeach
+            <div class="flex items-start justify-between gap-3">
+
+                <div class="flex min-w-0 items-start gap-3">
+
+                    <div class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 sm:flex">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
                     </div>
 
-                    <div class="col">
-                        <div class="col-title">Definiciones</div>
-                        @foreach ($rightOptions as $option)
-                            <div class="card-item right" data-text="{{ $option->right_text }}">
-                                {{ $option->right_text }}
-                            </div>
-                        @endforeach
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-amber-200 sm:text-xs">
+                            Actividad interactiva
+                        </p>
+                        <h1 class="mt-0.5 text-lg font-bold tracking-tight sm:mt-1 sm:text-2xl">
+                            Unir parejas
+                        </h1>
+                        <p class="mt-0.5 break-words text-xs font-semibold text-amber-100 sm:text-sm">
+                            {{ $matching->activity->title }}
+                        </p>
+                    </div>
+
+                </div>
+
+                <div id="timer" class="shrink-0 rounded-xl bg-white/15 px-3 py-2 text-center ring-1 ring-white/25" aria-label="Tiempo restante">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-amber-100">
+                        Tiempo
+                    </span>
+                    <div class="font-mono text-lg font-bold tabular-nums text-white sm:text-xl">
+                        <span id="timer-value">--:--</span>
                     </div>
                 </div>
 
-                <div id="finish" class="finish">¡Lo lograste! 🎉</div>
-                <div class="game-footer">
-                    <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-                        onsubmit="return confirm('¿Seguro que quieres dejar el juego?');">
-                        @csrf
+            </div>
 
-                        <button type="submit">Dejar el juego 👋</button>
-                    </form>
-                </div>
+        </header>
+
+        {{-- Resumen --}}
+        <p class="mt-3 flex gap-2 sm:gap-3" aria-label="Resumen de la actividad">
+
+            <span class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0-3.375-6.375m-7.125 0L6 18.75m4.875-9.75L9.75 2.25h4.5l-1.125 6.75h-2.25Z" />
+                </svg>
+                <span class="font-semibold text-slate-500">Puntos</span>
+                <span class="font-bold text-amber-700"><span id="points">{{ $earnedPoints }}</span> / {{ $maxScore }}</span>
+            </span>
+
+            <span class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                <span class="font-semibold text-slate-500">Parejas</span>
+                <span class="font-bold text-emerald-700"><span id="matched-count">{{ count($correctIds) }}</span> / {{ $items->count() }}</span>
+            </span>
+
+        </p>
+
+        {{-- Cómo jugar --}}
+        <p class="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900 ring-1 ring-amber-100">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 0 4.51-2.104m0 0A9.04 9.04 0 0 0 12 3a9.04 9.04 0 0 0-6.76 12.986M3.75 19.5a12.06 12.06 0 0 1 4.51-2.104m0 0a6.01 6.01 0 0 0 1.5-.189m0 0a6.01 6.01 0 0 1 1.5-.189" />
+            </svg>
+            <span><strong class="font-bold">Cómo jugar:</strong> toca un concepto y luego su definición, o arrastra el concepto hasta su pareja.</span>
+        </p>
+
+        {{-- Resultado de la selección --}}
+        <div id="result" class="result" role="status" aria-live="polite"></div>
+
+        {{-- Tablero de parejas --}}
+        <div class="layout mt-3" aria-label="Relaciona los conceptos con sus definiciones">
+            <svg id="connections" aria-hidden="true"></svg>
+
+            <div class="col">
+                <div class="col-title">Conceptos</div>
+                @foreach ($items as $item)
+                    <div class="card-item left" data-item-id="{{ $item->id }}"
+                        {{ in_array($item->id, $correctIds) ? 'data-matched' : '' }}>
+                        {{ $item->left_text }}
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="col">
+                <div class="col-title">Definiciones</div>
+                @foreach ($rightOptions as $option)
+                    <div class="card-item right" data-text="{{ $option->right_text }}">
+                        {{ $option->right_text }}
+                    </div>
+                @endforeach
             </div>
         </div>
+
+        {{-- Fin de la partida --}}
+        <div id="finish" class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center font-bold text-emerald-800" role="status" aria-live="polite" style="display: none;">
+            ¡Lo lograste!
+        </div>
+
+        <div class="mt-4 flex justify-end border-t border-slate-200 pt-4">
+            <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+                onsubmit="return confirm('¿Seguro que quieres dejar el juego?');">
+                @csrf
+                <button type="submit"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H9" />
+                    </svg>
+                    Dejar el juego
+                </button>
+            </form>
+        </div>
+
     </div>
 
     <form id="expire-form" method="POST" action="{{ route('student.participation.expire', $activity->id) }}"
