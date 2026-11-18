@@ -1,514 +1,237 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultado — {{ $activity->title }}</title>
-    
-    <!-- Fuentes Google para estilo infantil/gamificado -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome para Iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+@extends('student.layouts.app')
 
-    <style>
-        :root {
-            --bg-main: #f4f7fe;
-            --card-bg: #ffffff;
-            --primary: #4318ff;
-            --primary-light: #eef2ff;
-            --success: #05cd99;
-            --success-light: #e6f9f5;
-            --warning: #ffb547;
-            --warning-light: #fff8ec;
-            --danger: #ee5d50;
-            --danger-light: #fdecf0;
-            --text-dark: #2b3674;
-            --text-gray: #a3eedd;
-            --text-muted: #707ebe;
-            --border: #e9edf7;
-            --radius-lg: 20px;
-            --radius-md: 14px;
-            --shadow-sm: 0px 4px 12px rgba(0, 0, 0, 0.03);
-            --shadow-md: 0px 10px 20px rgba(112, 144, 176, 0.07);
-        }
+@section('title', 'Resultado — '.$activity->title)
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+@section('page-title', 'Mi resultado')
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-dark);
-            padding: 32px 16px;
-            min-height: 100vh;
-        }
+@section('page-actions')
+    <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
 
-        .container {
-            max-width: 760px;
-            margin: 0 auto;
-        }
-
-        /* Navegación */
-        .nav-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .btn-nav {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            border-radius: var(--radius-md);
-            font-size: 14px;
-            font-weight: 700;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .btn-nav.primary {
-            background-color: #6c5ce7;
-            color: #ffffff;
-            box-shadow: 0 4px 14px rgba(108, 92, 231, 0.3);
-        }
-        .btn-nav.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
-        }
-
-        .btn-nav.secondary {
-            background-color: #ffffff;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-        }
-        .btn-nav.secondary:hover {
-            background-color: #f8fafc;
-            color: var(--text-dark);
-        }
-
-        /* Encabezado */
-        .header-card {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            padding: 24px 28px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--border);
-        }
-
-        .header-title-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        h1.activity-title {
-            font-family: 'Fredoka', cursive;
-            font-size: 26px;
-            color: var(--text-dark);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .meta-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 8px;
-            font-size: 14px;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .status-completed { background: var(--success-light); color: var(--success); }
-        .status-abandoned { background: var(--warning-light); color: #d97706; }
-        .status-expired   { background: var(--danger-light); color: var(--danger); }
-
-        /* Grid de Resumen */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .summary-card {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            text-align: center;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .summary-card .icon-wrapper {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 10px auto;
-            font-size: 18px;
-        }
-
-        .summary-card.score .icon-wrapper { background: #eef2ff; color: #4318ff; }
-        .summary-card.time .icon-wrapper { background: #fff8ec; color: #ffb547; }
-        .summary-card.accuracy .icon-wrapper { background: #e6f9f5; color: #05cd99; }
-
-        .summary-card .label {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-
-        .summary-card .value {
-            font-family: 'Fredoka', cursive;
-            font-size: 26px;
-            font-weight: 700;
-        }
-
-        .value.info { color: #4318ff; }
-        .value.good { color: var(--success); }
-        .value.bad  { color: var(--danger); }
-
-        /* Sección de Tabla de Respuestas */
-        .details-section {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--border);
-        }
-
-        .details-section h2 {
-            font-family: 'Fredoka', cursive;
-            font-size: 20px;
-            color: var(--text-dark);
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            text-align: left;
-        }
-
-        th {
-            background: #f8fafc;
-            color: var(--text-muted);
-            font-weight: 700;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-dark);
-            font-weight: 600;
-        }
-
-        tr:last-child td { border-bottom: none; }
-        tr:nth-child(even) { background-color: #fafbfc; }
-
-        .badge-score {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 13px;
-        }
-        .badge-score.correct { background: var(--success-light); color: var(--success); }
-        .badge-score.incorrect { background: var(--danger-light); color: var(--danger); }
-
-        .empty-state {
-            text-align: center;
-            padding: 32px 16px;
-            color: var(--text-muted);
-        }
-        .empty-state i {
-            font-size: 36px;
-            margin-bottom: 8px;
-            display: block;
-            opacity: 0.5;
-        }
-
-        /* Ajustes específicos para Modo Kids */
-        body.student-kids .summary-card .value { font-size: 28px; }
-        body.student-kids .summary-card .label { font-size: 13px; }
-
-        @media (max-width: 600px) {
-            .summary-grid { grid-template-columns: 1fr; }
-            .header-title-wrap { flex-direction: column; align-items: flex-start; }
-            .nav-bar { flex-direction: column-reverse; gap: 10px; align-items: stretch; }
-            .btn-nav { justify-content: center; }
-        }
-    </style>
-</head>
-<body class="student-kids">
-
-<div class="container">
-
-    {{-- Navegación --}}
-    <nav class="nav-bar" aria-label="Navegación del resultado">
-        <a href="{{ route('student.class.show', $activity->class_id) }}" class="btn-nav secondary">
-            <i class="fa-solid fa-arrow-left"></i> Mi clase
+        <a href="{{ route('student.class.show', $activity->class_id) }}"
+           class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Mi clase
         </a>
-        <a href="{{ route('student.activities.show', $activity->id) }}" class="btn-nav primary">
-            <i class="fa-solid fa-gamepad"></i> ¡Jugar otra vez!
-        </a>
-    </nav>
 
-    {{-- Encabezado e Información --}}
-    <div class="header-card">
-        <div class="header-title-wrap">
-            <h1 class="activity-title">
-                <i class="fa-solid fa-trophy" style="color: #ffb547;"></i> {{ $activity->title }}
-            </h1>
-            <span class="status-badge status-{{ $participation->status }}">
-                <i class="fa-solid {{ match($participation->status) {
-                    'completed' => 'fa-circle-check',
-                    'abandoned' => 'fa-circle-pause',
-                    'expired'   => 'fa-clock',
-                    default     => 'fa-circle-info',
-                } }}"></i>
-                {{ match($participation->status) {
-                    'completed' => 'Completado',
-                    'abandoned' => 'Abandonado',
-                    'expired'   => 'Expirado',
-                    default     => $participation->status,
-                } }}
-            </span>
-        </div>
-        <div class="meta-info">
-            <span><i class="fa-solid fa-rotate-right"></i> Intento #{{ $participation->attempt }}</span>
-        </div>
+        <a href="{{ route('student.activities.show', $activity->id) }}"
+           class="inline-flex items-center gap-2 rounded-xl bg-orange-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-orange-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.396 1.663-.98l11.282 6.35c.746.418.746 1.542 0 1.96l-11.282 6.35c-.746.417-1.663-.124-1.663-.98V5.653Z" />
+            </svg>
+            ¡Jugar otra vez!
+        </a>
+
     </div>
+@endsection
+
+@section('content')
 
     @php
         $correctCount = collect($answers)->where('is_correct', true)->count();
         $total = count($answers);
+
+        $typeLabels = [
+            'crossword' => 'Crucigrama',
+            'kahoot' => 'Kahoot',
+            'word_search' => 'Sopa de letras',
+            'matching' => 'Unir conceptos',
+            'roulette' => 'Ruleta',
+        ];
+
+        $typeIcons = [
+            'kahoot' => 'm3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z',
+            'crossword' => 'M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.75m-.75 3h.75m0 0H21',
+            'word_search' => 'm21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z',
+            'matching' => 'M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244',
+            'roulette' => 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
+        ];
+
+        $typeIcon = $typeIcons[$activity->type] ?? $typeIcons['roulette'];
+
+        [$statusClass, $statusText] = match ($participation->status) {
+            'completed' => ['bg-emerald-100 text-emerald-700', 'Completado'],
+            'abandoned' => ['bg-amber-100 text-amber-800', 'Abandonado'],
+            'expired' => ['bg-slate-100 text-slate-600', 'Se acabó el tiempo'],
+            default => ['bg-slate-100 text-slate-600', ucfirst($participation->status)],
+        };
     @endphp
 
-    {{-- Resumen Estadístico --}}
-    <div class="summary-grid">
-        <div class="summary-card score">
-            <div class="icon-wrapper"><i class="fa-solid fa-star"></i></div>
-            <div class="label">Puntaje</div>
-            <div class="value info">{{ $participation->score }} / {{ $activity->max_score }}</div>
-        </div>
+    <div class="mx-auto max-w-3xl">
 
-        <div class="summary-card time">
-            <div class="icon-wrapper"><i class="fa-solid fa-stopwatch"></i></div>
-            <div class="label">Tiempo</div>
-            <div class="value info">{{ $elapsed ?? '—' }}</div>
-        </div>
+        {{-- Encabezado --}}
+        <section class="rounded-2xl bg-orange-600 p-4 text-white shadow-sm sm:p-6">
 
-        <div class="summary-card accuracy">
-            <div class="icon-wrapper"><i class="fa-solid fa-bullseye"></i></div>
-            <div class="label">Aciertos</div>
-            <div class="value {{ $correctCount === $total && $total > 0 ? 'good' : ($correctCount > 0 ? 'info' : 'bad') }}">
-                {{ $correctCount }} / {{ $total }}
+            <div class="flex items-start justify-between gap-3">
+
+                <div class="min-w-0">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-orange-200 sm:text-xs">
+                        Resultado del intento
+                    </p>
+
+                    <h2 class="mt-1 break-words text-xl font-bold tracking-tight sm:text-2xl">
+                        {{ $activity->title }}
+                    </h2>
+
+                    <p class="mt-2 flex items-start gap-1.5 text-xs font-bold text-orange-100 sm:text-sm">
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $typeIcon }}" />
+                        </svg>
+                        <span class="min-w-0">{{ $typeLabels[$activity->type] ?? $activity->type }} · Intento #{{ $participation->attempt }}</span>
+                    </p>
+                </div>
+
+                <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-white sm:text-xs {{ $statusClass }}">
+                    {{ $statusText }}
+                </span>
+
             </div>
-        </div>
+
+        </section>
+
+        {{-- Resumen --}}
+        <section class="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+                <div class="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-700 ring-1 ring-orange-100">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0-3.375-6.375m-7.125 0L6 18.75m4.875-9.75L9.75 2.25h4.5l-1.125 6.75h-2.25Z" />
+                    </svg>
+                </div>
+                <p class="mt-2 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Puntaje
+                </p>
+                <p class="mt-0.5 text-center text-base font-bold text-orange-700 sm:text-lg">
+                    {{ $participation->score }} / {{ $activity->max_score }}
+                </p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+                <div class="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-slate-600 ring-1 ring-slate-200">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                </div>
+                <p class="mt-2 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Tiempo
+                </p>
+                <p class="mt-0.5 text-center text-base font-bold text-slate-700 sm:text-lg">
+                    {{ $elapsed ?? '—' }}
+                </p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+                <div class="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                </div>
+                <p class="mt-2 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Aciertos
+                </p>
+                <p class="mt-0.5 text-center text-base font-bold sm:text-lg {{ $correctCount === $total && $total > 0 ? 'text-emerald-700' : ($correctCount > 0 ? 'text-slate-700' : 'text-red-600') }}">
+                    {{ $correctCount }} / {{ $total }}
+                </p>
+            </div>
+
+        </section>
+
+        {{-- Respuestas --}}
+        <section class="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+
+            <div class="flex items-center gap-3">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-700 ring-1 ring-orange-100">
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                </div>
+
+                <div class="min-w-0">
+                    <h3 class="text-lg font-bold text-slate-900">
+                        Detalle de respuestas
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        {{ $typeLabels[$activity->type] ?? $activity->type }} · intento #{{ $participation->attempt }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-4 grid gap-2.5 sm:grid-cols-2">
+
+                @forelse ($answers as $answer)
+                    <div class="flex items-start gap-3 rounded-xl border p-3.5 {{ $answer['is_correct'] ? 'border-emerald-200 bg-emerald-50/60' : 'border-red-200 bg-red-50/60' }}">
+
+                        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $answer['is_correct'] ? 'bg-emerald-600' : 'bg-red-600' }} text-white">
+                            @if ($answer['is_correct'])
+                                <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                            @else
+                                <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                </svg>
+                            @endif
+                        </span>
+
+                        <div class="min-w-0 flex-1">
+                            <p class="break-words text-sm font-bold text-slate-900">
+                                @if (isset($answer['word']))
+                                    Palabra: {{ $answer['word'] }}
+                                @elseif (isset($answer['clue']))
+                                    {{ $answer['clue'] }}
+                                @elseif (isset($answer['question']))
+                                    {{ $answer['question'] }}
+                                @elseif (isset($answer['left'], $answer['right']))
+                                    {{ $answer['left'] }}
+                                    <svg class="mx-0.5 inline h-4 w-4 shrink-0 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                                    </svg>
+                                    {{ $answer['right'] }}
+                                @else
+                                    Elemento del juego
+                                @endif
+                            </p>
+
+                            @if (isset($answer['response']))
+                                <p class="mt-0.5 break-words text-xs text-slate-600">
+                                    Tu respuesta: {{ $answer['response'] }}
+                                    @if (isset($answer['correct']) && ! $answer['is_correct'])
+                                        · Correcta: {{ $answer['correct'] }}
+                                    @endif
+                                </p>
+                            @endif
+
+                            <div class="mt-2 flex items-center gap-1.5">
+                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide {{ $answer['is_correct'] ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                                    {{ $answer['is_correct'] ? 'Correcta' : 'Incorrecta' }}
+                                </span>
+
+                                @if (isset($answer['score']))
+                                    <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">
+                                        {{ $answer['is_correct'] ? '+'.$answer['score'] : '0' }} pts
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                    </div>
+                @empty
+                    <div class="col-span-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-center" role="status">
+                        <svg class="mx-auto h-8 w-8 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                        </svg>
+                        <p class="mt-2 text-sm text-slate-600">
+                            No hay respuestas registradas para este intento.
+                        </p>
+                    </div>
+                @endforelse
+
+            </div>
+
+        </section>
+
     </div>
 
-    {{-- Respuestas por Tipo de Actividad --}}
-    <div class="details-section">
-        @if (count($answers) > 0)
-
-            @if ($activity->type === 'crossword')
-                <h2><i class="fa-solid fa-border-all"></i> Respuestas del crucigrama</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Pista</th>
-                                <th>Tu respuesta</th>
-                                <th>Correcta</th>
-                                <th>Pts</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($answers as $a)
-                                <tr>
-                                    <td>{{ $a['clue'] }}</td>
-                                    <td>{{ $a['response'] }}</td>
-                                    <td>{{ $a['correct'] }}</td>
-                                    <td>
-                                        <span class="badge-score {{ $a['is_correct'] ? 'correct' : 'incorrect' }}">
-                                            {{ $a['is_correct'] ? '+' . $a['score'] : '0' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-            @elseif ($activity->type === 'kahoot')
-                <h2><i class="fa-solid fa-bolt"></i> Respuestas del Quiz</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Pregunta</th>
-                                <th>Tu respuesta</th>
-                                <th>Pts</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($answers as $a)
-                                <tr>
-                                    <td>{{ $a['question'] }}</td>
-                                    <td>
-                                        <span class="badge-score {{ $a['is_correct'] ? 'correct' : 'incorrect' }}">
-                                            <i class="fa-solid {{ $a['is_correct'] ? 'fa-check' : 'fa-xmark' }}"></i>
-                                            {{ $a['response'] }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge-score {{ $a['is_correct'] ? 'correct' : 'incorrect' }}">
-                                            {{ $a['is_correct'] ? '+' . $a['score'] : '0' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-            @elseif ($activity->type === 'word_search')
-                <h2><i class="fa-solid fa-magnifying-glass"></i> Palabras encontradas</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Palabra</th>
-                                <th>Pts</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($answers as $a)
-                                <tr>
-                                    <td>
-                                        <span class="badge-score correct">
-                                            <i class="fa-solid fa-check"></i> {{ $a['word'] }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge-score correct">+{{ $a['score'] }}</span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-            @elseif ($activity->type === 'matching')
-                <h2><i class="fa-solid fa-link"></i> Respuestas de Unir conceptos</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Concepto</th>
-                                <th>Tu respuesta</th>
-                                <th>Correcto</th>
-                                <th>Pts</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($answers as $a)
-                                <tr>
-                                    <td>{{ $a['left'] }}</td>
-                                    <td>{{ $a['response'] }}</td>
-                                    <td>{{ $a['right'] }}</td>
-                                    <td>
-                                        <span class="badge-score {{ $a['is_correct'] ? 'correct' : 'incorrect' }}">
-                                            {{ $a['is_correct'] ? '+' . $a['score'] : '0' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-            @elseif ($activity->type === 'roulette')
-                <h2><i class="fa-solid fa-arrows-spin"></i> Respuestas de la Ruleta</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Pregunta</th>
-                                <th>Tu respuesta</th>
-                                <th>Correcto</th>
-                                <th>Pts</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($answers as $a)
-                                <tr>
-                                    <td>{{ $a['question'] }}</td>
-                                    <td>{{ $a['response'] }}</td>
-                                    <td>{{ $a['correct'] }}</td>
-                                    <td>
-                                        <span class="badge-score {{ $a['is_correct'] ? 'correct' : 'incorrect' }}">
-                                            {{ $a['is_correct'] ? '+' . $a['score'] : '0' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-
-        @else
-            <div class="empty-state">
-                <i class="fa-solid fa-inbox"></i>
-                <p>No hay respuestas registradas para este intento.</p>
-            </div>
-        @endif
-    </div>
-
-</div>
-
-</body>
-</html>
+@endsection
