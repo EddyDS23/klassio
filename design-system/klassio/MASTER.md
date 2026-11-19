@@ -132,3 +132,22 @@ Atributos fijos: `data-confirm-toggle` (con `aria-expanded` y `aria-controls`), 
 - [ ] `vendor/bin/pint --dirty --format agent` passed.
 - [ ] Feedback async con `role="status" aria-live="polite"`; confirmaciones destructivas en 2 pasos.
 - [ ] Botones primarios `disabled` visiblemente apagados con motivo explicado (hint bajo el botón).
+
+---
+
+## Área estudiante — juegos (Fase 5)
+
+Vistas standalone (sin layout) para los 5 juegos (`word_search`, `crossword`, `matching`, `roulette`, `kahoot`) y sus versiones multijugador. Patrón común:
+
+- `@include('partials.assets', ['theme' => 'student', 'includeBootstrap' => false])` + Google Fonts `Plus Jakarta Sans`.
+- CSS custom solo para internos del tablero/JS-managed; chrome con Tailwind.
+- Hero sólido por rol: naranja `bg-orange-700` (word_search, matching, crossword) / pink `bg-pink-700` (roulette, kahoot).
+- Pill de timer mono `#timer-value.warning/.danger`; chips de stats en `grid-cols-1 sm:grid-cols-2/3` con `min-w-0`; nota "Cómo jugar" con bombilla; botón rojo "Dejar el juego"/"Salir de la sala" con SVG.
+- `.result/.finish/.answer-feedback` con estilo completo en CSS custom (el JS reemplaza `className`).
+- MP: código de sala pill + panel de marcador Tailwind + `.race-chip`/`.answer-grid` en CSS custom.
+
+**Paleta estudiante:** primario naranja (`orange-700`); pink para multijugador/kahoot/roulette; ámbar SOLO crossword/matching; violeta solo marca; errores → red.
+
+**Override de `partials.assets`:** normaliza `button[type="button"]`/`button:not([class*="rounded-"])` con `border-radius: .75rem` (0-1-1) que gana a clases custom (0-1-0). Overrides necesarios: `button.wheel-center { border-radius: 50%; }`, `button.option-btn { border-radius: .9rem; }`, `button.opt-btn { border-radius: .9rem; }`.
+
+**Kahoot (excepción aprobada):** strings del JS con emojis editados (`⏰`,`🎉`,`❌`,`⭐`,`👉`,`😅` eliminados); `#result-icon` inyecta SVG inline con clases `result-icon-ok`/`result-icon-bad`, colores en CSS custom. Bootstrap classes creadas por el JS (`alert alert-success/danger`, `fw-bold`, `mb-2`, `mb-0`, `.small`, `.disabled`, `.d-none`) redefinidas en CSS custom; `[hidden] { display: none !important; }` explícito. Dark-theme eliminado.
