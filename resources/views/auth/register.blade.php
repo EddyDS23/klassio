@@ -293,27 +293,20 @@
                                 required
                                 aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}"
                                 @if ($errors->has('password')) aria-describedby="register-password-error" @endif
-                                class="block w-full rounded-xl border bg-white px-4 py-3.5 pr-24 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 @if($errors->has('password')) border-rose-400 focus:border-rose-500 focus:ring-rose-100 @else border-slate-200 focus:border-indigo-500 focus:ring-indigo-100 @endif"
+                                class="block w-full rounded-xl border bg-white px-4 py-3.5 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 @if($errors->has('password')) border-rose-400 focus:border-rose-500 focus:ring-rose-100 @else border-slate-200 focus:border-indigo-500 focus:ring-indigo-100 @endif"
                             >
 
-                            <button
-                                type="button"
-                                class="absolute inset-y-1.5 right-1.5 flex w-20 items-center justify-center gap-1.5 rounded-lg text-xs font-bold text-indigo-600 transition hover:bg-indigo-50"
-                                data-password-toggle
-                                aria-controls="register-password"
-                                aria-pressed="false"
-                                aria-label="Mostrar contraseña"
-                            >
+                            <button type="button" data-toggle-password="register-password"
+                                    class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 transition hover:text-slate-700 focus:outline-none"
+                                    aria-label="Mostrar contraseña">
 
-                                <svg class="h-5 w-5" data-icon="show" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10 1c3.66 0 6.898 2.073 8.636 5.287l.012.022a3.2 3.2 0 0 1 0 2.93l-.012.023C16.898 12.472 13.66 14.545 10 14.545c-3.66 0-6.898-2.073-8.636-5.283l-.012-.022a3.2 3.2 0 0 1 0-2.93l.012-.023C3.102 3.073 6.34 1 10 1Zm0 3a3.727 3.727 0 1 0 0 7.455A3.727 3.727 0 0 0 10 4Zm0 5.727a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" clip-rule="evenodd" />
+                                <svg class="h-5 w-5 eye-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                 </svg>
-
-                                <svg class="hidden h-5 w-5" data-icon="hide" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-2.808-2.808c1.405-1.122 2.569-2.616 3.356-4.297C16.42 6.28 13.478 3 10 3c-1.558 0-3.003.575-4.192 1.537L3.28 2.22ZM8.58 6.519l4.901 4.9c.18-.28.28-.61.28-.966a3.76 3.76 0 0 0-3.727-3.727c-.356 0-.686.1-.967.28l-.487-.487ZM9.026 12.47l2.504 2.503a8.213 8.213 0 0 1-1.53.171c-3.48 0-6.421-3.28-7.328-6.617a.75.75 0 0 1 0-.489 14.3 14.3 0 0 1 1.465-2.702l2.19 2.19a3.727 3.727 0 0 0 2.699 4.944Z" clip-rule="evenodd" />
+                                <svg class="h-5 w-5 eye-closed hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
                                 </svg>
-
-                                <span data-toggle-text>Mostrar</span>
 
                             </button>
 
@@ -347,7 +340,7 @@
                                 required
                                 aria-invalid="{{ $errors->has('password_confirmation') ? 'true' : 'false' }}"
                                 @if ($errors->has('password_confirmation')) aria-describedby="register-password-confirmation-error" @endif
-                                class="block w-full rounded-xl border bg-white px-4 py-3.5 pr-24 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 @if($errors->has('password_confirmation')) border-rose-400 focus:border-rose-500 focus:ring-rose-100 @else border-slate-200 focus:border-indigo-500 focus:ring-indigo-100 @endif"
+                                class="block w-full rounded-xl border bg-white px-4 py-3.5 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 @if($errors->has('password_confirmation')) border-rose-400 focus:border-rose-500 focus:ring-rose-100 @else border-slate-200 focus:border-indigo-500 focus:ring-indigo-100 @endif"
                             >
 
                             <button
@@ -359,15 +352,13 @@
                                 aria-label="Mostrar confirmación de contraseña"
                             >
 
-                                <svg class="h-5 w-5" data-icon="show" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10 1c3.66 0 6.898 2.073 8.636 5.287l.012.022a3.2 3.2 0 0 1 0 2.93l-.012.023C16.898 12.472 13.66 14.545 10 14.545c-3.66 0-6.898-2.073-8.636-5.283l-.012-.022a3.2 3.2 0 0 1 0-2.93l.012-.023C3.102 3.073 6.34 1 10 1Zm0 3a3.727 3.727 0 1 0 0 7.455A3.727 3.727 0 0 0 10 4Zm0 5.727a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" clip-rule="evenodd" />
+                                <svg class="h-5 w-5 eye-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                 </svg>
-
-                                <svg class="hidden h-5 w-5" data-icon="hide" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-2.808-2.808c1.405-1.122 2.569-2.616 3.356-4.297C16.42 6.28 13.478 3 10 3c-1.558 0-3.003.575-4.192 1.537L3.28 2.22ZM8.58 6.519l4.901 4.9c.18-.28.28-.61.28-.966a3.76 3.76 0 0 0-3.727-3.727c-.356 0-.686.1-.967.28l-.487-.487ZM9.026 12.47l2.504 2.503a8.213 8.213 0 0 1-1.53.171c-3.48 0-6.421-3.28-7.328-6.617a.75.75 0 0 1 0-.489 14.3 14.3 0 0 1 1.465-2.702l2.19 2.19a3.727 3.727 0 0 0 2.699 4.944Z" clip-rule="evenodd" />
+                                <svg class="h-5 w-5 eye-closed hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
                                 </svg>
-
-                                <span data-toggle-text>Mostrar</span>
 
                             </button>
 
@@ -430,27 +421,20 @@
 
 
     <script>
-        // Toggle mostrar/ocultar contraseña (SVG + texto accesible).
-        document.querySelectorAll('[data-password-toggle]').forEach(function (button) {
-            var input = document.getElementById(button.getAttribute('aria-controls'));
-            var iconShow = button.querySelector('[data-icon="show"]');
-            var iconHide = button.querySelector('[data-icon="hide"]');
-            var toggleText = button.querySelector('[data-toggle-text]');
-            var labelBase = button.getAttribute('aria-label');
-
-            button.addEventListener('click', function () {
-                var showPassword = input.type === 'password';
-
-                input.type = showPassword ? 'text' : 'password';
-                button.setAttribute('aria-pressed', String(showPassword));
-                button.setAttribute('aria-label', (showPassword ? 'Ocultar ' : 'Mostrar ') + labelBase.replace(/^Mostrar /, ''));
-                toggleText.textContent = showPassword ? 'Ocultar' : 'Mostrar';
-                iconShow.classList.toggle('hidden', showPassword);
-                iconHide.classList.toggle('hidden', !showPassword);
+        // Toggle mostrar/ocultar contraseña (icono de ojo).
+        document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var input = document.getElementById(btn.getAttribute('data-toggle-password'));
+                if (!input) return;
+                var show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                btn.querySelector('.eye-open').classList.toggle('hidden', show);
+                btn.querySelector('.eye-closed').classList.toggle('hidden', !show);
+                btn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
             });
         });
 
-        // Al fallar la validación, el resumen de errores recibe el foco (teclado y lectores de pantalla).
+        // Al fallar la validación, el resumen de errores recibe el foco.
         (function () {
             var summary = document.getElementById('register-error-summary');
             if (summary) {
