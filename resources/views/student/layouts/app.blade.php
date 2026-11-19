@@ -142,47 +142,15 @@
                     </div>
                 @endif
 
-                <!-- Mensaje de éxito -->
                 @if (session('success'))
-                    <div class="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm" role="status">
-
-                        <svg class="mt-0.5 h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                        </svg>
-
-                        <div>
-                            <p class="font-bold">
-                                ¡Operación exitosa!
-                            </p>
-
-                            <p class="text-sm">
-                                {{ session('success') }}
-                            </p>
-                        </div>
-
-                    </div>
+                    <div data-toast="success" hidden>{{ session('success') }}</div>
                 @endif
 
-                <!-- Mensaje de error -->
                 @if (session('error'))
-                    <div class="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm" role="alert">
-
-                        <svg class="mt-0.5 h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                        </svg>
-
-                        <div>
-                            <p class="font-bold">
-                                Ocurrió un problema
-                            </p>
-
-                            <p class="text-sm">
-                                {{ session('error') }}
-                            </p>
-                        </div>
-
-                    </div>
+                    <div data-toast="error" hidden>{{ session('error') }}</div>
                 @endif
+
+                @include('partials.toast')
 
                 @yield('content')
 
