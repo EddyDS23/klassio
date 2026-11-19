@@ -4,129 +4,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $activity->title }}</title>
+
+    @include('partials.assets', ['theme' => 'student', 'includeBootstrap' => false])
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        :root { --kh-ink: #183b3a; --kh-muted: #587371; --kh-line: #d7e8e4; --kh-deep: #075e58; --kh-lime: #c6f36a; }
-        * { box-sizing: border-box; }
-        a { text-decoration: none; }
-        body.student-kids { min-height: 100vh; margin: 0; padding: 22px 16px; color: var(--kh-ink); background: radial-gradient(circle at 8% 0%, #d9f3e8 0, transparent 31%), #eff6f2; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 17px; }
-        #screen-start, #screen-question, #screen-result, #screen-finish { width: min(760px, 100%); margin: 0 auto; padding: 24px; border: 1px solid var(--kh-line); border-radius: 24px; background: #fff; box-shadow: 0 24px 64px rgb(23 69 60 / .12); }
-        #screen-start { margin-top: clamp(28px, 9vh, 90px); padding: clamp(28px, 6vw, 54px); text-align: center; }
-        #screen-start::before { content: "ACTIVIDAD INTERACTIVA"; display: inline-flex; margin-bottom: 13px; color: var(--kh-deep); font-size: .7rem; font-weight: 850; letter-spacing: .13em; }
-        #screen-start h1, #screen-finish h1 { margin: 0; color: var(--kh-ink); font-size: clamp(1.7rem, 4vw, 2.35rem); line-height: 1.15; overflow-wrap: anywhere; }
-        #screen-start p { margin: 11px 0 20px; color: var(--kh-muted); }
-        #btn-start, #btn-next, #btn-back { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 24px; border: 0; border-radius: 12px; background: var(--kh-deep); color: #fff; font: inherit; font-size: 1rem; font-weight: 850; cursor: pointer; transition: background .15s, transform .15s, box-shadow .15s; }
-        #btn-start:hover, #btn-next:hover, #btn-back:hover { transform: translateY(-1px); background: #064e49; box-shadow: 0 8px 18px rgb(7 94 88 / .2); }
-        #screen-question { display: none; }
-        #progress-bar-wrap { height: 8px; margin-bottom: 10px; overflow: hidden; border-radius: 999px; background: #e4efeb; }
-        #progress-bar { height: 100%; border-radius: inherit; background: #07877b; transition: width .3s; }
-        #question-counter { margin-bottom: 8px; color: var(--kh-muted); font-size: .82rem; font-weight: 800; }
-        #timer-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 9px 12px; border: 1px solid var(--kh-line); border-radius: 13px; background: #f5faf7; }
-        #timer-bar-wrap { flex: 1; height: 9px; overflow: hidden; border-radius: 999px; background: #dce9e4; }
-        #timer-bar { height: 100%; border-radius: inherit; transition: width 1s linear; }
-        #timer-text { min-width: 34px; color: var(--kh-deep); font-size: 1.1rem; font-weight: 900; font-variant-numeric: tabular-nums; text-align: right; }
-        #timer-text.danger { color: #b42318; }
-        #question-text { display: flex; min-height: 112px; align-items: center; justify-content: center; margin-bottom: 16px; padding: clamp(18px, 4vw, 28px); border: 1px solid #d8e9e1; border-radius: 17px; background: linear-gradient(140deg, #f0faf5, #e7f4ed); color: var(--kh-ink); font-size: clamp(1.2rem, 3vw, 1.6rem); font-weight: 850; line-height: 1.35; text-align: center; overflow-wrap: anywhere; }
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+
+        /* === Pantallas (JS alterna display) === */
+        #screen-question, #screen-result, #screen-finish { display: none; }
+        #error-msg { display: none; }
+
+        /* === Internos del juego (JS modifica estas clases) === */
+        #timer-text.danger { color: #dc2626; }
+
         #options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-        .option-btn { display: flex; min-height: 74px; align-items: center; justify-content: center; padding: 14px; border: 2px solid transparent; border-radius: 14px; color: #fff; font: inherit; font-size: 1rem; font-weight: 800; line-height: 1.3; text-align: center; overflow-wrap: anywhere; cursor: pointer; transition: transform .12s, box-shadow .15s, opacity .2s; }
-        .option-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 18px rgb(24 59 58 / .16); }
-        .option-btn:focus-visible, #btn-start:focus-visible, #btn-next:focus-visible, #btn-back:focus-visible, #screen-question form button:focus-visible { outline: 3px solid #f59e0b; outline-offset: 3px; }
+        .option-btn { display: flex; min-height: 76px; align-items: center; justify-content: center; padding: 14px; border: 2px solid transparent; border-radius: .75rem; color: #fff; font: inherit; font-size: 1rem; font-weight: 700; line-height: 1.3; text-align: center; overflow-wrap: anywhere; cursor: pointer; transition: opacity .2s; }
+        .option-btn:nth-child(1) { background: #dc2626; }
+        .option-btn:nth-child(2) { background: #2563eb; }
+        .option-btn:nth-child(3) { background: #d97706; }
+        .option-btn:nth-child(4) { background: #059669; }
+        .option-btn:hover:not(:disabled) { filter: brightness(1.06); }
+        .option-btn:focus-visible { outline: 3px solid #be185d; outline-offset: 3px; }
         .option-btn:disabled { cursor: default; opacity: .72; }
-        .option-btn:nth-child(1) { background: #b83c37; }
-        .option-btn:nth-child(2) { background: #2865a4; }
-        .option-btn:nth-child(3) { background: #98700a; }
-        .option-btn:nth-child(4) { background: #247346; }
-        .option-btn.correct { border-color: #72d49a; box-shadow: 0 0 0 3px rgb(48 145 82 / .2); opacity: 1; }
-        .option-btn.incorrect { border-color: #f1aaa4; box-shadow: 0 0 0 3px rgb(189 49 43 / .16); opacity: .58; }
-        #error-msg { display: none; margin-top: 12px; padding: 11px 13px; border: 1px solid #e9b7b3; border-radius: 11px; background: #fff1ef; color: #8c302a; font-size: .9rem; text-align: center; }
-        #screen-question form { margin-top: 16px !important; text-align: right !important; }
-        #screen-question form button { min-height: 40px; padding: 8px 12px; border: 1px solid #e9c7c6; border-radius: 10px; background: #fff6f4; color: #9b3a35; font: inherit; font-size: .84rem; font-weight: 750; cursor: pointer; }
-        #screen-question form button:hover { background: #ffede9; }
-        #screen-result { display: none; margin-top: clamp(24px, 8vh, 76px); padding: clamp(24px, 5vw, 42px); text-align: center; }
-        #result-icon { margin-bottom: 10px; font-size: 3.4rem; }
-        #result-text { margin-bottom: 8px; color: var(--kh-ink); font-size: 1.55rem; font-weight: 900; }
-        #result-score { margin-bottom: 8px; color: var(--kh-deep); font-size: 1.15rem; font-weight: 850; }
-        #result-correct-text { margin-bottom: 22px; color: var(--kh-muted); font-size: .95rem; }
-        #btn-next { min-width: 190px; }
-        #screen-finish { display: none; margin-top: clamp(28px, 9vh, 90px); padding: clamp(28px, 6vw, 54px); text-align: center; }
-        #final-score { margin: 18px 0 8px; color: var(--kh-deep); font-size: clamp(2.8rem, 9vw, 4.4rem); font-weight: 950; font-variant-numeric: tabular-nums; }
-        #screen-finish p { margin: 0; color: var(--kh-muted); }
-        #btn-back { margin-top: 24px; }
-        .klassio-sound-btn, .klassio-sound-fab { border: 1px solid #bfd9d0 !important; background: #fff !important; color: var(--kh-deep) !important; }
-        body.student-kids #question-text { font-size: clamp(1.25rem, 3vw, 1.65rem); }
-        body.student-kids .option-btn { min-height: 82px; padding: 17px 14px; font-size: 1.08rem; }
-        body.student-kids #timer-text { font-size: 1.35rem; }
-        body.student-kids #result-text { font-size: 1.7rem; }
+        .option-btn.correct { border-color: #6ee7b7; box-shadow: 0 0 0 3px rgb(5 150 105 / .25); opacity: 1; }
+        .option-btn.incorrect { border-color: #fca5a5; box-shadow: 0 0 0 3px rgb(220 38 38 / .2); opacity: .6; }
+
+        #result-icon svg { display: block; width: 4rem; height: 4rem; margin: 0 auto; }
+        #result-icon .result-icon-ok { color: #059669; }
+        #result-icon .result-icon-bad { color: #dc2626; }
+
         @media (max-width: 600px) {
-            body.student-kids { padding: 10px; font-size: 16px; }
-            #screen-start, #screen-question, #screen-result, #screen-finish { padding: 17px; border-radius: 19px; }
-            #screen-start, #screen-result, #screen-finish { margin-top: 5vh; }
             #options-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-            .option-btn, body.student-kids .option-btn { min-height: 58px; padding: 12px; font-size: 1rem; }
-            #question-text { min-height: 92px; }
-            #screen-question form { text-align: center !important; }
-            #screen-question form button { width: 100%; min-height: 44px; }
+            .option-btn { min-height: 58px; padding: 12px; }
         }
-        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
     </style>
 </head>
 
 <body class="student-kids">
     @include('partials.toast')
 
-    {{-- Pantalla inicio --}}
-    <div id="screen-start">
-        <h1>🎯 {{ $activity->title }}</h1>
-        <p>{{ count($questions) }} preguntas · Lee cada pregunta y elige una opción antes de que termine el tiempo.</p>
-        <button id="btn-start" onclick="startGame()">¡A jugar! 🎮</button>
-    </div>
+    <div class="mx-auto w-full max-w-2xl px-3 py-5 sm:px-5 sm:py-8">
 
-    {{-- Pantalla pregunta --}}
-    <div id="screen-question">
-        <div id="progress-bar-wrap">
-            <div id="progress-bar" style="width: 0%"></div>
-        </div>
-        <div id="question-counter"></div>
-
-        <div id="timer-wrap">
-            <div id="timer-bar-wrap">
-                <div id="timer-bar" style="width: 100%"></div>
-            </div>
-            <div id="timer-text"></div>
-        </div>
-
-        <div id="question-text"></div>
-        <div id="options-grid"></div>
-        <div id="error-msg"></div>
-
-        <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
-            onsubmit="return confirm('¿Seguro que quieres dejar el juego?');"
-            style="margin-top: 1.5rem; text-align: center;">
-            @csrf
-
-            <button type="submit">
-                Dejar el juego 👋
+        {{-- Pantalla inicio --}}
+        <div id="screen-start" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-pink-700 sm:text-xs">
+                Actividad interactiva
+            </p>
+            <h1 class="mt-1.5 break-words text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                {{ $activity->title }}
+            </h1>
+            <p class="mx-auto mt-2 max-w-md text-sm font-semibold text-slate-500">
+                {{ count($questions) }} preguntas · Lee cada pregunta y elige una opción antes de que termine el tiempo.
+            </p>
+            <button id="btn-start" onclick="startGame()"
+                class="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-pink-700 px-8 text-base font-bold text-white shadow-sm transition hover:bg-pink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2">
+                ¡A jugar!
             </button>
-        </form>
-    </div>
+        </div>
 
-    {{-- Pantalla resultado por pregunta --}}
-    <div id="screen-result">
-        <div id="result-icon"></div>
-        <div id="result-text"></div>
-        <div id="result-score"></div>
-        <div id="result-correct-text"></div>
-        <button id="btn-next" onclick="nextQuestion()">Siguiente pregunta →</button>
-    </div>
+        {{-- Pantalla pregunta --}}
+        <div id="screen-question" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
 
-    {{-- Pantalla final --}}
-    <div id="screen-finish">
-        <h1>¡Increíble! 🎉</h1>
-        <div id="final-score"></div>
-        <p>Tus puntos ⭐</p>
-        <a id="btn-back" href="{{ route('student.activities.show', $activity->id) }}">
-            ¡Jugar otra vez! 🎮
-        </a>
+            <div id="progress-bar-wrap" class="h-2 overflow-hidden rounded-full bg-pink-100">
+                <div id="progress-bar" class="h-full rounded-full bg-pink-700" style="width: 0%"></div>
+            </div>
+            <p id="question-counter" class="mt-2 text-xs font-bold text-slate-500"></p>
+
+            <div id="timer-wrap" class="mt-3 flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200">
+                <div id="timer-bar-wrap" class="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
+                    <div id="timer-bar" class="h-full rounded-full" style="width: 100%"></div>
+                </div>
+                <div id="timer-text" class="min-w-[2.5rem] text-right font-mono text-lg font-bold tabular-nums text-pink-700"></div>
+            </div>
+
+            <div id="question-text" class="mt-4 flex min-h-28 items-center justify-center rounded-xl bg-pink-50 p-5 text-center text-lg font-bold leading-snug text-slate-900 ring-1 ring-pink-100 sm:min-h-32 sm:text-xl"></div>
+
+            <div id="options-grid" class="mt-3"></div>
+
+            <div id="error-msg" class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-sm font-bold text-red-700"></div>
+
+            <div class="mt-5 flex justify-center border-t border-slate-200 pt-4 sm:justify-end">
+                <form method="POST" action="{{ route('student.participation.abandon', $activity->id) }}"
+                    onsubmit="return confirm('¿Seguro que quieres dejar el juego?');">
+                    @csrf
+                    <button type="submit"
+                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H9" />
+                        </svg>
+                        Dejar el juego
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+        {{-- Pantalla resultado por pregunta --}}
+        <div id="screen-result" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
+            <div id="result-icon"></div>
+            <div id="result-text" class="mt-2 text-2xl font-bold text-slate-900"></div>
+            <div id="result-score" class="mt-1 text-lg font-bold text-pink-700"></div>
+            <div id="result-correct-text" class="mt-1 text-sm font-semibold text-slate-500"></div>
+            <button id="btn-next" onclick="nextQuestion()"
+                class="mt-6 inline-flex min-h-12 min-w-48 items-center justify-center rounded-xl bg-pink-700 px-8 text-base font-bold text-white shadow-sm transition hover:bg-pink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2">
+                Siguiente
+            </button>
+        </div>
+
+        {{-- Pantalla final --}}
+        <div id="screen-finish" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                ¡Increíble!
+            </h1>
+            <div id="final-score" class="mt-4 font-mono text-6xl font-extrabold tabular-nums text-pink-700 sm:text-7xl"></div>
+            <p class="mt-1 text-sm font-semibold text-slate-500">
+                Tus puntos
+            </p>
+            <a id="btn-back" href="{{ route('student.activities.show', $activity->id) }}"
+                class="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-8 text-base font-bold text-pink-700 shadow-sm transition hover:bg-pink-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2">
+                ¡Jugar otra vez!
+            </a>
+        </div>
+
     </div>
 
     <script src="/js/klassio-sounds.js"></script>
@@ -244,7 +253,7 @@
         function timeExpired() {
             answered = true;
             disableOptions();
-            showResult(false, 0, null, '⏰ ¡Se acabó el tiempo!');
+            showResult(false, 0, null, '¡Se acabó el tiempo!');
         }
 
         // -------------------------------------------------------------------------
@@ -383,24 +392,26 @@
             document.getElementById('screen-question').style.display = 'none';
             document.getElementById('screen-result').style.display = 'block';
 
-            document.getElementById('result-icon').textContent =
-                isCorrect ? '🎉' : '❌';
+            document.getElementById('result-icon').innerHTML =
+                isCorrect
+                    ? '<svg class="result-icon-ok" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>'
+                    : '<svg class="result-icon-bad" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>';
 
             document.getElementById('result-text').textContent =
-                overrideMessage ?? (isCorrect ? '¡Bien! 🎉' : '¡Casi! 😅');
+                overrideMessage ?? (isCorrect ? '¡Correcto!' : '¡Casi!');
 
             document.getElementById('result-score').textContent =
-                isCorrect ? `+${score} puntos ⭐` : 'Sin puntos';
+                isCorrect ? `+${score} puntos` : 'Sin puntos';
 
             document.getElementById('result-correct-text').textContent =
-                `Llevas: ${totalScore} ⭐`;
+                `Llevas: ${totalScore} puntos`;
 
             const remaining = QUESTIONS.slice(currentIndex + 1)
                 .filter(q => !ANSWERED_IDS.includes(q.id));
 
             document.getElementById('btn-next').textContent = remaining.length > 0 ?
-                'Siguiente 👉' :
-                'Ver mi puntaje ⭐';
+                'Siguiente' :
+                'Ver mi puntaje';
         }
 
         // -------------------------------------------------------------------------

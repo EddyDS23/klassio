@@ -4,8 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>Kahoot — Sala {{ $session->code }}</title>
-    @include('partials.assets', ['theme' => 'student'])
+
     @if ((bool) config('broadcasting.connections.reverb.enabled', false))
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
@@ -20,144 +22,230 @@
             });
         </script>
     @endif
+
+    @include('partials.assets', ['theme' => 'student', 'includeBootstrap' => false])
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        :root { --kh-ink: #183b3a; --kh-muted: #587371; --kh-line: #d7e8e4; --kh-deep: #075e58; }
-        body.student-kids { min-height: 100vh; color: var(--kh-ink); background: radial-gradient(circle at 8% 0%, #d9f3e8 0, transparent 31%), #eff6f2; }
-        .page-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 22px 0 38px; }
-        .kahoot-header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
-        .kahoot-title { min-width:0; }
-        .kahoot-title h1 { margin:0; color:var(--kh-ink); font-size:clamp(1.3rem, 3vw, 1.9rem); font-weight:900; overflow-wrap:anywhere; }
-        .kahoot-title p { margin:.25rem 0 0; color:var(--kh-muted); }
-        .session-pill { flex:none; padding:8px 12px; border:1px solid var(--kh-line); border-radius:12px; background:#fff; color:var(--kh-deep); font-weight:850; }
-        .session-meta { display:flex; flex:none; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
-        .session-meta span { padding:7px 10px; border:1px solid var(--kh-line); border-radius:11px; background:#fff; color:var(--kh-deep); font-size:.82rem; font-weight:800; }
-        .kahoot-layout { display:grid; grid-template-columns:minmax(0, 1fr) 300px; gap:18px; align-items:start; }
-        .game-panel, .side-panel { border:1px solid var(--kh-line); border-radius:20px; background:#fff; box-shadow:0 18px 45px rgb(23 69 60 / .09); }
-        .game-panel { min-height:440px; padding:clamp(16px, 3vw, 28px); }
-        .side-panel { padding:20px; }
-        .game-topline { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
-        .turn-badge { display:inline-flex; align-items:center; max-width:100%; background:#e4f4eb; color:var(--kh-deep); border:1px solid #cce7d8; border-radius:999px; padding:.5rem .9rem; font-weight:850; }
-        .round-clock { flex:none; padding:7px 11px; border-radius:11px; background:#f4f8f6; color:var(--kh-deep); font-weight:900; font-variant-numeric:tabular-nums; }
-        .round-clock.is-urgent { background:#fff0ed; color:#a5362f; }
-        .question-progress { height:8px; margin:14px 0 8px; overflow:hidden; border-radius:999px; background:#e4efeb; }
-        .question-progress > span { display:block; width:0; height:100%; border-radius:inherit; background:#07877b; transition:width .3s ease; }
-        .question-count { margin:0 0 12px; color:var(--kh-muted); font-size:.84rem; font-weight:800; }
-        .question-card { display:flex; min-height:126px; align-items:center; justify-content:center; margin-bottom:16px; padding:clamp(18px, 4vw, 30px); border:1px solid #d8e9e1; border-radius:17px; background:linear-gradient(140deg,#f0faf5,#e7f4ed); color:var(--kh-ink); font-size:clamp(1.2rem, 3vw, 1.65rem); font-weight:850; line-height:1.35; text-align:center; overflow-wrap:anywhere; }
-        .answer-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-        .turn-badge {
-            background: var(--klassio-primary);
-            color: #fff;
-            border-radius: 1rem;
-            padding: .5rem 1rem;
-            font-weight: 700;
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+
+        /* === Utilidades que el JS reutiliza (reemplazan a Bootstrap) === */
+        [hidden] { display: none !important; }
+        .d-none { display: none !important; }
+        .fw-bold { font-weight: 700; }
+        .small { font-size: .8rem; line-height: 1.45; }
+        .mb-0 { margin-bottom: 0; }
+        .mb-2 { margin-bottom: .5rem; }
+        .alert { padding: 12px 14px; border-radius: .8rem; font-size: .9rem; font-weight: 700; text-align: center; }
+        .alert-success { color: #166534; border: 1px solid #86efac; background: #dcfce7; }
+        .alert-danger { color: #991b1b; border: 1px solid #fca5a5; background: #fee2e2; }
+
+        /* === Internos del juego (JS modifica estas clases) === */
+        #round-clock.is-urgent { background: #fee2e2; color: #dc2626; }
+
+        .question-progress { height: 9px; margin: 14px 0 8px; overflow: hidden; border-radius: 999px; background: #fce7f3; }
+        .question-progress > span { display: block; width: 0; height: 100%; border-radius: inherit; background: #be185d; transition: width .3s ease; }
+
+        .answer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .opt-btn { width: 100%; display: flex; min-height: 76px; align-items: center; justify-content: center; padding: 14px; border: 2px solid transparent; border-radius: .75rem; color: #fff; font: inherit; font-size: 1rem; font-weight: 700; line-height: 1.3; text-align: center; overflow-wrap: anywhere; cursor: pointer; transition: opacity .2s, filter .15s; }
+        .opt-btn:nth-child(1) { background: #dc2626; }
+        .opt-btn:nth-child(2) { background: #2563eb; }
+        .opt-btn:nth-child(3) { background: #d97706; }
+        .opt-btn:nth-child(4) { background: #059669; }
+        button.opt-btn { border-radius: .9rem; }
+        .opt-btn:hover:not(:disabled) { filter: brightness(1.06); }
+        .opt-btn:focus-visible { outline: 3px solid #be185d; outline-offset: 3px; }
+        .opt-btn:disabled, .opt-btn.disabled { cursor: default; opacity: .72; }
+
+        #round-question-note { min-height: 1.4em; }
+
+        @media (max-width: 560px) {
+            .answer-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+            .opt-btn { min-height: 58px; padding: 12px; }
         }
 
-        .opt-btn { display:flex; min-height:76px; align-items:center; justify-content:center; width:100%; padding:14px; border:2px solid transparent; border-radius:14px; color:#fff; font:inherit; font-size:1rem; font-weight:800; line-height:1.3; text-align:center; overflow-wrap:anywhere; transition:transform .12s, box-shadow .15s, opacity .2s; }
-        .opt-btn:nth-child(1) { background:#b83c37; }
-        .opt-btn:nth-child(2) { background:#2865a4; }
-        .opt-btn:nth-child(3) { background:#98700a; }
-        .opt-btn:nth-child(4) { background:#247346; }
-        .opt-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 18px rgb(24 59 58 / .16); }
-        .opt-btn:focus-visible, .leave-button:focus-visible { outline:3px solid #f59e0b; outline-offset:3px; }
-
-        .opt-btn:disabled {
-            cursor: not-allowed;
-            opacity: .72;
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
         }
-
-        #round-answer-feedback { margin-top:14px; }
-        #round-question-note { min-height:1.4em; color:var(--kh-muted); }
-        .wait-state { display:flex; min-height:340px; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; }
-        .wait-icon { display:grid; width:66px; height:66px; place-items:center; margin-bottom:14px; border-radius:20px; background:#e4f4eb; color:var(--kh-deep); font-size:2rem; font-weight:900; }
-        .wait-state h2 { margin:0 0 7px; font-size:1.3rem; font-weight:900; }
-        .wait-state p { max-width:440px; margin:0; color:var(--kh-muted); }
-        .side-panel h2 { margin:0 0 12px; color:var(--kh-ink); font-size:1.05rem; font-weight:900; }
-        .score-summary { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; color:var(--kh-muted); font-size:.86rem; }
-        #players .list-group-item { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:11px 0; border-color:#edf3f0; background:transparent; color:var(--kh-ink); }
-        #players { max-height:300px; overflow-y:auto; scrollbar-gutter:stable; }
-        #players [data-role="score"] { flex:none; color:var(--kh-deep); font-variant-numeric:tabular-nums; }
-        .leave-button { min-height:44px; border:1px solid #e9c7c6; border-radius:11px; background:#fff6f4; color:#9b3a35; font:inherit; font-weight:750; }
-        html[data-theme="dark"] body.student-kids { --kh-ink:#e6f1ee; --kh-muted:#a4bab4; --kh-line:#334a45; color:var(--kh-ink); background:radial-gradient(circle at 8% 0%,#193d35 0,transparent 34%),#101d1a; }
-        html[data-theme="dark"] .game-panel, html[data-theme="dark"] .side-panel, html[data-theme="dark"] .session-pill, html[data-theme="dark"] .session-meta span { background:#172622; border-color:var(--kh-line); color:var(--kh-ink); }
-        html[data-theme="dark"] .kahoot-title h1, html[data-theme="dark"] .side-panel h2 { color:var(--kh-ink); }
-        html[data-theme="dark"] .question-card { background:linear-gradient(140deg,#203b34,#1b302b); border-color:#38564d; color:var(--kh-ink); }
-        html[data-theme="dark"] .round-clock { background:#223630; color:#c4f2d9; }
-        html[data-theme="dark"] .round-clock.is-urgent { background:#482b29; color:#ffc2b9; }
-        html[data-theme="dark"] #players .list-group-item { color:var(--kh-ink); }
-        html[data-theme="dark"] .leave-button { background:#382321; border-color:#69413c; color:#ffc2b9; }
-        [hidden] { display:none !important; }
-        @media (max-width:800px) { .kahoot-layout { grid-template-columns:minmax(0,1fr); } .game-panel { min-height:0; } }
-        @media (max-width:560px) { .page-shell { width:calc(100% - 20px); padding-top:12px; } .kahoot-header { align-items:flex-start; flex-wrap:wrap; } .session-meta { width:100%; justify-content:flex-start; } .session-pill { padding:7px 9px; font-size:.82rem; } .game-panel,.side-panel { border-radius:16px; } .game-topline { align-items:flex-start; flex-direction:column; } .answer-grid { grid-template-columns:minmax(0,1fr); gap:8px; } .opt-btn { min-height:58px; padding:12px; } .question-card { min-height:96px; } }
-        @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; } }
     </style>
 </head>
 
 <body class="student-kids">
 
-    <div class="page-shell">
+    <div class="mx-auto w-full max-w-3xl px-3 py-4 sm:px-5 sm:py-6">
 
-        <header class="kahoot-header">
-            <div class="kahoot-title">
-                <h1>{{ $activity->title }}</h1>
-                <p>Kahoot multijugador · Código de sala {{ $session->code }}</p>
+        {{-- Encabezado --}}
+        <header class="rounded-2xl bg-pink-700 p-4 text-white shadow-sm sm:p-6">
+
+            <div class="flex items-start justify-between gap-3">
+
+                <div class="flex min-w-0 items-start gap-3">
+
+                    <div class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 sm:flex">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                        </svg>
+                    </div>
+
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-pink-200 sm:text-xs">
+                            {{ $activity->mode === 'team' ? 'Actividad por equipos' : 'Partida multijugador' }}
+                        </p>
+                        <h1 class="mt-0.5 text-lg font-bold tracking-tight sm:mt-1 sm:text-2xl">
+                            Kahoot
+                        </h1>
+                        <p class="mt-0.5 break-words text-xs font-semibold text-pink-100 sm:text-sm">
+                            {{ $activity->title }}
+                        </p>
+                        <p class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <span class="inline-flex items-center rounded-full bg-white/15 px-2.5 py-1 font-mono text-xs font-bold tracking-[0.15em] ring-1 ring-white/25">
+                                {{ $session->code }}
+                            </span>
+                            <span class="text-xs font-semibold text-pink-100">
+                                {{ count($state['players']) }} {{ $activity->mode === 'team' ? 'equipos' : 'participantes' }}
+                            </span>
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="shrink-0 rounded-xl bg-white/15 px-3 py-2 text-center ring-1 ring-white/25" aria-label="Tiempo restante">
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-pink-100">
+                        Tiempo restante
+                    </span>
+                    <div class="font-mono text-lg font-bold tabular-nums text-white sm:text-xl">
+                        <span id="timer">--:--</span>
+                    </div>
+                    <div id="round-clock" class="text-[10px] font-semibold text-pink-100">
+                        Pregunta: <span id="round-timer" class="tabular-nums">--</span>
+                    </div>
+                </div>
+
             </div>
-            <div class="session-meta">
-                <span>Sala {{ $session->code }}</span>
-                <span>{{ count($state['players']) }} participantes</span>
-            </div>
+
         </header>
 
-        <div class="kahoot-layout">
-            <main class="game-panel" aria-live="polite">
-                <section id="question-stage" hidden>
-                    <div class="game-topline">
-                        <span class="turn-badge" id="turn-badge">Preparando...</span>
-                        <span class="round-clock" id="round-clock">Pregunta: <span id="round-timer">--</span></span>
-                    </div>
-                    <div class="question-progress" role="progressbar" aria-label="Preguntas respondidas"
-                        aria-valuemin="0" aria-valuemax="{{ $totalItems }}" aria-valuenow="{{ $answeredCount }}">
-                        <span id="question-progress-fill"></span>
-                    </div>
-                    <p class="question-count"><span id="answered-count">{{ $answeredCount }}</span> de {{ $totalItems }} preguntas respondidas · Tiempo de partida: <span id="timer">--:--</span></p>
-                    <div class="question-card" id="q-text"></div>
-                    <div class="answer-grid" id="q-options"></div>
-                    <div id="round-answer-feedback" aria-live="assertive"></div>
-                    <p class="text-center mt-3 mb-0" id="round-question-note"></p>
-                </section>
-                <section class="wait-state" id="wait-state" aria-live="polite">
-                    <div class="wait-icon" aria-hidden="true">?</div>
-                    <h2 id="wait-title">Preparados para jugar</h2>
-                    <p id="wait-msg">Esperando a que el profesor lance la primera pregunta…</p>
-                    <p class="mt-2" id="turn-hint">Cuando empiece la ronda, la pregunta aparecerá aquí.</p>
-                </section>
-            </main>
+        {{-- Resumen --}}
+        <p class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3" aria-label="Resumen de la partida">
 
-            <aside>
-                <section class="side-panel">
-                    <h2>Marcador</h2>
-                    <div class="score-summary"><span>Progreso</span><strong><span id="answered-count-side">{{ $answeredCount }}</span> / {{ $totalItems }}</strong></div>
-                    <ul class="list-group list-group-flush" id="players">
-                        @foreach ($state['players'] as $p)
-                            <li class="list-group-item" data-participation-id="{{ $p['participation_id'] }}">
-                                <span>@if ($p['participation_id'] === $participation->id)<strong>{{ $p['name'] }}</strong> <span class="text-muted">(tú)</span>@else{{ $p['name'] }}@endif</span>
-                                <span data-role="score">{{ $p['score'] }} / {{ $maxScore }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </section>
-                <section class="side-panel mt-3">
-                    <h2>Salir de la partida</h2>
-                    <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}">
-                        @csrf
-                        <button type="submit" class="leave-button w-100">Abandonar partida</button>
-                    </form>
-                </section>
-            </aside>
+            <span class="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                <span class="font-semibold text-slate-500">Respondidas</span>
+                <span class="font-bold text-emerald-700"><span id="answered-count">{{ $answeredCount }}</span> / {{ $totalItems }}</span>
+            </span>
+
+            <span class="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm sm:justify-start sm:px-4">
+                <svg class="h-4 w-4 shrink-0 text-pink-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                </svg>
+                <span class="font-semibold text-slate-500">Preguntas</span>
+                <span class="font-bold text-pink-700">{{ $totalItems }}</span>
+            </span>
+
+        </p>
+
+        {{-- Cómo jugar --}}
+        <p class="mt-3 flex items-start gap-2 rounded-xl bg-pink-50 px-3.5 py-2.5 text-sm text-pink-900 ring-1 ring-pink-100">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-pink-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 0 4.51-2.104m0 0A9.04 9.04 0 0 0 12 3a9.04 9.04 0 0 0-6.76 12.986M3.75 19.5a12.06 12.06 0 0 1 4.51-2.104m0 0a6.01 6.01 0 0 0 1.5-.189m0 0a6.01 6.01 0 0 1 1.5-.189" />
+            </svg>
+            @if ($activity->mode === 'team')
+                <span><strong class="font-bold">Cómo jugar:</strong> el profesor lanza las preguntas. Quien tenga el turno responde y el equipo puede ayudarle a decidir antes de que termine el tiempo.</span>
+            @else
+                <span><strong class="font-bold">Cómo jugar:</strong> el profesor lanza las preguntas. Responde antes de que termine el tiempo de cada ronda.</span>
+            @endif
+        </p>
+
+        {{-- Ronda --}}
+        <section class="mt-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-live="polite">
+
+            {{-- Escenario de pregunta --}}
+            <div id="question-stage" hidden>
+                <div class="flex items-start justify-between gap-2">
+                    <span id="turn-badge" tabindex="-1" class="inline-flex max-w-full items-center rounded-full bg-pink-700 px-3.5 py-1.5 text-sm font-bold text-white">
+                        Preparando...
+                    </span>
+                </div>
+
+                <div class="question-progress" role="progressbar" aria-label="Preguntas respondidas"
+                    aria-valuemin="0" aria-valuemax="{{ $totalItems }}" aria-valuenow="{{ $answeredCount }}">
+                    <span id="question-progress-fill"></span>
+                </div>
+
+                <div id="q-text" class="mt-3 flex min-h-28 items-center justify-center rounded-xl bg-pink-50 p-5 text-center text-lg font-bold leading-snug text-slate-900 ring-1 ring-pink-100 sm:min-h-32 sm:text-xl"></div>
+
+                <div id="q-options" class="answer-grid mt-3"></div>
+
+                <div id="round-answer-feedback" class="mt-3" aria-live="assertive"></div>
+
+                <p id="round-question-note" class="mt-3 mb-0 text-center text-sm font-semibold text-slate-500"></p>
+            </div>
+
+            {{-- Pantalla de espera --}}
+            <div id="wait-state" class="flex min-h-64 flex-col items-center justify-center py-6 text-center" aria-live="polite">
+                <div class="grid h-16 w-16 place-items-center rounded-2xl bg-pink-50 text-2xl font-extrabold text-pink-700 ring-1 ring-pink-100" aria-hidden="true">?</div>
+                <h2 id="wait-title" class="mt-3 text-xl font-bold text-slate-900">
+                    Preparados para jugar
+                </h2>
+                <p id="wait-msg" class="mt-1.5 max-w-md text-sm text-slate-500">
+                    Esperando a que el profesor lance la primera pregunta…
+                </p>
+                <p id="turn-hint" class="mt-2 text-sm font-semibold text-slate-400">
+                    Cuando empiece la ronda, la pregunta aparecerá aquí.
+                </p>
+            </div>
+
+        </section>
+
+        {{-- Marcador de la sala --}}
+        <section class="mt-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4" aria-label="Marcador de la sala">
+            <div class="flex items-center justify-between gap-2">
+                <h2 class="text-base font-bold text-slate-900 sm:text-lg">
+                    Marcador
+                </h2>
+                <p class="text-xs font-semibold text-slate-500">
+                    Progreso: <strong class="font-bold text-pink-700"><span id="answered-count-side">{{ $answeredCount }}</span> / {{ $totalItems }}</strong>
+                </p>
+            </div>
+            <ul id="players" class="mt-3 grid max-h-72 gap-1.5 overflow-y-auto pr-1">
+                @foreach ($state['players'] as $p)
+                    <li data-participation-id="{{ $p['participation_id'] }}"
+                        class="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
+                        <span class="min-w-0 flex-1 truncate text-slate-700">
+                            @if ($p['participation_id'] === $participation->id)
+                                <strong class="font-bold text-slate-900">{{ $p['name'] }}</strong>
+                                <span class="font-semibold text-slate-400">(tú)</span>
+                            @else
+                                {{ $p['name'] }}
+                            @endif
+                        </span>
+                        <span data-role="score" class="shrink-0 font-bold tabular-nums text-pink-700">{{ $p['score'] }} / {{ $maxScore }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+
+        <div class="mt-4 flex justify-end border-t border-slate-200 pt-4">
+            <form method="POST" action="{{ route('student.game-sessions.leave', $session->id) }}"
+                onsubmit="return confirm('¿Estás seguro de que quieres salir de esta sala?');">
+                @csrf
+                <button type="submit"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H9" />
+                    </svg>
+                    Salir de la sala
+                </button>
+            </form>
         </div>
 
     </div>
 
-    <script src="/js/klassio-sounds.js"></script>
     <script>
         window.KlassioSounds?.setup('kahoot');
         const sessionId = @json($session->id);
