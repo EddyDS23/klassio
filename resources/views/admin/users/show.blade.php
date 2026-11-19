@@ -123,10 +123,10 @@
 
     </section>
 
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 
     <!-- Gestión del estado -->
-    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    <section class="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
         <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
             Seguridad
@@ -141,7 +141,7 @@
         </p>
 
         @if ($user->id === auth()->id())
-            <div class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800" role="status">
+            <div class="mt-3 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800" role="status">
                 <svg class="mt-0.5 h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
                 </svg>
@@ -151,7 +151,7 @@
             </div>
         @else
             <form action="{{ route('admin.users.update-status', $user->id) }}" method="POST"
-                  class="mt-4 flex flex-wrap items-center gap-3">
+                  class="mt-3 flex flex-wrap items-center gap-2.5">
                 @csrf
                 @method('PATCH')
 
@@ -173,7 +173,7 @@
     </section>
 
     <!-- Cambiar contraseña -->
-    <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    <section class="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
         <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
             Seguridad
@@ -187,14 +187,14 @@
         </p>
 
         @if ($user->id === auth()->id())
-            <div class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800" role="status">
+            <div class="mt-3 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800" role="status">
                 <p class="text-sm font-bold">
                     No puedes cambiar tu propia contraseña desde aquí. Usa tu perfil.
                 </p>
             </div>
         @else
             <form action="{{ route('admin.users.update-password', $user->id) }}" method="POST"
-                  class="mt-4 flex flex-col gap-4">
+                  class="mt-3 flex flex-col gap-3">
                 @csrf
                 @method('PATCH')
 
