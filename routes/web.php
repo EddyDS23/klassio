@@ -39,6 +39,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'active', 'role:admi
     Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
     Route::get('/users/{id}', [AdminUserController::class, 'show'])->where(['id' => '[1-9][0-9]*'])->name('users.show');
     Route::patch('/users/{id}/status', [AdminUserController::class, 'updateStatus'])->where(['id' => '[1-9][0-9]*'])->name('users.update-status');
+    Route::patch('/users/{id}/password', [AdminUserController::class, 'updatePassword'])->where(['id' => '[1-9][0-9]*'])->name('users.update-password');
 
     Route::get('/classes', [AdminClassController::class, 'index'])->name('classes.index');
     Route::get('/classes/{id}', [AdminClassController::class, 'show'])->where(['id' => '[1-9][0-9]*'])->name('classes.show');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdminUserRequest;
+use App\Http\Requests\Admin\UpdateUserPasswordRequest;
 use App\Http\Requests\Admin\UpdateUserStatusRequest;
 use App\Models\Participation;
 use App\Models\TeamMember;
@@ -99,5 +100,21 @@ class AdminUserController extends Controller
         $user->update(['status' => $status]);
 
         return redirect()->back()->with('success', "El estado del usuario {$user->name} fue actualizado a «{$status}».");
+    }
+
+    public function updatePassword(UpdateUserPasswordRequest $request, int $id): RedirectResponse
+    {
+        $user = User::findOrFail($id);
+
+        // Evita que el admin cambie su propia contraseña por esta vía
+        // (debe usar su perfil); así se evitan bloqueos accidentales.
+        if ($user->id === (int) $request->user()->id) {
+            return redirect()->back()->with('error', 'No puedes cambiar tu propia contraseña desde aquí. Usa tu perfil.');
+        }
+
+        // El cast 'hashed' del modelo se encarga de hashear la contraseña.
+        $user->update(['password' => $request->input('password')]);
+
+        return redirect()->back()->with('success', "La contraseña de {$user->name} fue actualizada correctamente.");
     }
 }

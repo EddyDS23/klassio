@@ -170,4 +170,60 @@
 
     </section>
 
+    <!-- Cambiar contraseña -->
+    <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+
+        <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
+            Seguridad
+        </p>
+        <h3 class="mt-1 text-xl font-black text-slate-900">
+            Cambiar contraseña
+        </h3>
+
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Establece una nueva contraseña para este usuario. Debe tener al menos 8 caracteres.
+        </p>
+
+        @if ($user->id === auth()->id())
+            <div class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800" role="status">
+                <p class="text-sm font-bold">
+                    No puedes cambiar tu propia contraseña desde aquí. Usa tu perfil.
+                </p>
+            </div>
+        @else
+            <form action="{{ route('admin.users.update-password', $user->id) }}" method="POST"
+                  class="mt-4 flex flex-col gap-4">
+                @csrf
+                @method('PATCH')
+
+                <div class="flex flex-col gap-1.5">
+                    <label for="password" class="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                        Nueva contraseña
+                    </label>
+                    <input id="password" name="password" type="password" required minlength="8" maxlength="50"
+                           class="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100">
+                    @error('password')
+                        <p class="text-sm font-medium text-red-600" role="alert">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label for="password_confirmation" class="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                        Confirmar contraseña
+                    </label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required minlength="8" maxlength="50"
+                           class="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100">
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+                        Cambiar contraseña
+                    </button>
+                </div>
+            </form>
+        @endif
+
+    </section>
+
 @endsection
