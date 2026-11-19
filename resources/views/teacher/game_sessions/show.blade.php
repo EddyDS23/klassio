@@ -23,7 +23,7 @@
 
     <div class="mx-auto max-w-5xl">
 
-        <div class="mb-6">
+        <div class="mb-6 flex justify-end">
             <a href="{{ route('teacher.dashboard') }}"
                class="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
