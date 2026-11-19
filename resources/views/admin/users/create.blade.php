@@ -91,6 +91,8 @@
                     @enderror
                 </div>
 
+                <!-- Contraseñas -->
+                <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="password" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600">
                             Contraseña
