@@ -246,6 +246,7 @@
 
     </div>
 
+    <script src="/js/klassio-sounds.js"></script>
     <script>
         window.KlassioSounds?.setup('kahoot');
         const sessionId = @json($session->id);
