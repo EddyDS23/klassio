@@ -123,10 +123,10 @@
 
     </section>
 
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
 
     <!-- Gestión del estado -->
-    <section class="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
         <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
             Seguridad
@@ -173,7 +173,7 @@
     </section>
 
     <!-- Cambiar contraseña -->
-    <section class="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
         <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
             Seguridad
