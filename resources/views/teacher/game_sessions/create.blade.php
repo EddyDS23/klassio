@@ -8,7 +8,7 @@
 
     <div class="mx-auto max-w-5xl">
 
-        <div class="mb-6">
+        <div class="mb-6 flex justify-end">
             @if ($selectedClass)
                 <a href="{{ route('teacher.classes.show', $selectedClass->id) }}"
                    class="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
