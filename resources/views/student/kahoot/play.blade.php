@@ -73,7 +73,7 @@
         </div>
 
         {{-- Pantalla pregunta --}}
-        <div id="screen-question" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div id="screen-question" class="flex min-h-[calc(100vh-6rem)] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
 
             <div id="progress-bar-wrap" class="h-2 overflow-hidden rounded-full bg-pink-100">
                 <div id="progress-bar" class="h-full rounded-full bg-pink-700" style="width: 0%"></div>
@@ -110,7 +110,7 @@
         </div>
 
         {{-- Pantalla resultado por pregunta --}}
-        <div id="screen-result" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
+        <div id="screen-result" class="flex min-h-[calc(100vh-6rem)] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
             <div id="result-icon"></div>
             <div id="result-text" class="mt-2 text-2xl font-bold text-slate-900"></div>
             <div id="result-score" class="mt-1 text-lg font-bold text-pink-700"></div>
@@ -122,7 +122,7 @@
         </div>
 
         {{-- Pantalla final --}}
-        <div id="screen-finish" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
+        <div id="screen-finish" class="flex min-h-[calc(100vh-6rem)] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
             <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 ¡Increíble!
             </h1>
@@ -130,10 +130,6 @@
             <p class="mt-1 text-sm font-semibold text-slate-500">
                 Tus puntos
             </p>
-            <a id="btn-back" href="{{ route('student.activities.show', $activity->id) }}"
-                class="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-8 text-base font-bold text-pink-700 shadow-sm transition hover:bg-pink-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2">
-                ¡Jugar otra vez!
-            </a>
         </div>
 
     </div>
