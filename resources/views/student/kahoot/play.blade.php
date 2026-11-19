@@ -53,7 +53,7 @@
 <body class="student-kids">
     @include('partials.toast')
 
-    <div class="mx-auto w-full max-w-2xl px-3 py-5 sm:px-5 sm:py-8">
+    <div class="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-3 py-5 sm:px-5 sm:py-8">
 
         {{-- Pantalla inicio --}}
         <div id="screen-start" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
@@ -73,7 +73,7 @@
         </div>
 
         {{-- Pantalla pregunta --}}
-        <div id="screen-question" class="flex min-h-[calc(100vh-6rem)] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div id="screen-question" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
 
             <div id="progress-bar-wrap" class="h-2 overflow-hidden rounded-full bg-pink-100">
                 <div id="progress-bar" class="h-full rounded-full bg-pink-700" style="width: 0%"></div>
@@ -110,7 +110,7 @@
         </div>
 
         {{-- Pantalla resultado por pregunta --}}
-        <div id="screen-result" class="flex min-h-[calc(100vh-6rem)] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
+        <div id="screen-result" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
             <div id="result-icon"></div>
             <div id="result-text" class="mt-2 text-2xl font-bold text-slate-900"></div>
             <div id="result-score" class="mt-1 text-lg font-bold text-pink-700"></div>
@@ -122,7 +122,7 @@
         </div>
 
         {{-- Pantalla final --}}
-        <div id="screen-finish" class="flex min-h-[calc(100vh-6rem)] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
+        <div id="screen-finish" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
             <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 ¡Increíble!
             </h1>
@@ -405,9 +405,13 @@
             const remaining = QUESTIONS.slice(currentIndex + 1)
                 .filter(q => !ANSWERED_IDS.includes(q.id));
 
-            document.getElementById('btn-next').textContent = remaining.length > 0 ?
-                'Siguiente' :
-                'Ver mi puntaje';
+            const btnNext = document.getElementById('btn-next');
+            if (remaining.length > 0) {
+                btnNext.textContent = 'Siguiente';
+                btnNext.style.display = '';
+            } else {
+                btnNext.style.display = 'none';
+            }
         }
 
         // -------------------------------------------------------------------------
